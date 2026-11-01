@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Administración | Dulce & Feliz</title>
+  <link rel="icon" type="image/png" href="Isotipo Sin fondo.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#0B0B0C',
+            charcoal: '#121214',
+            surface: '#1C1C1E',
+            surfaceLight: '#262629',
+            gold: '#D4AF37',
+            goldLight: '#F3E5AB'
+          },
+          fontFamily: {
+            serif: ['Cormorant Garamond', 'serif'],
+            sans: ['Montserrat', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { background: #0B0B0C; color: #F2F2F2; font-family: 'Montserrat', sans-serif; }
+    .font-serif-luxury { font-family: 'Cormorant Garamond', serif; }
+    .glass-card { background: rgba(17, 17, 19, 0.85); border: 1px solid rgba(212, 175, 55, 0.25); backdrop-filter: blur(10px); border-radius: 1.5rem; }
+    .gold-button { background: linear-gradient(135deg, #D4AF37 0%, #AA771C 100%); color: #0B0B0C; font-weight: 700; transition: all .25s ease; }
+    .gold-button:hover { transform: translateY(-1px); box-shadow: 0 10px 25px rgba(212, 175, 55, 0.2); }
+    .admin-dialog { width: min(40rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; background: #121214; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 1rem; color: #F2F2F2; padding: 2rem; }
+    .admin-dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); }
+  </style>
+</head>
+<body class="min-h-screen pb-16">
+  <!-- AUTH LOCK MODAL -->
+  <div id="auth-modal" class="fixed inset-0 z-50 bg-[#0B0B0C] flex items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full p-8 text-center border-gold/40">
+      <img src="Logo Dulce y Feliz sf.png" alt="Logo" class="h-16 w-auto mx-auto mb-4 object-contain" />
+      <h2 class="font-serif-luxury text-3xl text-white mb-2">Acceso Restringido</h2>
+      <p class="text-xs text-gray-400 mb-6">Ingresa el código de seguridad para administrar la tienda.</p>
+      <input type="password" id="auth-code-input" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-3 text-center text-xl tracking-widest text-goldLight mb-4 focus:outline-none focus:border-gold" placeholder="••••" />
+      <button onclick="verifyAdminCode()" class="gold-button w-full rounded-xl py-3 text-xs uppercase tracking-wider">Entrar al Panel</button>
+      <p id="auth-error" class="text-xs text-red-400 mt-3 hidden" role="alert"></p>
+    </div>
+  </div>
+
+  <header class="border-b border-white/10 bg-[#0B0B0C]/90 backdrop-blur-md sticky top-0 z-40">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex h-20 items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img src="Logo Dulce y Feliz sf.png" alt="Logo" class="h-12 w-auto object-contain" />
+        <div>
+          <h1 class="font-serif-luxury text-2xl text-white">Panel de Administración</h1>
+          <p class="text-[10px] uppercase tracking-[0.2em] text-goldLight">Gestión Integral de Tienda</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="index.html" target="_blank" class="rounded-xl border border-gold/40 px-4 py-2 text-xs uppercase tracking-wider text-goldLight hover:bg-gold/10 transition-colors">
+          <i class="fa-solid fa-store mr-1"></i> Ver Tienda
+        </a>
+        <button onclick="downloadJSON()" class="gold-button rounded-xl px-4 py-2 text-xs uppercase tracking-wider">
+          <i class="fa-solid fa-download mr-1"></i> Descargar JSON
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-10 space-y-10">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-gold/20 bg-[#161618] p-4">
+      <p id="save-status" class="text-xs text-gray-300" aria-live="polite">Cada guardado actualiza GitHub y dispara un despliegue de Vercel.</p>
+      <button onclick="persistAdminData()" class="gold-button shrink-0 rounded-xl px-4 py-2 text-xs uppercase tracking-wider">
+        <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publicar cambios
+      </button>
+    </div>
+
+    <!-- STOCK ALERTS BANNER -->
+    <div id="stock-alerts-banner" class="hidden rounded-2xl border border-amber-500/40 bg-amber-950/30 p-5 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid fa-triangle-exclamation text-amber-400 text-xl"></i>
+        <div>
+          <h4 class="font-serif-luxury text-lg text-amber-200">Alerta de Inventario</h4>
+          <p id="stock-alerts-text" class="text-xs text-gray-300 mt-0.5"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <section class="glass-card p-6 sm:p-8">
+      <h2 class="font-serif-luxury text-3xl text-white">Indicadores de Gestión y Rendimiento</h2>
+      <p class="text-xs text-gray-400 mt-1">Métricas clave calculadas a partir de las visitas y la salida de stock por WhatsApp.</p>
+      
+      <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+        <div class="rounded-2xl border border-gold/20 bg-[#161618] p-5">
+          <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Visitas Totales</p>
+          <p id="kpi-visits" class="mt-2 font-serif-luxury text-3xl text-goldLight">0</p>
+        </div>
+        <div class="rounded-2xl border border-gold/20 bg-[#161618] p-5">
+          <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Ventas WhatsApp</p>
+          <p id="kpi-orders" class="mt-2 font-serif-luxury text-3xl text-emerald-400">0</p>
+        </div>
+        <div class="rounded-2xl border border-gold/20 bg-[#161618] p-5">
+          <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Conversión (Venta/Visita)</p>
+          <p id="kpi-conversion" class="mt-2 font-serif-luxury text-3xl text-goldLight">0%</p>
+        </div>
+        <div class="rounded-2xl border border-gold/20 bg-[#161618] p-5">
+          <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Ventas de la Semana (Est.)</p>
+          <p id="kpi-week-sales" class="mt-2 font-serif-luxury text-3xl text-goldLight">$0</p>
+        </div>
+        <div class="rounded-2xl border border-gold/20 bg-[#161618] p-5">
+          <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Ventas del Mes (Est.)</p>
+          <p id="kpi-month-sales" class="mt-2 font-serif-luxury text-3xl text-goldLight">$0</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Configuración del Hero, Novedades, Ofertas, Packaging e Instagram -->
+    <div class="grid gap-8 lg:grid-cols-2">
+      <section class="glass-card p-6 space-y-4">
+        <h3 class="font-serif-luxury text-2xl text-white"><i class="fa-solid fa-video text-gold mr-2"></i> Video del Hero (Portada)</h3>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Nombre del archivo de video (.mp4)</label>
+          <input type="text" id="input-hero-video" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-2.5 text-sm text-white" placeholder="Ej. Cookie de lujo.mp4" />
+        </div>
+        <button onclick="saveHeroVideo()" class="gold-button rounded-xl px-5 py-2 text-xs uppercase tracking-wider">Guardar Video</button>
+      </section>
+
+      <section class="glass-card p-6 space-y-4">
+        <h3 class="font-serif-luxury text-2xl text-white"><i class="fa-solid fa-box text-gold mr-2"></i> Presentación Exclusiva</h3>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Título de Presentación Exclusiva</label>
+          <input type="text" id="input-pkg-title" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-2.5 text-sm text-white" placeholder="Ej. Nuestra Caja de Lujo" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Texto descriptivo</label>
+          <textarea id="input-pkg-text" rows="2" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-2.5 text-sm text-white" placeholder="Descripción de la caja de lujo..."></textarea>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Archivo Multimedia (Imagen o Video .jpg / .png / .mp4)</label>
+          <input type="text" id="input-pkg-media" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-2.5 text-sm text-white" placeholder="Ej. Caja modelo.jpg" />
+        </div>
+        <button onclick="savePackagingConfig()" class="gold-button rounded-xl px-5 py-2 text-xs uppercase tracking-wider">Guardar Presentación</button>
+      </section>
+    </div>
+
+    <!-- Gestión de Novedades y Ofertas Especiales -->
+    <div class="grid gap-8 lg:grid-cols-2">
+      <section class="glass-card p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-serif-luxury text-2xl text-white"><i class="fa-solid fa-bullhorn text-gold mr-2"></i> Sección Novedades</h3>
+          <label class="flex items-center gap-2 text-xs text-goldLight cursor-pointer">
+            <input type="checkbox" id="news-active" class="rounded accent-gold" /> Activo en Index
+          </label>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Título de Novedades</label>
+          <input type="text" id="news-title" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-2.5 text-sm text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Texto descriptivo</label>
+          <textarea id="news-text" rows="2" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-2.5 text-sm text-white"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Imagen o Video multimedia (opcional)</label>
+          <input type="text" id="news-media" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-2.5 text-sm text-white" placeholder="Ej. novedad.jpg" />
+        </div>
+        <button onclick="saveAnnouncements()" class="gold-button rounded-xl px-5 py-2 text-xs uppercase tracking-wider">Guardar Novedades</button>
+      </section>
+
+      <section class="glass-card p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-serif-luxury text-2xl text-white"><i class="fa-solid fa-fire text-gold mr-2"></i> Sección Oferta Especial</h3>
+          <label class="flex items-center gap-2 text-xs text-goldLight cursor-pointer">
+            <input type="checkbox" id="offer-active" class="rounded accent-gold" /> Activo en Index
+          </label>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Título de Oferta</label>
+          <input type="text" id="offer-title" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-2.5 text-sm text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Texto descriptivo</label>
+          <textarea id="offer-text" rows="2" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-2.5 text-sm text-white"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Imagen o Video multimedia (opcional)</label>
+          <input type="text" id="offer-media" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-2.5 text-sm text-white" placeholder="Ej. oferta.jpg" />
+        </div>
+        <button onclick="saveAnnouncements()" class="gold-button rounded-xl px-5 py-2 text-xs uppercase tracking-wider">Guardar Oferta</button>
+      </section>
+    </div>
+
+    <!-- Gestión de Sección Instagram -->
+    <section class="glass-card p-6 space-y-4">
+      <h3 class="font-serif-luxury text-2xl text-white"><i class="fa-brands fa-instagram text-gold mr-2"></i> Imágenes / Videos de Instagram (Máximo 3)</h3>
+      <p class="text-xs text-gray-400">Configura los archivos multimedia y su enlace directo a tu perfil de Instagram.</p>
+      <div id="instagram-inputs-container" class="grid gap-4 sm:grid-cols-3"></div>
+      <button onclick="saveInstagramConfig()" class="gold-button rounded-xl px-5 py-2 text-xs uppercase tracking-wider">Guardar Instagram</button>
+    </section>
+
+    <!-- Gestión de Catálogo y Stock -->
+    <section class="glass-card p-6 sm:p-8">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="font-serif-luxury text-3xl text-white">Catálogo y Stock (<span id="admin-product-count">0</span> Variedades)</h2>
+          <p class="text-xs text-gray-400 mt-1">Controlá lotes horneados, condiciones y stock en tiempo real.</p>
+        </div>
+        <button onclick="openProductModal()" class="gold-button rounded-xl px-5 py-3 text-xs uppercase tracking-wider">
+          <i class="fa-solid fa-plus mr-1"></i> Agregar Nuevo Sabor
+        </button>
+      </div>
+
+      <div class="mt-8 overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-gold/20 text-[10px] uppercase tracking-[0.2em] text-goldLight">
+            <tr>
+              <th class="py-3 px-4">Producto</th>
+              <th class="py-3 px-4">Línea</th>
+              <th class="py-3 px-4">Condición</th>
+              <th class="py-3 px-4">Precio</th>
+              <th class="py-3 px-4">Stock Actual</th>
+              <th class="py-3 px-4">Estado</th>
+              <th class="py-3 px-4 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="admin-products-table" class="divide-y divide-white/10 text-gray-300"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECCIÓN NUEVA: GESTIÓN Y REGISTRO DE CLIENTES Y PEDIDOS -->
+    <section class="glass-card p-6 sm:p-8 space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/10 pb-4">
+        <div>
+          <h2 class="font-serif-luxury text-3xl text-white">Registro y Base de Datos de Clientes VIP</h2>
+          <p class="text-xs text-gray-400 mt-1">Clientes que realizaron pedidos y se registraron para una atención personalizada</p>
+        </div>
+        <button onclick="exportClientsCSV()" class="rounded-xl border border-gold/40 bg-surface hover:bg-surfaceLight px-4 py-2 text-xs uppercase tracking-wider text-goldLight">
+          <i class="fa-solid fa-download mr-1"></i> Exportar Clientes (CSV)
+        </button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-gray-300">
+          <thead class="bg-[#161618] text-goldLight uppercase tracking-wider">
+            <tr>
+              <th class="p-3">Fecha y Hora</th>
+              <th class="p-3">Cliente / Nombre</th>
+              <th class="p-3">Dirección de Envío</th>
+              <th class="p-3">Medio de Pago</th>
+              <th class="p-3">Total Pedido</th>
+              <th class="p-3">Detalle del Pedido</th>
+              <th class="p-3 text-center">VIP</th>
+            </tr>
+          </thead>
+          <tbody id="admin-clients-tbody" class="divide-y divide-white/10"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Producto -->
+  <dialog id="product-modal" class="admin-dialog">
+    <form id="product-form" onsubmit="saveProduct(event)" class="space-y-4">
+      <h3 id="modal-title" class="font-serif-luxury text-3xl text-white">Agregar / Editar Sabor</h3>
+      <input type="hidden" id="edit-product-id" />
+      <div>
+        <label class="block text-xs text-gray-300 mb-1">Nombre del Sabor *</label>
+        <input type="text" id="prod-name" class="w-full rounded-xl border border-gold/30 bg-[#0B0B0C] px-3 py-2 text-sm text-white" required />
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Línea *</label>
+          <select id="prod-line" class="w-full rounded-xl border border-gold/30 bg-[#0B0B0C] px-3 py-2 text-sm text-white">
+            <option value="vip">VIP (Rellenas)</option>
+            <option value="clasica">Clásica / Sin Gluten</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Condición *</label>
+          <select id="prod-condition" class="w-full rounded-xl border border-gold/30 bg-[#0B0B0C] px-3 py-2 text-sm text-white">
+            <option value="">Ninguna / Normal</option>
+            <option value="nuevo">Nuevo sabor</option>
+            <option value="temporal">Sabor Temporal</option>
+            <option value="descontinuado">Sabor descontinuado</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Precio ($) *</label>
+          <input type="number" id="prod-price" class="w-full rounded-xl border border-gold/30 bg-[#0B0B0C] px-3 py-2 text-sm text-white" required />
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-300 mb-1">Stock Inicial *</label>
+        <input type="number" id="prod-stock" class="w-full rounded-xl border border-gold/30 bg-[#0B0B0C] px-3 py-2 text-sm text-white" required />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-300 mb-1">Ingredientes / Descripción *</label>
+        <textarea id="prod-ingredients" rows="3" class="w-full rounded-xl border border-gold/30 bg-[#0B0B0C] px-3 py-2 text-sm text-white" required></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Imagen Principal</label>
+          <input type="text" id="prod-img" class="w-full rounded-xl border border-gold/30 bg-[#0B0B0C] px-3 py-2 text-sm text-white" value="Briga Nut.jpg" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Imagen Cenital (Armador)</label>
+          <input type="text" id="prod-img-cenital" class="w-full rounded-xl border border-gold/30 bg-[#0B0B0C] px-3 py-2 text-sm text-white" value="Nocciolla Supreme cenital sin fondo.png" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 pt-4">
+        <button type="button" onclick="document.getElementById('product-modal').close()" class="px-4 py-2 rounded-xl border border-white/20 text-xs text-gray-300">Cancelar</button>
+        <button type="submit" class="gold-button px-5 py-2 rounded-xl text-xs uppercase tracking-wider">Guardar Sabor</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    let adminData = { stats: { visits: 0, whatsappOrders: 0 }, products: [], announcements: {}, instagramGallery: [] };
+    let adminPassword = '';
+    let adminSaveQueue = Promise.resolve();
+
+    async function verifyAdminCode() {
+      const val = document.getElementById('auth-code-input').value;
+      const errorMessage = document.getElementById('auth-error');
+      errorMessage.classList.add('hidden');
+
+      try {
+        const response = await fetch('./api/catalog', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${val}` },
+          body: JSON.stringify({ action: 'authenticate' })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'No se pudo validar el acceso.');
+
+        adminPassword = val;
+        document.getElementById('auth-modal').classList.add('hidden');
+        loadAdminData();
+      } catch (error) {
+        errorMessage.textContent = error.message || 'No se pudo validar el acceso. Inténtalo de nuevo.';
+        errorMessage.classList.remove('hidden');
+      }
+    }
+
+    async function loadAdminData() {
+      try {
+        const res = await fetch('./catalog-data.json', { cache: 'no-store' });
+        adminData = await res.json();
+      } catch (e) {
+        console.warn('No se pudo cargar el JSON', e);
+      }
+      renderAdminDashboard();
+      renderAdminClients();
+    }
+
+    function renderAdminDashboard() {
+      const stats = adminData.stats || { visits: 0, whatsappOrders: 0 };
+      document.getElementById('kpi-visits').textContent = stats.visits;
+      document.getElementById('kpi-orders').textContent = stats.whatsappOrders;
+      
+      const conv = stats.visits > 0 ? ((stats.whatsappOrders / stats.visits) * 100).toFixed(1) : 0;
+      document.getElementById('kpi-conversion').textContent = `${conv}%`;
+
+      const estWeek = stats.whatsappOrders * 6000 * 3;
+      const estMonth = stats.whatsappOrders * 6000 * 12;
+      document.getElementById('kpi-week-sales').textContent = `$${estWeek.toLocaleString('es-AR')}`;
+      document.getElementById('kpi-month-sales').textContent = `$${estMonth.toLocaleString('es-AR')}`;
+
+      document.getElementById('input-hero-video').value = adminData.heroVideo || 'Cookie de lujo.mp4';
+      const pkg = adminData.packagingConfig || { title: 'Nuestra Caja de Lujo', text: 'Una presentación alargada y refinada diseñada para albergar perfectamente 3 galletas de autor con detalles dorados.', media: 'Caja modelo.jpg' };
+      document.getElementById('input-pkg-title').value = pkg.title || '';
+      document.getElementById('input-pkg-text').value = pkg.text || '';
+      document.getElementById('input-pkg-media').value = pkg.media || '';
+      document.getElementById('admin-product-count').textContent = (adminData.products || []).length;
+
+      const ann = adminData.announcements || {};
+      document.getElementById('news-active').checked = !!ann.newsActive;
+      document.getElementById('news-title').value = ann.newsTitle || '';
+      document.getElementById('news-text').value = ann.newsText || '';
+      document.getElementById('news-media').value = ann.newsMedia || '';
+
+      document.getElementById('offer-active').checked = !!ann.offerActive;
+      document.getElementById('offer-title').value = ann.offerTitle || '';
+      document.getElementById('offer-text').value = ann.offerText || '';
+      document.getElementById('offer-media').value = ann.offerMedia || '';
+
+      const igGallery = adminData.instagramGallery || [
+        {media: 'Briga Nut.jpg', link: 'https://instagram.com/dulceyfelices'},
+        {media: 'Dubai Gold.jpg', link: 'https://instagram.com/dulceyfelices'},
+        {media: 'Caja VIP 6.jpg', link: 'https://instagram.com/dulceyfelices'}
+      ];
+      let igHtml = '';
+      for(let i=0; i<3; i++) {
+        const item = igGallery[i] || {media:'', link:''};
+        igHtml += `
+          <div class="rounded-xl border border-gold/20 bg-[#161618] p-4 space-y-2">
+            <p class="text-[10px] uppercase text-goldLight font-bold">Elemento #${i+1}</p>
+            <input type="text" id="ig-media-${i}" class="w-full rounded-lg border border-gold/30 bg-[#0B0B0C] px-3 py-1.5 text-xs text-white" placeholder="Archivo (ej. foto.jpg)" value="${item.media || ''}" />
+            <input type="text" id="ig-link-${i}" class="w-full rounded-lg border border-gold/30 bg-[#0B0B0C] px-3 py-1.5 text-xs text-white" placeholder="Enlace URL IG" value="${item.link || 'https://instagram.com/dulceyfelices'}" />
+          </div>
+        `;
+      }
+      document.getElementById('instagram-inputs-container').innerHTML = igHtml;
+
+      const products = adminData.products || [];
+      const outStock = products.filter(p => (p.stockQuantity ?? 10) <= 0 || p.condition === 'descontinuado');
+      const lowStock = products.filter(p => {
+        const s = p.stockQuantity ?? 10;
+        return s > 0 && s <= 5 && p.condition !== 'descontinuado';
+      });
+
+      const banner = document.getElementById('stock-alerts-banner');
+      const bannerText = document.getElementById('stock-alerts-text');
+      if(outStock.length > 0 || lowStock.length > 0) {
+        banner.classList.remove('hidden');
+        let msg = [];
+        if(outStock.length > 0) msg.push(`Agotados/Descontinuados: ${outStock.map(p => p.name).join(', ')}`);
+        if(lowStock.length > 0) msg.push(`Próximos a agotarse (bajo stock): ${lowStock.map(p => `${p.name} (${p.stockQuantity} u.)`).join(', ')}`);
+        bannerText.textContent = msg.join(' | ');
+      } else {
+        banner.classList.add('hidden');
+      }
+
+      const tbody = document.getElementById('admin-products-table');
+      tbody.innerHTML = products.map((p, idx) => {
+        const stock = p.stockQuantity ?? 10;
+        const cond = p.condition || '';
+        let condBadge = `<span class="text-gray-500">-</span>`;
+        if(cond === 'nuevo') condBadge = `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-blue-950 text-blue-400 border border-blue-800">Nuevo</span>`;
+        else if(cond === 'temporal') condBadge = `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-purple-950 text-purple-400 border border-purple-800">Temporal</span>`;
+        else if(cond === 'descontinuado') condBadge = `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-red-950 text-red-400 border border-red-800">Descontinuado</span>`;
+
+        let badge = `<span class="px-2.5 py-1 rounded-full text-[10px] uppercase font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">Disponible (${stock})</span>`;
+        if (stock <= 0 || cond === 'descontinuado') {
+          badge = `<span class="px-2.5 py-1 rounded-full text-[10px] uppercase font-bold bg-red-950 text-red-400 border border-red-800">Agotado / Inactivo</span>`;
+        } else if (stock <= 5) {
+          badge = `<span class="px-2.5 py-1 rounded-full text-[10px] uppercase font-bold bg-amber-950 text-amber-400 border border-amber-800">Bajo Stock (${stock})</span>`;
+        }
+
+        return `
+          <tr class="hover:bg-white/5 transition-colors">
+            <td class="py-3 px-4 font-semibold text-white flex items-center gap-3">
+              <img src="${p.imgCenital || p.img}" class="w-10 h-10 object-contain rounded-lg bg-black/40 border border-gold/20" />
+              ${p.name}
+            </td>
+            <td class="py-3 px-4 uppercase text-xs tracking-wider text-goldLight">${p.line}</td>
+            <td class="py-3 px-4">${condBadge}</td>
+            <td class="py-3 px-4 font-serif-luxury text-lg text-white">$${p.price.toLocaleString('es-AR')}</td>
+            <td class="py-3 px-4 font-bold text-white">${stock} u.</td>
+            <td class="py-3 px-4">${badge}</td>
+            <td class="py-3 px-4 text-right space-x-1">
+              <button onclick="updateStock(${idx}, 5)" class="px-2 py-1 rounded bg-surface border border-gold/35 text-xs text-goldLight hover:bg-gold/20" title="Sumar 5">+5</button>
+              <button onclick="updateStock(${idx}, -5)" class="px-2 py-1 rounded bg-surface border border-gold/35 text-xs text-goldLight hover:bg-gold/20" title="Restar 5">-5</button>
+              <button onclick="editProduct(${idx})" class="px-2 py-1 rounded bg-surface border border-white/20 text-xs text-gray-200 hover:bg-white/15"><i class="fa-solid fa-pen"></i></button>
+              <button onclick="deleteProduct(${idx})" class="px-2 py-1 rounded bg-red-950/50 border border-red-800/50 text-xs text-red-400 hover:bg-red-900/50"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderAdminClients() {
+      const clients = JSON.parse(localStorage.getItem('dulce_feliz_clients') || '[]');
+      const tbody = document.getElementById('admin-clients-tbody');
+      
+      if(clients.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500 italic">No hay clientes ni pedidos registrados todavía. Realiza una prueba desde la tienda.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = clients.map(c => `
+        <tr class="hover:bg-white/5">
+          <td class="p-3 text-gray-400">${c.date}</td>
+          <td class="p-3 font-bold text-white">${c.name}</td>
+          <td class="p-3 text-gray-300">${c.address}</td>
+          <td class="p-3 text-goldLight">${c.payment}</td>
+          <td class="p-3 font-bold text-emerald-400">$${c.total.toLocaleString('es-AR')}</td>
+          <td class="p-3 text-gray-300 max-w-xs truncate" title="${c.order}">${c.order}</td>
+          <td class="p-3 text-center">${c.registered ? '<span class="text-emerald-400 font-bold">Sí</span>' : '<span class="text-gray-500">No</span>'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function exportClientsCSV() {
+      const clients = JSON.parse(localStorage.getItem('dulce_feliz_clients') || '[]');
+      if(clients.length === 0) { alert('No hay datos para exportar.'); return; }
+      let csv = 'Fecha,Nombre,Dirección,Pago,Total,Pedido,RegistradoVIP\n';
+      clients.forEach(c => {
+        csv += `"${c.date}","${c.name}","${c.address}","${c.payment}",${c.total},"${c.order}","${c.registered ? 'Sí' : 'No'}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'clientes_dulce_y_feliz.csv';
+      a.click();
+    }
+
+    async function saveHeroVideo() {
+      adminData.heroVideo = document.getElementById('input-hero-video').value.trim();
+      await persistAdminData();
+    }
+
+    async function savePackagingConfig() {
+      adminData.packagingConfig = {
+        title: document.getElementById('input-pkg-title').value.trim(),
+        text: document.getElementById('input-pkg-text').value.trim(),
+        media: document.getElementById('input-pkg-media').value.trim()
+      };
+      await persistAdminData();
+    }
+
+    async function saveAnnouncements() {
+      adminData.announcements = {
+        newsActive: document.getElementById('news-active').checked,
+        newsTitle: document.getElementById('news-title').value.trim(),
+        newsText: document.getElementById('news-text').value.trim(),
+        newsMedia: document.getElementById('news-media').value.trim(),
+        offerActive: document.getElementById('offer-active').checked,
+        offerTitle: document.getElementById('offer-title').value.trim(),
+        offerText: document.getElementById('offer-text').value.trim(),
+        offerMedia: document.getElementById('offer-media').value.trim()
+      };
+      await persistAdminData();
+    }
+
+    async function saveInstagramConfig() {
+      let igArr = [];
+      for(let i=0; i<3; i++) {
+        igArr.push({
+          media: document.getElementById(`ig-media-${i}`).value.trim(),
+          link: document.getElementById(`ig-link-${i}`).value.trim()
+        });
+      }
+      adminData.instagramGallery = igArr;
+      await persistAdminData();
+    }
+
+    async function updateStock(idx, delta) {
+      const current = adminData.products[idx].stockQuantity ?? 10;
+      adminData.products[idx].stockQuantity = Math.max(0, current + delta);
+      renderAdminDashboard();
+      await persistAdminData();
+    }
+
+    function openProductModal() {
+      document.getElementById('product-form').reset();
+      document.getElementById('edit-product-id').value = '';
+      document.getElementById('modal-title').textContent = 'Agregar Nuevo Sabor';
+      document.getElementById('product-modal').showModal();
+    }
+
+    function editProduct(idx) {
+      const p = adminData.products[idx];
+      document.getElementById('edit-product-id').value = idx;
+      document.getElementById('prod-name').value = p.name;
+      document.getElementById('prod-line').value = p.line;
+      document.getElementById('prod-condition').value = p.condition || '';
+      document.getElementById('prod-price').value = p.price;
+      document.getElementById('prod-stock').value = p.stockQuantity ?? 10;
+      document.getElementById('prod-ingredients').value = p.ingredients || p.desc;
+      document.getElementById('prod-img').value = p.img;
+      document.getElementById('prod-img-cenital').value = p.imgCenital;
+      document.getElementById('modal-title').textContent = 'Editar Sabor';
+      document.getElementById('product-modal').showModal();
+    }
+
+    async function saveProduct(e) {
+      e.preventDefault();
+      const idx = document.getElementById('edit-product-id').value;
+      const prodData = {
+        id: document.getElementById('prod-name').value.toLowerCase().replace(/\s+/g, ''),
+        name: document.getElementById('prod-name').value,
+        line: document.getElementById('prod-line').value,
+        condition: document.getElementById('prod-condition').value,
+        price: Number(document.getElementById('prod-price').value),
+        stockQuantity: Number(document.getElementById('prod-stock').value),
+        ingredients: document.getElementById('prod-ingredients').value,
+        desc: document.getElementById('prod-ingredients').value,
+        img: document.getElementById('prod-img').value,
+        imgCenital: document.getElementById('prod-img-cenital').value
+      };
+
+      if (idx === '') {
+        adminData.products.push(prodData);
+      } else {
+        adminData.products[idx] = prodData;
+      }
+
+      document.getElementById('product-modal').close();
+      renderAdminDashboard();
+      if (!await persistAdminData()) document.getElementById('product-modal').showModal();
+    }
+
+    async function deleteProduct(idx) {
+      if (confirm('¿Estás seguro de eliminar este sabor?')) {
+        adminData.products.splice(idx, 1);
+        renderAdminDashboard();
+        await persistAdminData();
+      }
+    }
+
+    async function persistAdminData() {
+      const saveRequest = adminSaveQueue.then(async () => {
+        const status = document.getElementById('save-status');
+        status.textContent = 'Guardando cambios en GitHub...';
+        status.className = 'text-xs text-goldLight';
+
+        const response = await fetch('./api/catalog', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminPassword}` },
+          body: JSON.stringify({ action: 'save', data: adminData })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'No se pudieron publicar los cambios.');
+
+        status.textContent = 'Cambios guardados en GitHub. Vercel inició el despliegue automático.';
+        status.className = 'text-xs text-emerald-400';
+        return true;
+      });
+
+      adminSaveQueue = saveRequest.catch(() => {});
+      try {
+        return await saveRequest;
+      } catch (error) {
+        const status = document.getElementById('save-status');
+        status.textContent = error.message || 'Error al guardar. Revisa la conexión y vuelve a intentarlo.';
+        status.className = 'text-xs text-red-400';
+        alert(status.textContent);
+        return false;
+      }
+    }
+
+    function downloadJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(adminData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "catalog-data.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      alert('¡Archivo catalog-data.json descargado con éxito! Puedes usarlo como copia de respaldo.');
+    }
+  </script>
+</body>
+</html>

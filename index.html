@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dulce & Feliz | Cookies de Lujo</title>
+  <meta name="description" content="Colección premium y clásica de cookies gourmet con armado de caja personalizado y envío por WhatsApp." />
+  <link rel="icon" type="image/png" href="Isotipo Sin fondo.png" />
+  <link rel="apple-touch-icon" href="Isotipo Sin fondo.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#0B0B0C',
+            charcoal: '#121214',
+            surface: '#1C1C1E',
+            surfaceLight: '#262629',
+            gold: '#D4AF37',
+            goldLight: '#F3E5AB',
+            whatsapp: '#25D366',
+            whatsappHover: '#1FB95A',
+            cream: '#F7F3EA'
+          },
+          fontFamily: {
+            serif: ['Cormorant Garamond', 'serif'],
+            sans: ['Montserrat', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body { background: #0B0B0C; color: #F2F2F2; font-family: 'Montserrat', sans-serif; line-height: 1.6; }
+    .hero-section { min-height: min(880px, calc(100vh - 5rem)); }
+    .hero-background-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+    .hero-background-overlay { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,11,12,0.8), rgba(11,11,12,0.35) 75%), linear-gradient(0deg, rgba(11,11,12,0.5), rgba(11,11,12,0.3) 50%); }
+    .font-serif-luxury { font-family: 'Cormorant Garamond', serif; }
+    .gold-script {
+      font-family: 'Great Vibes', 'Cormorant Garamond', serif;
+      font-weight: 400;
+  let body;size: clamp(2.4rem, 4.5vw, 4.5rem);
+      line-height: 1.1;
+      background: linear-gradient(135deg, #F3E5AB 0%, #D4AF37 45%, #AA771C 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      display: inline-block;
+      margin-left: 0.4rem;
+      white-space: nowrap;
+    }
+    .hero-title-main { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.3rem, 3.5vw, 3rem); line-height: 1.4; font-weight: 600; color: #F3F3F2; }
+    .gold-button { background: linear-gradient(135deg, #D4AF37 0%, #AA771C 100%); color: #0B0B0C; font-weight: 700; transition: all .25s ease; }
+    .gold-button:hover { transform: translateY(-1px); box-shadow: 0 15px 35px rgba(212, 175, 55, 0.18); }
+    .order-dialog { width: min(36rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; padding: 0; color: #F2F2F2; background: #121214; border: 1px solid rgba(212, 175, 55, 0.35); border-radius: 1rem; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55); }
+    .order-dialog::backdrop { background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(2px); }
+    .flavor-detail-dialog { width: min(70rem, calc(100vw - 2rem)); max-height: calc(100dvh - 1rem); }
+    .flavor-detail-image { width: 100%; height: 100%; min-height: 20rem; object-fit: cover; }
+    .glass-card { background: rgba(17, 17, 19, 0.85); border: 1px solid rgba(212, 175, 55, 0.22); backdrop-filter: blur(10px); }
+    .chip { border: 1px solid rgba(212,175,55,0.28); background: rgba(28,28,30,0.7); }
+    .product-card { background: rgba(17,17,19,0.9); border: 1px solid rgba(212,175,55,0.22); border-radius: 1.5rem; overflow: hidden; transition: .25s ease; position: relative; }
+    .product-card:hover { transform: translateY(-4px); border-color: rgba(212,175,55,0.62); }
+    .product-card img { width: 100%; height: 260px; object-fit: cover; }
+    .product-card.out-of-stock img { opacity: 0.4; filter: grayscale(80%); }
+    
+    .cookie-pc-card { background: rgba(24, 24, 27, 0.85); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 1.25rem; padding: 0.85rem; display: flex; flex-direction: column; align-items: center; transition: all 0.25s ease; cursor: pointer; }
+    .cookie-pc-card:hover:not(.out-of-stock) { border-color: rgba(212, 175, 55, 0.9); transform: translateY(-3px) scale(1.02); background: rgba(35, 35, 40, 0.98); }
+    .cookie-pc-card.out-of-stock { opacity: 0.45; cursor: not-allowed; border-color: rgba(220, 38, 38, 0.4); }
+    .cookie-img-pc { width: 85px; height: 85px; object-fit: contain; filter: drop-shadow(0px 6px 12px rgba(0,0,0,0.8)); }
+
+    .mobile-carousel-wrapper { display: flex; gap: 0.75rem; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0.75rem 0.25rem; scroll-behavior: smooth; width: 100%; -webkit-overflow-scrolling: touch; }
+    .mobile-carousel-wrapper::-webkit-scrollbar { height: 4px; }
+    .mobile-carousel-wrapper::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.4); border-radius: 4px; }
+    .cookie-mobile-card { background: rgba(24, 24, 27, 0.9); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 1rem; padding: 0.6rem; display: flex; flex-direction: column; align-items: center; transition: all 0.2s ease; cursor: pointer; flex: 0 0 115px; scroll-snap-align: start; }
+    .cookie-mobile-card:active { transform: scale(0.94); border-color: rgba(212,175,55,1); background: rgba(45,40,30,0.95); }
+    .cookie-mobile-card.out-of-stock { opacity: 0.4; cursor: not-allowed; border-color: rgba(220, 38, 38, 0.4); }
+    .cookie-img-mobile { width: 62px; height: 62px; object-fit: contain; filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.9)); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .cookie-mobile-card:active .cookie-img-mobile { transform: translateY(-12px) scale(1.15); }
+
+    .caja-foto-container { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 1.25rem; overflow: hidden; border: 2px solid rgba(212,175,55,0.45); box-shadow: 0 15px 35px rgba(0,0,0,0.6); background-color: #17171a; background-image: url('Caja vacía para el armador.png'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center; }
+    
+    .slot-exacto-3 { position: absolute; top: 12%; bottom: 12%; width: 28%; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 0.75rem; transition: background 0.2s; }
+    .slot-exacto-3:hover { background: rgba(212,175,55,0.12); }
+    .slot-1 { left: 5%; }
+    .slot-2 { left: 36%; }
+    .slot-3 { left: 67%; }
+    
+    .slot-exacto-1 { position: absolute; inset: 15% 30%; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 0.75rem; }
+    
+    .slot-exacto-3 img, .slot-exacto-1 img { width: 85%; height: 85%; object-fit: contain; filter: drop-shadow(0px 6px 12px rgba(0,0,0,0.9)); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    @keyframes popIn { 0% { transform: scale(0.4) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+
+    .slot-remove { position: absolute; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 0.7rem; font-weight: bold; opacity: 0; border-radius: 0.75rem; transition: opacity 0.2s; }
+    .slot-exacto-3:hover .slot-remove, .slot-exacto-1:hover .slot-remove { opacity: 1; }
+
+    .size-option { border: 1px solid rgba(212,175,55,0.3); background: #1C1C1E; color: #F2F2F2; transition: .2s ease; }
+    .size-option.active { background: linear-gradient(135deg, rgba(212,175,55,0.22), rgba(170,119,28,0.14)); border-color: rgba(212,175,55,0.7); color: #F3E5AB; }
+    .completion-tag { background: rgba(18, 18, 20, 0.95); border: 1px solid rgba(212, 175, 55, 0.6); box-shadow: 0 15px 40px rgba(0,0,0,0.8); backdrop-filter: blur(12px); border-radius: 1.25rem; padding: 1rem; }
+    @media (max-width: 767px) {
+  #builder-selector-container {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    max-width: 100%;
+  }
+  #builder-selector-container > div {
+    flex: 0 0 auto; /* Cada tarjeta no se encoja ni expanda */
+    width: 140px;    /* Ancho fijo para tarjetas en móvil */
+    scroll-snap-align: start;
+  }
+  #builder-vip .grid > .glass-card,
+  #builder-boxes-wrapper,
+  #builder-boxes-wrapper > div {
+    min-width: 0;
+  }
+  .caja-foto-container {
+    aspect-ratio: 485 / 205;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <header class="sticky top-0 z-50 border-b border-white/10 bg-[#0B0B0C]/85 backdrop-blur-md">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="flex h-20 items-center justify-between gap-4">
+        <a href="index.html#home" class="flex items-center gap-3">
+          <img src="Logo Dulce y Feliz sf.png" alt="Dulce & Feliz" class="h-12 sm:h-14 w-auto object-contain" />
+        </a>
+        <nav class="hidden md:flex items-center gap-6 text-[10px] font-medium uppercase tracking-[0.2em] text-gray-300">
+          <a href="index.html#home" class="hover:text-gold transition-colors">Inicio</a>
+          <a href="#novedades" class="hover:text-gold transition-colors">Lo nuevo</a>
+          <a href="#ofertas" class="hover:text-gold transition-colors">Ofertas</a>
+          <a href="#catalogo" class="hover:text-gold transition-colors">Catálogo</a>
+          <a href="#packaging" class="hover:text-gold transition-colors">Packaging</a>
+          <a href="#builder-vip" class="hover:text-gold transition-colors">Armá tu caja</a>
+        </nav>
+        <div class="flex items-center gap-3">
+          <a href="https://instagram.com/dulceyfelices" target="_blank" rel="noopener" class="flex h-10 w-10 items-center justify-center rounded-full border border-gold/50 bg-surface text-gold hover:text-white transition-colors">
+            <i class="fa-brands fa-instagram"></i>
+          </a>
+          <a href="https://wa.me/541127401426?text=Hola%20Dulce%20%26%20Feliz%21%20Quiero%20armar%20mi%20pedido." target="_blank" rel="noopener" class="gold-button rounded-full px-4 py-2 text-[10px] uppercase tracking-[0.18em]">
+            WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="hero-section relative isolate overflow-hidden border-b border-gold/20 bg-[#0B0B0C] flex items-center py-20 lg:py-28">
+      <video id="hero-video-tag" class="hero-background-video" autoplay muted loop playsinline preload="auto">
+        <source id="hero-video-source" src="Cookie de lujo.mp4" type="video/mp4" />
+      </video>
+      <div class="hero-background-overlay" aria-hidden="true"></div>
+      <div class="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl space-y-6">
+          <div class="chip inline-flex items-center gap-3 rounded-full px-4 py-2 text-[10px] uppercase tracking-[0.22em] text-goldLight">
+            <span class="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
+            Página en periodo de prueba
+          </div>
+
+          <h1 class="flex flex-wrap items-baseline leading-normal text-white pt-2 pb-2">
+            <span class="hero-title-main mr-3">Galletas de Autor al estilo:</span>
+            <span class="gold-script">Cookies New York</span>
+          </h1>
+
+          <p class="max-w-xl text-base sm:text-lg text-white font-medium drop-shadow-md pt-2 pb-4">
+            Cookies Premium en presentación estilizada con elegancia y personalización.
+          </p>
+
+          <div class="flex flex-wrap items-center gap-6 pt-2">
+            <a href="#catalogo" class="gold-button inline-flex items-center justify-center rounded-xl px-6 py-4 text-[11px] uppercase tracking-[0.22em]">
+              Ver catálogo
+            </a>
+            <div class="flex items-center gap-4">
+              <a href="#builder-vip" class="group relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1C1C1E] to-[#0B0B0C] border-2 border-gold/60 shadow-xl hover:border-gold hover:scale-105 transition-all">
+                <i class="fa-solid fa-box-open text-gold text-xl"></i>
+              </a>
+              <span class="text-xs uppercase tracking-[0.2em] font-bold text-goldLight drop-shadow">Armá tu caja aquí</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOVEDADES SECTION -->
+    <section id="novedades" class="border-b border-gold/20 bg-[#121214] py-16 hidden">
+      <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center space-y-4">
+        <p class="text-[11px] uppercase tracking-[0.3em] text-goldLight">Novedades & Anuncios</p>
+        <h2 id="news-title-render" class="font-serif-luxury text-4xl text-white"></h2>
+        <p id="news-text-render" class="text-sm text-gray-300 max-w-2xl mx-auto leading-relaxed"></p>
+        <div id="news-media-render" class="mt-4 max-w-md mx-auto rounded-xl overflow-hidden hidden"></div>
+      </div>
+    </section>
+
+    <!-- OFERTAS SECTION -->
+    <section id="ofertas" class="border-b border-gold/20 bg-[#0d0d0f] py-16 hidden">
+      <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center glass-card rounded-3xl p-8 border-gold/40 space-y-4">
+        <p class="text-[11px] uppercase tracking-[0.3em] text-goldLight"><i class="fa-solid fa-fire text-gold mr-1"></i> Oferta Especial</p>
+        <h2 id="offer-title-render" class="font-serif-luxury text-3xl sm:text-4xl text-white"></h2>
+        <p id="offer-text-render" class="text-sm text-gray-300 max-w-2xl mx-auto leading-relaxed"></p>
+        <div id="offer-media-render" class="mt-4 max-w-md mx-auto rounded-xl overflow-hidden hidden"></div>
+      </div>
+    </section>
+
+    <!-- PACKAGING -->
+    <section id="packaging" class="border-b border-gold/20 bg-[#121214] py-20">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-3xl text-center">
+          <p class="text-[11px] uppercase tracking-[0.3em] text-goldLight">Presentación Exclusiva</p>
+          <h2 id="pkg-title-render" class="mt-3 font-serif-luxury text-4xl text-white sm:text-5xl">Nuestra Caja de Lujo</h2>
+          <p id="pkg-text-render" class="mt-4 text-gray-300">Una presentación alargada y refinada diseñada para albergar perfectamente 3 galletas de autor con detalles dorados.</p>
+        </div>
+        <div class="mt-12 max-w-2xl mx-auto rounded-[2rem] border border-gold/30 bg-[#17171A] p-6 shadow-2xl">
+          <div id="pkg-media-render" class="overflow-hidden rounded-[1.5rem] border border-gold/25">
+            <img id="packaging-img-render" src="Caja modelo.jpg" alt="Caja Dulce & Feliz" class="h-80 w-full object-cover" />
+          </div>
+          <div class="mt-6 text-center">
+            <h3 class="font-serif-luxury text-3xl text-white">Caja Alargada de 3 Unidades</h3>
+            <p class="mt-2 text-sm text-gray-300">Personalizada con el nombre que elijas para regalar o disfrutar.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CATALOGO -->
+    <section id="catalogo" class="bg-[#0B0B0C] py-20">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mb-12 text-center">
+          <p class="text-[11px] uppercase tracking-[0.3em] text-goldLight">Catálogo Completo</p>
+          <h2 class="mt-3 font-serif-luxury text-4xl text-white sm:text-5xl">Nuestras <span id="total-varieties-count">16</span> Variedades</h2>
+        </div>
+        <div class="grid gap-12 lg:grid-cols-2">
+          <div id="vip" class="rounded-[2rem] border border-gold/20 bg-[#161618] p-6">
+            <div class="mb-6 flex items-center justify-between gap-4">
+              <div>
+                <p class="text-[10px] uppercase tracking-[0.3em] text-goldLight">Línea VIP</p>
+                <h3 class="mt-2 font-serif-luxury text-3xl text-white">Cookies Rellenas</h3>
+              </div>
+              <a href="#builder-vip" class="gold-button rounded-xl px-4 py-3 text-[10px] uppercase tracking-[0.2em]">Armar caja</a>
+            </div>
+            <div class="grid gap-6 md:grid-cols-2" id="vip-gallery-grid"></div>
+          </div>
+
+          <div id="clasica" class="rounded-[2rem] border border-gold/20 bg-[#161618] p-6">
+            <div class="mb-6 flex items-center justify-between gap-4">
+              <div>
+                <p class="text-[10px] uppercase tracking-[0.3em] text-goldLight">Línea Clásica</p>
+                <h3 class="mt-2 font-serif-luxury text-3xl text-white">Sin Gluten</h3>
+              </div>
+              <a href="#builder-vip" class="gold-button rounded-xl px-4 py-3 text-[10px] uppercase tracking-[0.2em]">Armar caja</a>
+            </div>
+            
+            <div class="mb-4 rounded-xl bg-amber-950/30 border border-amber-600/40 p-3 text-[11px] text-amber-200">
+              <i class="fa-solid fa-triangle-exclamation mr-1 text-amber-400"></i> <strong>Nota importante:</strong> Los productos de la línea sin gluten no son aptos para personas celíacas, solo para aquellos que simplemente elijan por preferencia esta opción.
+            </div>
+
+            <div class="grid gap-6 md:grid-cols-2" id="clasica-gallery-grid"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ARMADOR INTERACTIVO -->
+    <section id="builder-vip" class="border-y border-gold/20 bg-[#121214] py-20">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mb-8 text-center">
+          <p class="text-[11px] uppercase tracking-[0.3em] text-goldLight">Armador Interactivo</p>
+          <h2 class="mt-2 font-serif-luxury text-4xl text-white sm:text-5xl">Armá tu caja de autor</h2>
+          <p class="mt-2 text-xs text-gray-400">Seleccioná el formato y toca las galletas para llenar tu caja.</p>
+        </div>
+
+        <div class="grid gap-8 lg:grid-cols-[1fr_1.1fr] items-start">
+          
+          <div class="glass-card rounded-[2rem] p-6">
+            <div class="mb-6 flex items-center justify-between">
+              <div class="flex gap-3">
+                <button class="size-option active rounded-full px-5 py-2.5 text-[10px] uppercase tracking-[0.2em]" data-size="3">Caja de 3 galletas</button>
+                <button class="size-option rounded-full px-5 py-2.5 text-[10px] uppercase tracking-[0.2em]" data-size="1">Cajita individual</button>
+              </div>
+              <div class="flex md:hidden gap-2">
+                <button type="button" onclick="scrollMobileCarousel('left')" aria-label="Ver sabores anteriores" class="h-9 w-9 rounded-full border border-gold/40 text-goldLight hover:bg-gold/15">
+                  <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <button type="button" onclick="scrollMobileCarousel('right')" aria-label="Ver más sabores" class="h-9 w-9 rounded-full border border-gold/40 text-goldLight hover:bg-gold/15">
+                  <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="mb-3 flex items-center justify-between">
+              <p id="builder-selector-title" class="text-xs uppercase tracking-[0.2em] text-goldLight font-semibold">SELECCIONA TUS SABORES (0/3):</p>
+            </div>
+
+            <div id="builder-selector-container"></div>
+          </div>
+
+          <div class="glass-card rounded-[2rem] p-6 relative flex flex-col justify-between">
+            <div>
+              <div class="mb-4 flex items-center justify-between">
+                <h3 class="font-serif-luxury text-2xl text-white">Vista previa</h3>
+                <span id="builder-size-label" class="text-[10px] uppercase tracking-[0.2em] text-goldLight">Caja de 3</span>
+              </div>
+
+              <div id="builder-boxes-wrapper" class="space-y-6 mb-4"></div>
+              <p id="builder-single-notice" class="hidden text-[11px] text-amber-300/90 italic text-center mt-2">* Los pedidos de una sola galleta son para ser retirados en tienda.</p>
+
+              <div class="mt-6 rounded-2xl border border-gold/20 bg-[#0f0f10] p-4">
+                <p class="text-[10px] uppercase tracking-[0.25em] text-goldLight">Resumen del pedido</p>
+                <ul id="builder-summary" class="mt-2 space-y-1 text-sm text-gray-200"></ul>
+              </div>
+            </div>
+
+            <div id="builder-completion-toast" class="hidden completion-tag mt-4">
+              <p class="text-xs font-bold text-goldLight"><i class="fa-solid fa-sparkles mr-1"></i> ¡Caja completa!</p>
+              <div class="mt-3 flex gap-2">
+                <button class="gold-button flex-1 py-2 rounded-lg text-[10px] uppercase tracking-wider" onclick="addNewBox()">+ Agregar otra caja</button>
+                <button class="bg-whatsapp hover:bg-whatsappHover flex-1 py-2 rounded-lg text-[10px] uppercase tracking-wider text-white font-bold" onclick="openWhatsApp()">Finalizar WhatsApp</button>
+              </div>
+            </div>
+
+            <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+              <button onclick="addNewBox()" class="gold-button flex-1 rounded-xl px-4 py-3 text-[10px] uppercase tracking-[0.2em]">Agregar otra caja</button>
+              <button onclick="openWhatsApp()" class="flex-1 rounded-xl bg-whatsapp px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-white hover:bg-whatsappHover">Continuar por WhatsApp</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- INSTAGRAM -->
+    <section id="instagram" class="border-t border-gold/20 bg-[#121214] py-20">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mb-10 flex items-end justify-between gap-4">
+          <div>
+            <p class="text-[11px] uppercase tracking-[0.3em] text-goldLight">Instagram</p>
+            <h2 class="mt-3 font-serif-luxury text-4xl text-white sm:text-5xl">@dulceyfelices</h2>
+          </div>
+          <a href="https://instagram.com/dulceyfelices" target="_blank" rel="noopener" class="inline-flex items-center gap-3 rounded-full border border-gold/30 px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-goldLight hover:bg-surfaceLight">
+            <i class="fa-brands fa-instagram"></i> Seguinos
+          </a>
+        </div>
+        <div id="instagram-grid-container" class="grid gap-5 md:grid-cols-3"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-gold/20 bg-[#0B0B0C] py-8 relative">
+    <div class="mx-auto mb-8 flex max-w-7xl flex-col items-center gap-3 px-4 text-center sm:px-6 lg:px-8">
+      <img src="Fotologo.png" alt="Dulce & Feliz - Repostería artesanal" class="h-44 w-44 sm:h-52 sm:w-52 rounded-2xl object-cover opacity-90 shadow-lg shadow-black/30" />
+      <p class="text-xs tracking-wide text-gray-400">Esta página fue elaborada por publicidaudiovisual@gmail.com</p>
+    </div>
+    <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 text-center text-sm text-gray-400 sm:flex-row sm:text-left sm:px-6 lg:px-8">
+      <p>Dulce & Feliz © 2026</p>
+      <div class="flex items-center gap-4">
+        <a href="index.html#catalogo" class="hover:text-goldLight transition-colors">Catálogo</a>
+        <a href="index.html#packaging" class="hover:text-goldLight transition-colors">Packaging</a>
+        <a href="admin.html" target="_blank" class="text-gray-700 hover:text-gold/40 transition-colors text-[9px] font-mono tracking-tighter opacity-30 hover:opacity-100" title="Panel">ADM</a>
+      </div>
+    </div>
+  </footer>
+
+  <dialog id="flavor-detail-dialog" class="order-dialog flavor-detail-dialog">
+    <div class="grid sm:grid-cols-[0.85fr_1.15fr]">
+      <img id="flavor-detail-image" class="flavor-detail-image" src="" alt="" />
+      <div class="p-6 sm:p-8 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-start">
+          <p id="flavor-detail-line" class="text-[10px] uppercase tracking-[0.25em] text-goldLight"></p>
+          <button type="button" onclick="document.getElementById('flavor-detail-dialog').close()" class="h-8 w-8 rounded-full border border-white/20 text-gray-300"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <h2 id="flavor-detail-name" class="font-serif-luxury text-4xl text-white"></h2>
+        <p id="flavor-detail-description" class="text-sm text-gray-300 leading-relaxed"></p>
+        <p id="flavor-detail-price" class="font-serif-luxury text-2xl text-goldLight"></p>
+        <div id="flavor-detail-fields" class="space-y-3 pt-4 border-t border-white/10 text-xs text-gray-200"></div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- MODAL DE CHECKOUT COMPLETAMENTE ENRIQUECIDO -->
+  <dialog id="order-dialog" class="order-dialog">
+    <form id="order-form" class="p-6 sm:p-8 space-y-4">
+      <div class="flex justify-between items-center">
+        <div>
+          <p class="text-[10px] uppercase tracking-[0.25em] text-goldLight">Checkout por WhatsApp</p>
+          <h2 class="font-serif-luxury text-3xl text-white">Finalizar tu pedido</h2>
+        </div>
+        <button type="button" onclick="document.getElementById('order-dialog').close()" class="h-8 w-8 rounded-full border border-white/20 text-gray-300 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Nombre y Apellido (para personalizar caja / retirar) *</label>
+          <input type="text" id="box-custom-name" class="w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white" placeholder="Ej. Dionisio Millan Zabala" required />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Dirección de envío o Nota de retiro *</label>
+          <input type="text" id="box-shipping-address" class="w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white" placeholder="Ej. El Salvador 679 (o Retiro en Tienda)" required />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-300 mb-1">Método de pago preferido *</label>
+          <select id="box-payment-method" class="w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white" required>
+            <option value="Transferencia bancaria">Transferencia bancaria</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Mercado Pago / Tarjeta">Mercado Pago / Tarjeta</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2 pt-1">
+          <input type="checkbox" id="client-register-check" class="rounded accent-[#D4AF37]" />
+          <label for="client-register-check" class="text-xs text-gray-300 cursor-pointer">Deseo registrarme como cliente VIP para futuras compras</label>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-gold/30 bg-[#0B0B0C] p-4 text-xs space-y-2">
+        <p class="text-[10px] uppercase tracking-wider text-goldLight font-bold">Resumen y Total a Pagar</p>
+        <p id="order-preview-flavors" class="text-gray-300 whitespace-pre-line"></p>
+        <p id="order-preview-total" class="font-serif-luxury text-lg text-goldLight font-bold pt-2 border-t border-white/10"></p>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" onclick="document.getElementById('order-dialog').close()" class="px-4 py-2 rounded-lg border border-white/15 text-xs text-gray-300">Volver</button>
+        <button type="submit" class="bg-whatsapp hover:bg-whatsappHover text-white px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider shadow-lg">Enviar pedido a WhatsApp</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    let appData = { stats: { visits: 0, whatsappOrders: 0 }, products: [] };
+    let currentSize = 3;
+    let activeBoxes = [[]]; 
+    let computedTotalAmount = 0;
+    let mobileCarouselTimer = null;
+    let mobileCarouselResumeTimer = null;
+
+    async function loadPublicData() {
+      try {
+        const res = await fetch('./catalog-data.json', { cache: 'no-store' });
+        appData = await res.json();
+        appData.stats.visits = (appData.stats.visits || 0) + 1;
+
+        if(appData.heroVideo) {
+          const vSource = document.getElementById('hero-video-source');
+          const vTag = document.getElementById('hero-video-tag');
+          if(vSource && vTag) {
+            vSource.src = appData.heroVideo;
+            vTag.load();
+            vTag.play().catch(()=>{});
+          }
+        }
+
+        const pkg = appData.packagingConfig || {};
+        if(pkg.title) document.getElementById('pkg-title-render').textContent = pkg.title;
+        if(pkg.text) document.getElementById('pkg-text-render').textContent = pkg.text;
+        if(pkg.media) {
+          const mRender = document.getElementById('pkg-media-render');
+          if(pkg.media.endsWith('.mp4') || pkg.media.endsWith('.MP4') || pkg.media.endsWith('.webm') || pkg.media.endsWith('.mov')) {
+            mRender.innerHTML = `<video src="${pkg.media}" autoplay muted loop playsinline class="h-80 w-full object-cover"></video>`;
+          } else {
+            mRender.innerHTML = `<img src="${pkg.media}" alt="Presentación Exclusiva" class="h-80 w-full object-cover" />`;
+          }
+        }
+
+        const ann = appData.announcements || {};
+        if(ann.newsActive && ann.newsTitle) {
+          document.getElementById('news-title-render').textContent = ann.newsTitle;
+          document.getElementById('news-text-render').textContent = ann.newsText;
+          if(ann.newsMedia) {
+            const mRender = document.getElementById('news-media-render');
+            const isVid = ann.newsMedia.match(/\.(mp4|MP4|webm|mov)$/);
+            if(isVid) {
+              mRender.innerHTML = `<video src="${ann.newsMedia}" autoplay muted loop playsinline class="w-full h-auto rounded-xl object-cover"></video>`;
+            } else {
+              mRender.innerHTML = `<img src="${ann.newsMedia}" class="w-full h-auto rounded-xl object-cover" />`;
+            }
+            mRender.classList.remove('hidden');
+          }
+          document.getElementById('novedades').classList.remove('hidden');
+        }
+        if(ann.offerActive && ann.offerTitle) {
+          document.getElementById('offer-title-render').textContent = ann.offerTitle;
+          document.getElementById('offer-text-render').textContent = ann.offerText;
+          if(ann.offerMedia) {
+            const mRender = document.getElementById('offer-media-render');
+            const isVid = ann.offerMedia.match(/\.(mp4|MP4|webm|mov)$/);
+            if(isVid) {
+              mRender.innerHTML = `<video src="${ann.offerMedia}" autoplay muted loop playsinline class="w-full h-auto rounded-xl object-cover"></video>`;
+            } else {
+              mRender.innerHTML = `<img src="${ann.offerMedia}" class="w-full h-auto rounded-xl object-cover" />`;
+            }
+            mRender.classList.remove('hidden');
+          }
+          document.getElementById('ofertas').classList.remove('hidden');
+        }
+
+        const totalCountEl = document.getElementById('total-varieties-count');
+        if(totalCountEl && appData.products) {
+          totalCountEl.textContent = appData.products.length;
+        }
+
+        renderCatalogs();
+        renderInstagram();
+        renderBuilder();
+      } catch (e) {
+        console.warn('Error cargando catalog-data.json:', e);
+      }
+    }
+
+    function renderInstagram() {
+      const igGallery = appData.instagramGallery || [
+        {media: 'Briga Nut.jpg', link: 'https://instagram.com/dulceyfelices'},
+        {media: 'Dubai Gold.jpg', link: 'https://instagram.com/dulceyfelices'},
+        {media: 'Caja VIP 6.jpg', link: 'https://instagram.com/dulceyfelices'}
+      ];
+      const grid = document.getElementById('instagram-grid-container');
+      grid.innerHTML = igGallery.map(item => `
+        <a href="${item.link || 'https://instagram.com/dulceyfelices'}" target="_blank" rel="noopener" class="group relative block overflow-hidden rounded-[1.5rem] border border-gold/20">
+          <img src="${item.media}" alt="Instagram Dulce & Feliz" class="h-72 w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+            <i class="fa-brands fa-instagram text-3xl"></i>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    function renderCatalogs() {
+      const vipGrid = document.getElementById('vip-gallery-grid');
+      const clasicaGrid = document.getElementById('clasica-gallery-grid');
+      const products = appData.products || [];
+
+      vipGrid.innerHTML = products.filter(p => p.line === 'vip').map(p => renderProductCard(p)).join('');
+      clasicaGrid.innerHTML = products.filter(p => p.line === 'clasica').map(p => renderProductCard(p)).join('');
+    }
+
+    function renderProductCard(p) {
+      const stock = p.stockQuantity ?? 10;
+      const cond = p.condition || '';
+      const isOut = stock <= 0 || cond === 'descontinuado';
+      
+      let condTag = '';
+      if(cond === 'nuevo') condTag = `<span class="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] uppercase font-bold bg-blue-900 text-blue-200 border border-blue-700 shadow">Nuevo Sabor</span>`;
+      else if(cond === 'temporal') condTag = `<span class="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] uppercase font-bold bg-purple-900 text-purple-200 border border-purple-700 shadow">Sabor Temporal</span>`;
+
+      return `
+        <div class="product-card ${isOut ? 'out-of-stock' : ''}">
+          <img src="${p.img}" alt="${p.name}" />
+          ${condTag}
+          <div class="p-5">
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="font-serif-luxury text-2xl text-white">${p.name}</h4>
+              <span class="text-xs font-bold text-goldLight">$${p.price.toLocaleString('es-AR')}</span>
+            </div>
+            <p class="text-xs text-gray-300 line-clamp-2 mb-4">${p.desc || p.ingredients}</p>
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] uppercase font-bold ${isOut ? 'text-red-400' : 'text-emerald-400'}">${isOut ? 'Agotado' : `Stock: ${stock}`}</span>
+              <button onclick='openFlavorDetail(${JSON.stringify(p)})' class="text-[10px] uppercase tracking-wider text-goldLight underline hover:text-white">Ver detalles</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openFlavorDetail(p) {
+      document.getElementById('flavor-detail-image').src = p.img;
+      document.getElementById('flavor-detail-line').textContent = `Línea ${p.line.toUpperCase()}`;
+      document.getElementById('flavor-detail-name').textContent = p.name;
+      document.getElementById('flavor-detail-description').textContent = p.ingredients || p.desc;
+      document.getElementById('flavor-detail-price').textContent = `$${p.price.toLocaleString('es-AR')}`;
+
+      let fieldsHtml = '';
+      if(p.size) fieldsHtml += `<p><strong>Tamaño:</strong> ${p.size}</p>`;
+      if(p.taste) fieldsHtml += `<p><strong>Sabor:</strong> ${p.taste}</p>`;
+      if(p.texture) fieldsHtml += `<p><strong>Textura:</strong> ${p.texture}</p>`;
+      if(p.ideal) fieldsHtml += `<p><strong>Ideal para:</strong> ${p.ideal}</p>`;
+      if(p.presentation) fieldsHtml += `<p><strong>Presentación:</strong> ${p.presentation}</p>`;
+
+      document.getElementById('flavor-detail-fields').innerHTML = fieldsHtml;
+      document.getElementById('flavor-detail-dialog').showModal();
+    }
+
+    document.querySelectorAll('.size-option').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.size-option').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        currentSize = Number(e.target.dataset.size);
+        activeBoxes = [[]];
+        renderBuilder();
+      });
+    });
+
+    function scrollMobileCarousel(direction) {
+      const container = document.getElementById('builder-selector-container');
+      const firstCard = container?.firstElementChild;
+      if (!container || !firstCard) return;
+
+      const gap = Number.parseFloat(getComputedStyle(container).columnGap) || 0;
+      const scrollAmount = firstCard.getBoundingClientRect().width + gap;
+      const maxScroll = container.scrollWidth - container.clientWidth;
+      const nextScroll = direction === 'left'
+        ? (container.scrollLeft <= 1 ? maxScroll : Math.max(0, container.scrollLeft - scrollAmount))
+        : (container.scrollLeft >= maxScroll - 1 ? 0 : Math.min(maxScroll, container.scrollLeft + scrollAmount));
+
+      container.scrollTo({ left: nextScroll, behavior: 'smooth' });
+      resumeMobileCarousel();
+    }
+
+    function pauseMobileCarousel() {
+      clearInterval(mobileCarouselTimer);
+      clearTimeout(mobileCarouselResumeTimer);
+      mobileCarouselTimer = null;
+      mobileCarouselResumeTimer = null;
+    }
+
+    function startMobileCarousel() {
+      pauseMobileCarousel();
+      const container = document.getElementById('builder-selector-container');
+      if (window.innerWidth >= 768
+        || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        || !container
+        || container.children.length < 2) return;
+
+      mobileCarouselTimer = setInterval(() => {
+        const firstCard = container.firstElementChild;
+        const maxScroll = container.scrollWidth - container.clientWidth;
+        if (!firstCard || maxScroll <= 0) return;
+
+        if (container.scrollLeft >= maxScroll - 1) {
+          container.scrollTo({ left: 0, behavior: 'smooth' });
+          return;
+        }
+
+        const gap = Number.parseFloat(getComputedStyle(container).columnGap) || 0;
+        container.scrollBy({ left: firstCard.getBoundingClientRect().width + gap, behavior: 'smooth' });
+      }, 3200);
+    }
+
+    function resumeMobileCarousel() {
+      clearTimeout(mobileCarouselResumeTimer);
+      clearInterval(mobileCarouselTimer);
+      mobileCarouselTimer = null;
+      mobileCarouselResumeTimer = setTimeout(startMobileCarousel, 3500);
+    }
+
+    function configureMobileCarousel() {
+      const container = document.getElementById('builder-selector-container');
+      if (!container) return;
+
+      if (!container.dataset.carouselListenersBound) {
+        container.addEventListener('pointerdown', pauseMobileCarousel);
+        container.addEventListener('pointerup', resumeMobileCarousel);
+        container.addEventListener('pointercancel', resumeMobileCarousel);
+        container.addEventListener('mouseenter', pauseMobileCarousel);
+        container.addEventListener('mouseleave', resumeMobileCarousel);
+        container.addEventListener('focusin', pauseMobileCarousel);
+        container.addEventListener('focusout', resumeMobileCarousel);
+        container.dataset.carouselListenersBound = 'true';
+      }
+
+      if (window.innerWidth < 768) startMobileCarousel();
+      else pauseMobileCarousel();
+    }
+
+    function renderBuilder() {
+      const selectorContainer = document.getElementById('builder-selector-container');
+      const selectorTitle = document.getElementById('builder-selector-title');
+      const boxesWrapper = document.getElementById('builder-boxes-wrapper');
+      const sizeLabel = document.getElementById('builder-size-label');
+      const singleNotice = document.getElementById('builder-single-notice');
+      const products = appData.products || [];
+
+      sizeLabel.textContent = currentSize === 3 ? 'Caja de 3' : 'Caja individual';
+      if(currentSize === 1) singleNotice.classList.remove('hidden');
+      else singleNotice.classList.add('hidden');
+
+      const currentBoxCount = activeBoxes.length;
+      const activeCurrentBox = activeBoxes[currentBoxCount - 1];
+      selectorTitle.textContent = `SELECCIONA TUS SABORES (${activeCurrentBox.length}/${currentSize}):`;
+
+      const isMobile = window.innerWidth < 768;
+
+      if(isMobile) {
+        selectorContainer.className = "mobile-carousel-wrapper";
+        selectorContainer.innerHTML = products.map((p, idx) => {
+          const stock = p.stockQuantity ?? 10;
+          const cond = p.condition || '';
+          const isOut = stock <= 0 || cond === 'descontinuado';
+          return `
+            <div onclick="${isOut ? '' : `addFlavorToCurrentBox(${idx})`}" class="cookie-mobile-card ${isOut ? 'out-of-stock' : ''}">
+              <img src="${p.imgCenital || p.img}" class="cookie-img-mobile" alt="${p.name}" />
+              <span class="mt-1 text-[10px] font-semibold text-white text-center line-clamp-1">${p.name}</span>
+              <span class="text-[9px] text-goldLight">$${p.price}</span>
+              <span class="text-[8px] ${isOut ? 'text-red-400 font-bold' : 'text-gray-400'}">${isOut ? 'Agotado' : `Stock: ${stock}`}</span>
+            </div>
+          `;
+        }).join('');
+      } else {
+        selectorContainer.className = "grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[520px] overflow-y-auto pr-2";
+        selectorContainer.innerHTML = products.map((p, idx) => {
+          const stock = p.stockQuantity ?? 10;
+          const cond = p.condition || '';
+          const isOut = stock <= 0 || cond === 'descontinuado';
+          return `
+            <div onclick="${isOut ? '' : `addFlavorToCurrentBox(${idx})`}" class="cookie-pc-card ${isOut ? 'out-of-stock' : ''}">
+              <img src="${p.imgCenital || p.img}" class="cookie-img-pc" alt="${p.name}" />
+              <span class="mt-2 text-xs font-semibold text-white text-center line-clamp-1">${p.name}</span>
+              <span class="text-[9px] text-goldLight">$${p.price}</span>
+              <span class="text-[9px] ${isOut ? 'text-red-400 font-bold' : 'text-gray-400'}">${isOut ? 'Agotado' : `Stock: ${stock}`}</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      configureMobileCarousel();
+
+      const validBoxesWithIndices = [];
+      activeBoxes.forEach((box, idx) => {
+        if(box.length > 0) validBoxesWithIndices.push({ box, idx });
+      });
+
+      if(validBoxesWithIndices.length === 0) {
+        if(activeBoxes.length === 0) activeBoxes = [[]];
+        validBoxesWithIndices.push({ box: activeBoxes[0], idx: 0 });
+      }
+
+      const visibleBoxes = validBoxesWithIndices.slice(-3);
+      let boxesHtml = '';
+      
+      visibleBoxes.forEach(({ box, idx: globalIdx }) => {
+        if(currentSize === 3) {
+          boxesHtml += `
+            <div class="space-y-1">
+              <p class="text-[10px] text-goldLight uppercase font-bold">Caja #${globalIdx+1} (3 Unidades)</p>
+              <div class="caja-foto-container">
+          `;
+          for(let i=0; i<3; i++) {
+            const slotClass = `slot-exacto-3 slot-${i+1}`;
+            if(box[i]) {
+              boxesHtml += `
+                <div class="${slotClass}" onclick="removeFlavor(${globalIdx}, ${i})">
+                  <img src="${box[i].imgCenital || box[i].img}" alt="Sabor" />
+                  <div class="slot-remove">Quitar</div>
+                </div>
+              `;
+            } else {
+              boxesHtml += `<div class="${slotClass}"></div>`;
+            }
+          }
+          boxesHtml += `</div></div>`;
+        } else {
+          boxesHtml += `
+            <div class="space-y-1">
+              <p class="text-[10px] text-goldLight uppercase font-bold">Cajita Individual #${globalIdx+1}</p>
+              <div class="caja-foto-container">
+          `;
+          if(box[0]) {
+            boxesHtml += `
+              <div class="slot-exacto-1" onclick="removeFlavor(${globalIdx}, 0)">
+                <img src="${box[0].imgCenital || box[0].img}" alt="Sabor" />
+                <div class="slot-remove">Quitar</div>
+              </div>
+            `;
+          }
+          boxesHtml += `</div></div>`;
+        }
+      });
+
+      boxesWrapper.innerHTML = boxesHtml;
+      renderSummary();
+    }
+
+    function addFlavorToCurrentBox(idx) {
+      let currentBox = activeBoxes[activeBoxes.length - 1];
+      if(currentBox.length < currentSize) {
+        currentBox.push(appData.products[idx]);
+        renderBuilder();
+        if(currentBox.length === currentSize) {
+          document.getElementById('builder-completion-toast').classList.remove('hidden');
+        }
+      } else {
+        addNewBox();
+        activeBoxes[activeBoxes.length - 1].push(appData.products[idx]);
+        renderBuilder();
+      }
+    }
+
+    function addNewBox() {
+      activeBoxes.push([]);
+      document.getElementById('builder-completion-toast').classList.add('hidden');
+      renderBuilder();
+    }
+
+    function removeFlavor(boxIdx, flavorIdx) {
+      activeBoxes[boxIdx].splice(flavorIdx, 1);
+      activeBoxes = activeBoxes.filter((b, i) => b.length > 0 || i === activeBoxes.length - 1);
+      if(activeBoxes.length === 0) activeBoxes = [[]];
+      document.getElementById('builder-completion-toast').classList.add('hidden');
+      renderBuilder();
+    }
+
+    function renderSummary() {
+      const summaryList = document.getElementById('builder-summary');
+      let html = '';
+      computedTotalAmount = 0;
+
+      activeBoxes.forEach((box, i) => {
+        if(box.length > 0) {
+          const boxTotal = box.reduce((acc, curr) => acc + curr.price, 0);
+          computedTotalAmount += boxTotal;
+          html += `<li>• Caja #${i+1} (${box.length} un.): $${boxTotal.toLocaleString('es-AR')}</li>`;
+        }
+      });
+
+      if(html === '') {
+        html = '<li class="text-gray-500 italic">Ningún sabor seleccionado todavía.</li>';
+      } else {
+        html += `<li class="pt-2 border-t border-white/10 font-bold text-goldLight">Total estimado: $${computedTotalAmount.toLocaleString('es-AR')}</li>`;
+      }
+
+      summaryList.innerHTML = html;
+    }
+
+    function openWhatsApp() {
+      const validBoxes = activeBoxes.filter(b => b.length > 0);
+      if(validBoxes.length === 0) {
+        alert('Por favor, armá al menos una caja antes de continuar.');
+        return;
+      }
+      document.getElementById('order-dialog').showModal();
+      let previewText = validBoxes.map((box, i) => `Caja #${i+1}:\n` + box.map(p => ` - ${p.name} ($${p.price})`).join('\n')).join('\n\n');
+      document.getElementById('order-preview-flavors').textContent = previewText;
+      document.getElementById('order-preview-total').textContent = `Total a pagar: $${computedTotalAmount.toLocaleString('es-AR')}`;
+    }
+
+    document.getElementById('order-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const customName = document.getElementById('box-custom-name').value;
+      const shippingAddress = document.getElementById('box-shipping-address').value;
+      const paymentMethod = document.getElementById('box-payment-method').value;
+      const wantRegister = document.getElementById('client-register-check').checked;
+
+      let clientsList = JSON.parse(localStorage.getItem('dulce_feliz_clients') || '[]');
+      const orderDetailsSummary = activeBoxes.filter(b => b.length > 0).map((box, i) => `Caja #${i+1}: ` + box.map(p => p.name).join(', ')).join(' | ');
+      
+      clientsList.push({
+        date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
+        name: customName,
+        address: shippingAddress,
+        payment: paymentMethod,
+        total: computedTotalAmount,
+        order: orderDetailsSummary,
+        registered: wantRegister
+      });
+      localStorage.setItem('dulce_feliz_clients', JSON.stringify(clientsList));
+
+      let text = `Hola Dulce & Feliz! Quiero encargar mi pedido:\n\n`;
+      text += `*Cliente:* ${customName}\n`;
+      text += `*Dirección de envío:* ${shippingAddress}\n`;
+      text += `*Medio de pago:* ${paymentMethod}\n`;
+      if(wantRegister) text += `*Registro VIP:* Sí, deseo registrarme.\n\n`;
+      text += `*Detalle del pedido:*\n`;
+      
+      activeBoxes.filter(b => b.length > 0).forEach((box, i) => {
+        text += `• Caja #${i+1}:\n`;
+        box.forEach(p => { text += `  - ${p.name} ($${p.price})\n`; });
+      });
+
+      text += `\n*Total a pagar: $${computedTotalAmount.toLocaleString('es-AR')}*\n\nQuedo atento/a para coordinar. ¡Muchas gracias!`;
+
+      const encoded = encodeURIComponent(text);
+      window.open(`https://wa.me/541127401426?text=${encoded}`, '_blank');
+      document.getElementById('order-dialog').close();
+    });
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { renderBuilder(); }, 150);
+    });
+
+    loadPublicData();
+  </script>
+</body>
+</html>
