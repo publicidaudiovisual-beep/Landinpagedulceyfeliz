@@ -93,10 +93,16 @@ module.exports = async function handler(req, res) {
     const currentFile = await readJson(currentResponse);
     if (!currentResponse.ok || !currentFile.sha) {
       console.error('Could not read catalog-data.json from GitHub', { status: currentResponse.status });
+      let errorMessage = 'GitHub no pudo leer el catálogo. Verifica la configuración del repositorio y la rama.';
+      if (currentResponse.status === 401) {
+        errorMessage = 'GitHub rechazó el token. Revisa GITHUB_TOKEN y crea uno nuevo si está vencido o revocado.';
+      } else if (currentResponse.status === 403) {
+        errorMessage = 'El token no tiene permiso de lectura para este repositorio. Revisa que tenga acceso al repositorio y Contents: Read and write.';
+      } else if (currentResponse.status === 404) {
+        errorMessage = 'GitHub no encontró el catálogo con esta configuración. Confirma que GITHUB_REPOSITORY sea publicidaudiovisual-beep/Landinpagedulceyfeliz, GITHUB_BRANCH sea main y exista catalog-data.json en esa rama.';
+      }
       return respond(res, currentResponse.status === 404 ? 404 : 502, {
-        error: currentResponse.status === 404
-          ? 'No se encontró catalog-data.json en la rama configurada de GitHub.'
-          : 'GitHub no pudo leer el catálogo. Verifica los permisos del token y la rama.'
+        error: errorMessage
       });
     }
 
