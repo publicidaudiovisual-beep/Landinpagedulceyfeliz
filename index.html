@@ -45,17 +45,16 @@
     .gold-script {
       font-family: 'Great Vibes', 'Cormorant Garamond', serif;
       font-weight: 400;
-  let body;size: clamp(2.4rem, 4.5vw, 4.5rem);
-      line-height: 1.1;
+      font-size: clamp(2.7rem, 9vw, 6.5rem);
+      line-height: 1.12;
+      padding-bottom: 0.12em;
       background: linear-gradient(135deg, #F3E5AB 0%, #D4AF37 45%, #AA771C 100%);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
-      display: inline-block;
-      margin-left: 0.4rem;
-      white-space: nowrap;
+      display: block;
     }
-    .hero-title-main { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.3rem, 3.5vw, 3rem); line-height: 1.4; font-weight: 600; color: #F3F3F2; }
+    .hero-title-main { display: block; margin-top: 0.75rem; font-family: 'Cormorant Garamond', serif; font-size: clamp(1.3rem, 3.5vw, 2.5rem); line-height: 1.3; font-weight: 600; color: #F3F3F2; }
     .gold-button { background: linear-gradient(135deg, #D4AF37 0%, #AA771C 100%); color: #0B0B0C; font-weight: 700; transition: all .25s ease; }
     .gold-button:hover { transform: translateY(-1px); box-shadow: 0 15px 35px rgba(212, 175, 55, 0.18); }
     .order-dialog { width: min(36rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; padding: 0; color: #F2F2F2; background: #121214; border: 1px solid rgba(212, 175, 55, 0.35); border-radius: 1rem; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55); }
@@ -164,14 +163,9 @@
       <div class="hero-background-overlay" aria-hidden="true"></div>
       <div class="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="max-w-4xl space-y-6">
-          <div class="chip inline-flex items-center gap-3 rounded-full px-4 py-2 text-[10px] uppercase tracking-[0.22em] text-goldLight">
-            <span class="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
-            Página en periodo de prueba
-          </div>
-
-          <h1 class="flex flex-wrap items-baseline leading-normal text-white pt-2 pb-2">
-            <span class="hero-title-main mr-3">Galletas de Autor al estilo:</span>
-            <span class="gold-script">Cookies New York</span>
+          <h1 class="pt-2 pb-2 text-white">
+            <span class="gold-script">Cookies estilo New York</span>
+            <span class="hero-title-main">Galletas de Autor</span>
           </h1>
 
           <p class="max-w-xl text-base sm:text-lg text-white font-medium drop-shadow-md pt-2 pb-4">
@@ -179,8 +173,8 @@
           </p>
 
           <div class="flex flex-wrap items-center gap-6 pt-2">
-            <a href="#catalogo" class="gold-button inline-flex items-center justify-center rounded-xl px-6 py-4 text-[11px] uppercase tracking-[0.22em]">
-              Ver catálogo
+            <a href="#builder-vip" class="gold-button inline-flex items-center justify-center rounded-xl px-6 py-4 text-[11px] uppercase tracking-[0.22em]">
+              Armar mi caja
             </a>
             <div class="flex items-center gap-4">
               <a href="#builder-vip" class="group relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#1C1C1E] to-[#0B0B0C] border-2 border-gold/60 shadow-xl hover:border-gold hover:scale-105 transition-all">
@@ -277,7 +271,7 @@
         <div class="mb-8 text-center">
           <p class="text-[11px] uppercase tracking-[0.3em] text-goldLight">Armador Interactivo</p>
           <h2 class="mt-2 font-serif-luxury text-4xl text-white sm:text-5xl">Armá tu caja de autor</h2>
-          <p class="mt-2 text-xs text-gray-400">Seleccioná el formato y toca las galletas para llenar tu caja.</p>
+          <p class="mt-2 text-xs text-gray-400">Elegí un formato y seleccioná sabores. Al cambiar de tamaño se agrega otra caja sin borrar las anteriores.</p>
         </div>
 
         <div class="grid gap-8 lg:grid-cols-[1fr_1.1fr] items-start">
@@ -288,14 +282,6 @@
                 <button class="size-option active rounded-full px-5 py-2.5 text-[10px] uppercase tracking-[0.2em]" data-size="3">Caja de 3 galletas</button>
                 <button class="size-option rounded-full px-5 py-2.5 text-[10px] uppercase tracking-[0.2em]" data-size="1">Cajita individual</button>
               </div>
-              <div class="flex md:hidden gap-2">
-                <button type="button" onclick="scrollMobileCarousel('left')" aria-label="Ver sabores anteriores" class="h-9 w-9 rounded-full border border-gold/40 text-goldLight hover:bg-gold/15">
-                  <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-                </button>
-                <button type="button" onclick="scrollMobileCarousel('right')" aria-label="Ver más sabores" class="h-9 w-9 rounded-full border border-gold/40 text-goldLight hover:bg-gold/15">
-                  <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-                </button>
-              </div>
             </div>
 
             <div class="mb-3 flex items-center justify-between">
@@ -303,6 +289,14 @@
             </div>
 
             <div id="builder-selector-container"></div>
+            <div class="mt-2 flex justify-end gap-2 md:hidden">
+              <button type="button" onclick="scrollMobileCarousel('left')" aria-label="Ver sabores anteriores" class="h-9 w-9 rounded-full border border-gold/40 text-goldLight hover:bg-gold/15">
+                <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+              </button>
+              <button type="button" onclick="scrollMobileCarousel('right')" aria-label="Ver más sabores" class="h-9 w-9 rounded-full border border-gold/40 text-goldLight hover:bg-gold/15">
+                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+              </button>
+            </div>
           </div>
 
           <div class="glass-card rounded-[2rem] p-6 relative flex flex-col justify-between">
@@ -313,7 +307,8 @@
               </div>
 
               <div id="builder-boxes-wrapper" class="space-y-6 mb-4"></div>
-              <p id="builder-single-notice" class="hidden text-[11px] text-amber-300/90 italic text-center mt-2">* Los pedidos de una sola galleta son para ser retirados en tienda.</p>
+              <div id="builder-box-pagination" class="mb-4 flex items-center justify-between gap-3 text-xs text-gray-300"></div>
+              <p id="builder-single-notice" class="hidden text-[11px] text-amber-300/90 italic text-center mt-2">* Los pedidos de hasta 3 cajitas individuales, sin cajas grandes, son únicamente para retirar en Villa Dominico.</p>
 
               <div class="mt-6 rounded-2xl border border-gold/20 bg-[#0f0f10] p-4">
                 <p class="text-[10px] uppercase tracking-[0.25em] text-goldLight">Resumen del pedido</p>
@@ -324,14 +319,20 @@
             <div id="builder-completion-toast" class="hidden completion-tag mt-4">
               <p class="text-xs font-bold text-goldLight"><i class="fa-solid fa-sparkles mr-1"></i> ¡Caja completa!</p>
               <div class="mt-3 flex gap-2">
-                <button class="gold-button flex-1 py-2 rounded-lg text-[10px] uppercase tracking-wider" onclick="addNewBox()">+ Agregar otra caja</button>
                 <button class="bg-whatsapp hover:bg-whatsappHover flex-1 py-2 rounded-lg text-[10px] uppercase tracking-wider text-white font-bold" onclick="openWhatsApp()">Finalizar WhatsApp</button>
               </div>
             </div>
 
             <div class="mt-6 flex flex-col gap-3 sm:flex-row">
-              <button onclick="addNewBox()" class="gold-button flex-1 rounded-xl px-4 py-3 text-[10px] uppercase tracking-[0.2em]">Agregar otra caja</button>
+              <button id="add-box-button" type="button" onclick="toggleNewBoxOptions()" aria-expanded="false" aria-controls="new-box-options" class="gold-button flex-1 rounded-xl px-4 py-3 text-[10px] uppercase tracking-[0.2em] disabled:cursor-not-allowed disabled:opacity-40" disabled>Agregar otra caja</button>
               <button onclick="openWhatsApp()" class="flex-1 rounded-xl bg-whatsapp px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-white hover:bg-whatsappHover">Continuar por WhatsApp</button>
+            </div>
+            <div id="new-box-options" class="mt-3 hidden rounded-xl border border-gold/30 bg-[#0f0f10] p-4" aria-label="Elegí el formato de la nueva caja">
+              <p class="mb-3 text-xs text-gray-300">¿Qué formato querés agregar?</p>
+              <div class="flex flex-col gap-2 sm:flex-row">
+                <button type="button" onclick="addNewBox(3)" class="flex-1 rounded-xl border border-gold/30 bg-[#1C1C1E] px-4 py-3 text-[10px] uppercase tracking-[0.15em] text-white hover:border-gold/70">Caja de 3 galletas</button>
+                <button type="button" onclick="addNewBox(1)" class="flex-1 rounded-xl border border-gold/30 bg-[#1C1C1E] px-4 py-3 text-[10px] uppercase tracking-[0.15em] text-white hover:border-gold/70">Cajita individual</button>
+              </div>
             </div>
           </div>
 
@@ -400,21 +401,47 @@
 
       <div class="space-y-3">
         <div>
-          <label class="block text-xs text-gray-300 mb-1">Nombre y Apellido (para personalizar caja / retirar) *</label>
+          <label class="block text-xs text-gray-300 mb-1">Nombre y Apellido para coordinar el pedido *</label>
           <input type="text" id="box-custom-name" class="w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white" placeholder="Ej. Dionisio Millan Zabala" required />
         </div>
         <div>
-          <label class="block text-xs text-gray-300 mb-1">Dirección de envío o Nota de retiro *</label>
-          <input type="text" id="box-shipping-address" class="w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white" placeholder="Ej. El Salvador 679 (o Retiro en Tienda)" required />
+          <label class="block text-xs text-gray-300 mb-1">Detalle de entrega (si aplica)</label>
+          <input type="text" id="box-shipping-address" class="w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white" placeholder="Dirección, localidad o referencia" />
         </div>
-        <div>
-          <label class="block text-xs text-gray-300 mb-1">Método de pago preferido *</label>
-          <select id="box-payment-method" class="w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white" required>
-            <option value="Transferencia bancaria">Transferencia bancaria</option>
-            <option value="Efectivo">Efectivo</option>
-            <option value="Mercado Pago / Tarjeta">Mercado Pago / Tarjeta</option>
+
+        <section class="space-y-3 rounded-xl border border-gold/30 bg-[#0B0B0C] p-4" aria-labelledby="shipping-options-title">
+          <h3 id="shipping-options-title" class="font-serif-luxury text-2xl text-goldLight">Opciones para despachar el pedido</h3>
+          <label for="box-shipping-method" class="block text-xs text-gray-300">Elegí cómo recibirlo *</label>
+          <select id="box-shipping-method" class="w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white" required>
+            <option value="" disabled selected>Seleccioná una opción de entrega</option>
+            <option value="Retiro Take Away en Villa Dominico">Retiro Take Away en Villa Dominico</option>
+            <option value="Envío por Envia.com" disabled>Envío por Envia.com — Próximamente</option>
+            <option value="Envío por Pedidos Ya Envíos">Envío por Pedidos Ya Envíos (solo zonas cercanas a Villa Dominico)</option>
           </select>
-        </div>
+          <div id="takeaway-details" class="hidden rounded-lg border border-gold/20 bg-[#17171A] p-3 text-xs text-gray-300" aria-live="polite">
+            <p class="font-semibold text-goldLight">Punto y horario de retiro</p>
+            <p>El Salvador 679, número 2, entre Mansilla y Villegas, Villa Dominico, Avellaneda, Provincia de Buenos Aires (CP 1874).</p>
+            <p class="mt-1">Lunes a viernes, de 10 a 18 h.</p>
+            <a href="https://wa.me/541127401426?text=Hola%20Dulce%20%26%20Feliz%2C%20quiero%20coordinar%20un%20retiro%20Take%20Away." target="_blank" rel="noopener" class="mt-2 inline-flex text-goldLight underline">Te sugerimos coordinar el retiro por WhatsApp</a>
+          </div>
+          <p id="pedidos-ya-details" class="hidden text-[11px] text-amber-200" aria-live="polite">Disponible únicamente en zonas cercanas a Villa Dominico. La cobertura se confirma por WhatsApp.</p>
+          <p class="text-[11px] text-gray-400">Envia.com: Próximamente.</p>
+        </section>
+
+        <section class="space-y-3 rounded-xl border border-gold/30 bg-[#0B0B0C] p-4" aria-labelledby="payment-options-title">
+          <h3 id="payment-options-title" class="font-serif-luxury text-2xl text-goldLight">Opciones para abonar tu compra</h3>
+          <label for="box-payment-method" class="block text-xs text-gray-300">Elegí cómo abonar *</label>
+          <select id="box-payment-method" class="w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white" required>
+            <option value="" disabled selected>Seleccioná una opción de abono</option>
+            <option value="Pago en efectivo (solo Take Away en Villa Dominico)" data-takeaway-only="true">Pago en efectivo (solo Take Away en Villa Dominico)</option>
+            <option value="Pago con QR, tarjeta de crédito o débito por Postner (al retirar en Villa Dominico)" data-takeaway-only="true">Pago con QR, TDC o TDD por Postner (al retirar personalmente en Villa Dominico)</option>
+            <option value="Transferencia bancaria por CBU, CTA o Alias">Transferencia bancaria por CBU, CTA o Alias</option>
+            <option value="Sistema Nave de Galicia, incluye MODO — Próximamente" disabled>Sistema Nave de Galicia (incluye MODO) — Próximamente</option>
+          </select>
+          <p id="takeaway-payment-details" class="hidden text-[11px] text-amber-200" aria-live="polite">El efectivo y el pago con Postner están disponibles únicamente al retirar personalmente en Villa Dominico.</p>
+          <p class="text-[11px] text-gray-400">Los datos de transferencia (CBU, CTA o Alias) se coordinan por WhatsApp. Nave de Galicia / MODO: Próximamente.</p>
+        </section>
+
         <div class="flex items-center gap-2 pt-1">
           <input type="checkbox" id="client-register-check" class="rounded accent-[#D4AF37]" />
           <label for="client-register-check" class="text-xs text-gray-300 cursor-pointer">Deseo registrarme como cliente VIP para futuras compras</label>
@@ -438,6 +465,9 @@
     let appData = { stats: { visits: 0, whatsappOrders: 0 }, products: [] };
     let currentSize = 3;
     let activeBoxes = [[]]; 
+    let boxNames = [''];
+    let boxSizes = [3];
+    let visibleBoxPage = 0;
     let computedTotalAmount = 0;
     let mobileCarouselTimer = null;
     let mobileCarouselResumeTimer = null;
@@ -588,14 +618,30 @@
     }
 
     document.querySelectorAll('.size-option').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.size-option').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        currentSize = Number(e.target.dataset.size);
-        activeBoxes = [[]];
-        renderBuilder();
-      });
+      btn.addEventListener('click', () => selectBoxSize(Number(btn.dataset.size)));
     });
+
+    function selectBoxSize(size) {
+      const currentIndex = activeBoxes.length - 1;
+      const currentBox = activeBoxes[currentIndex];
+
+      if(currentBox.length === 0) {
+        boxSizes[currentIndex] = size;
+        if(size === 1) boxNames[currentIndex] = '';
+      } else {
+        activeBoxes.push([]);
+        boxNames.push('');
+        boxSizes.push(size);
+        visibleBoxPage = Math.floor((activeBoxes.length - 1) / 4);
+      }
+
+      currentSize = size;
+      document.querySelectorAll('.size-option').forEach(button => {
+        button.classList.toggle('active', Number(button.dataset.size) === size);
+      });
+      document.getElementById('builder-completion-toast').classList.add('hidden');
+      renderBuilder();
+    }
 
     function scrollMobileCarousel(direction) {
       const container = document.getElementById('builder-selector-container');
@@ -604,10 +650,15 @@
 
       const gap = Number.parseFloat(getComputedStyle(container).columnGap) || 0;
       const scrollAmount = firstCard.getBoundingClientRect().width + gap;
-      const maxScroll = container.scrollWidth - container.clientWidth;
+      const loopWidth = Number(container.dataset.carouselLoopWidth) || 0;
+
+      if (direction === 'left' && loopWidth && container.scrollLeft <= 1) {
+        container.scrollLeft = loopWidth;
+      }
+
       const nextScroll = direction === 'left'
-        ? (container.scrollLeft <= 1 ? maxScroll : Math.max(0, container.scrollLeft - scrollAmount))
-        : (container.scrollLeft >= maxScroll - 1 ? 0 : Math.min(maxScroll, container.scrollLeft + scrollAmount));
+        ? Math.max(0, container.scrollLeft - scrollAmount)
+        : container.scrollLeft + scrollAmount;
 
       container.scrollTo({ left: nextScroll, behavior: 'smooth' });
       resumeMobileCarousel();
@@ -630,13 +681,7 @@
 
       mobileCarouselTimer = setInterval(() => {
         const firstCard = container.firstElementChild;
-        const maxScroll = container.scrollWidth - container.clientWidth;
-        if (!firstCard || maxScroll <= 0) return;
-
-        if (container.scrollLeft >= maxScroll - 1) {
-          container.scrollTo({ left: 0, behavior: 'smooth' });
-          return;
-        }
+        if (!firstCard || container.scrollWidth <= container.clientWidth) return;
 
         const gap = Number.parseFloat(getComputedStyle(container).columnGap) || 0;
         container.scrollBy({ left: firstCard.getBoundingClientRect().width + gap, behavior: 'smooth' });
@@ -662,28 +707,58 @@
         container.addEventListener('mouseleave', resumeMobileCarousel);
         container.addEventListener('focusin', pauseMobileCarousel);
         container.addEventListener('focusout', resumeMobileCarousel);
+        container.addEventListener('scroll', () => {
+          const loopWidth = Number(container.dataset.carouselLoopWidth) || 0;
+          if (loopWidth && container.scrollLeft >= loopWidth) {
+            container.scrollLeft -= loopWidth;
+          }
+        }, { passive: true });
         container.dataset.carouselListenersBound = 'true';
       }
 
-      if (window.innerWidth < 768) startMobileCarousel();
-      else pauseMobileCarousel();
+      if (window.innerWidth < 768) {
+        const cards = Array.from(container.children);
+        if (cards.length > 1) {
+          const clones = cards.map(card => {
+            const clone = card.cloneNode(true);
+            clone.setAttribute('aria-hidden', 'true');
+            return clone;
+          });
+          clones.forEach(clone => container.appendChild(clone));
+          const firstCard = container.firstElementChild;
+          const firstClone = container.children[cards.length];
+          container.dataset.carouselLoopWidth = String(
+            firstClone.getBoundingClientRect().left - firstCard.getBoundingClientRect().left
+          );
+        }
+        startMobileCarousel();
+      } else {
+        delete container.dataset.carouselLoopWidth;
+        pauseMobileCarousel();
+      }
     }
 
     function renderBuilder() {
       const selectorContainer = document.getElementById('builder-selector-container');
       const selectorTitle = document.getElementById('builder-selector-title');
       const boxesWrapper = document.getElementById('builder-boxes-wrapper');
+      const boxPagination = document.getElementById('builder-box-pagination');
       const sizeLabel = document.getElementById('builder-size-label');
       const singleNotice = document.getElementById('builder-single-notice');
+      const addBoxButton = document.getElementById('add-box-button');
       const products = appData.products || [];
+      const currentBoxIndex = activeBoxes.length - 1;
+      currentSize = boxSizes[currentBoxIndex] || currentSize;
 
       sizeLabel.textContent = currentSize === 3 ? 'Caja de 3' : 'Caja individual';
-      if(currentSize === 1) singleNotice.classList.remove('hidden');
-      else singleNotice.classList.add('hidden');
+      singleNotice.classList.toggle('hidden', !requiresTakeawayForIndividualBoxes());
 
-      const currentBoxCount = activeBoxes.length;
-      const activeCurrentBox = activeBoxes[currentBoxCount - 1];
+      const activeCurrentBox = activeBoxes[currentBoxIndex];
       selectorTitle.textContent = `SELECCIONA TUS SABORES (${activeCurrentBox.length}/${currentSize}):`;
+      addBoxButton.disabled = activeCurrentBox.length !== currentSize;
+      document.querySelectorAll('.size-option').forEach(button => {
+        button.classList.toggle('active', Number(button.dataset.size) === currentSize);
+      });
 
       const isMobile = window.innerWidth < 768;
 
@@ -721,21 +796,22 @@
 
       configureMobileCarousel();
 
-      const validBoxesWithIndices = [];
-      activeBoxes.forEach((box, idx) => {
-        if(box.length > 0) validBoxesWithIndices.push({ box, idx });
-      });
-
-      if(validBoxesWithIndices.length === 0) {
-        if(activeBoxes.length === 0) activeBoxes = [[]];
-        validBoxesWithIndices.push({ box: activeBoxes[0], idx: 0 });
-      }
-
-      const visibleBoxes = validBoxesWithIndices.slice(-3);
       let boxesHtml = '';
-      
-      visibleBoxes.forEach(({ box, idx: globalIdx }) => {
-        if(currentSize === 3) {
+      const pageCount = Math.ceil(activeBoxes.length / 4);
+      visibleBoxPage = Math.min(visibleBoxPage, pageCount - 1);
+      const firstVisibleBox = visibleBoxPage * 4;
+      activeBoxes.slice(firstVisibleBox, firstVisibleBox + 4).forEach((box, pageOffset) => {
+        const globalIdx = firstVisibleBox + pageOffset;
+        const size = boxSizes[globalIdx] || 3;
+        const capacity = size;
+        const isComplete = box.length === capacity;
+        boxesHtml += `
+          <div class="space-y-2 rounded-xl border border-gold/20 bg-[#0f0f10] p-3">
+            ${size === 3 ? `<label for="box-name-${globalIdx}" class="block text-[10px] uppercase tracking-wider text-goldLight">Nombre para personalizar la caja #${globalIdx + 1} (opcional)</label>
+            <input id="box-name-${globalIdx}" data-box-name="${globalIdx}" type="text" maxlength="40" class="w-full rounded-lg border border-gold/30 bg-[#1C1C1E] px-3 py-2 text-sm text-white" placeholder="Dejá el campo vacío si no querés personalizarla" />` : ''}
+            <p class="text-[10px] text-gray-400">${isComplete ? 'Caja completa' : `Seleccionadas: ${box.length} de ${capacity}`}</p>
+        `;
+        if(size === 3) {
           boxesHtml += `
             <div class="space-y-1">
               <p class="text-[10px] text-goldLight uppercase font-bold">Caja #${globalIdx+1} (3 Unidades)</p>
@@ -754,7 +830,7 @@
               boxesHtml += `<div class="${slotClass}"></div>`;
             }
           }
-          boxesHtml += `</div></div>`;
+          boxesHtml += `</div></div></div>`;
         } else {
           boxesHtml += `
             <div class="space-y-1">
@@ -769,92 +845,227 @@
               </div>
             `;
           }
-          boxesHtml += `</div></div>`;
+          boxesHtml += `</div></div></div>`;
         }
       });
 
       boxesWrapper.innerHTML = boxesHtml;
+      boxesWrapper.querySelectorAll('[data-box-name]').forEach(input => {
+        const boxIndex = Number(input.dataset.boxName);
+        input.value = boxNames[boxIndex] || '';
+      });
+      boxPagination.innerHTML = pageCount > 1 ? `
+        <button type="button" onclick="changeBoxPage(${visibleBoxPage - 1})" class="rounded-lg border border-gold/30 px-3 py-2 text-goldLight disabled:opacity-40" ${visibleBoxPage === 0 ? 'disabled' : ''}>Cajas anteriores</button>
+        <span>Cajas ${firstVisibleBox + 1}–${Math.min(firstVisibleBox + 4, activeBoxes.length)} de ${activeBoxes.length}</span>
+        <button type="button" onclick="changeBoxPage(${visibleBoxPage + 1})" class="rounded-lg border border-gold/30 px-3 py-2 text-goldLight disabled:opacity-40" ${visibleBoxPage >= pageCount - 1 ? 'disabled' : ''}>Cajas siguientes</button>
+      ` : '';
       renderSummary();
+      updateCheckoutOptions();
     }
 
     function addFlavorToCurrentBox(idx) {
-      let currentBox = activeBoxes[activeBoxes.length - 1];
-      if(currentBox.length < currentSize) {
-        currentBox.push(appData.products[idx]);
-        renderBuilder();
-        if(currentBox.length === currentSize) {
-          document.getElementById('builder-completion-toast').classList.remove('hidden');
-        }
-      } else {
-        addNewBox();
-        activeBoxes[activeBoxes.length - 1].push(appData.products[idx]);
-        renderBuilder();
+      const currentBoxIndex = activeBoxes.length - 1;
+      const currentBox = activeBoxes[currentBoxIndex];
+      currentSize = boxSizes[currentBoxIndex];
+      if(currentBox.length >= currentSize) return;
+
+      currentBox.push(appData.products[idx]);
+      renderBuilder();
+      if(currentBox.length === currentSize) {
+        document.getElementById('builder-completion-toast').classList.remove('hidden');
       }
     }
 
-    function addNewBox() {
+    function toggleNewBoxOptions() {
+      const options = document.getElementById('new-box-options');
+      const button = document.getElementById('add-box-button');
+      const isExpanded = button.getAttribute('aria-expanded') === 'true';
+      button.setAttribute('aria-expanded', String(!isExpanded));
+      options.classList.toggle('hidden', isExpanded);
+    }
+
+    function addNewBox(size) {
+      const currentBoxIndex = activeBoxes.length - 1;
+      const currentBox = activeBoxes[currentBoxIndex];
+      currentSize = boxSizes[currentBoxIndex];
+      if(currentBox.length !== currentSize || ![1, 3].includes(size)) return;
       activeBoxes.push([]);
+      boxNames.push('');
+      boxSizes.push(size);
+      currentSize = size;
+      visibleBoxPage = Math.floor((activeBoxes.length - 1) / 4);
       document.getElementById('builder-completion-toast').classList.add('hidden');
+      document.getElementById('new-box-options').classList.add('hidden');
+      document.getElementById('add-box-button').setAttribute('aria-expanded', 'false');
       renderBuilder();
     }
 
     function removeFlavor(boxIdx, flavorIdx) {
       activeBoxes[boxIdx].splice(flavorIdx, 1);
-      activeBoxes = activeBoxes.filter((b, i) => b.length > 0 || i === activeBoxes.length - 1);
-      if(activeBoxes.length === 0) activeBoxes = [[]];
+      if(boxIdx === activeBoxes.length - 1) currentSize = boxSizes[boxIdx];
       document.getElementById('builder-completion-toast').classList.add('hidden');
       renderBuilder();
     }
+
+    function changeBoxPage(page) {
+      const pageCount = Math.ceil(activeBoxes.length / 4);
+      if(page < 0 || page >= pageCount) return;
+      visibleBoxPage = page;
+      renderBuilder();
+    }
+
+    function requiresTakeawayForIndividualBoxes() {
+      const individualBoxCount = activeBoxes.reduce((count, box, index) => {
+        return count + (boxSizes[index] === 1 && box.length > 0 ? 1 : 0);
+      }, 0);
+      const hasLargeBox = boxSizes.some((size, index) => {
+        return size === 3 && activeBoxes[index].length > 0;
+      });
+
+      return !hasLargeBox && individualBoxCount >= 1 && individualBoxCount <= 3;
+    }
+
+    document.getElementById('builder-boxes-wrapper').addEventListener('input', (event) => {
+      const input = event.target.closest('[data-box-name]');
+      if(input) boxNames[Number(input.dataset.boxName)] = input.value;
+    });
 
     function renderSummary() {
       const summaryList = document.getElementById('builder-summary');
       let html = '';
       computedTotalAmount = 0;
+      let totalCookieCount = 0;
+      const flavorCounts = new Map();
 
       activeBoxes.forEach((box, i) => {
         if(box.length > 0) {
           const boxTotal = box.reduce((acc, curr) => acc + curr.price, 0);
           computedTotalAmount += boxTotal;
-          html += `<li>• Caja #${i+1} (${box.length} un.): $${boxTotal.toLocaleString('es-AR')}</li>`;
+          totalCookieCount += box.length;
+          box.forEach(product => flavorCounts.set(product.name, (flavorCounts.get(product.name) || 0) + 1));
+          const boxName = boxSizes[i] === 3 ? boxNames[i]?.trim() : '';
+          const boxLabel = boxSizes[i] === 1 ? 'Cajita individual' : 'Caja de 3';
+          html += `<li class="rounded-lg bg-white/5 p-2">
+            <p class="font-semibold">Caja #${i+1} — ${boxLabel} (${box.length}/${boxSizes[i]} galletas)${boxName ? ` · Personalizada para: ${escapeHtml(boxName)}` : ''}</p>
+            <p class="text-xs text-gray-400">${box.map(product => escapeHtml(product.name)).join(' · ')}</p>
+            <p class="text-xs text-goldLight">$${boxTotal.toLocaleString('es-AR')}</p>
+          </li>`;
         }
       });
 
       if(html === '') {
         html = '<li class="text-gray-500 italic">Ningún sabor seleccionado todavía.</li>';
       } else {
-        html += `<li class="pt-2 border-t border-white/10 font-bold text-goldLight">Total estimado: $${computedTotalAmount.toLocaleString('es-AR')}</li>`;
+        const flavorSummary = [...flavorCounts.entries()]
+          .map(([name, count]) => `${escapeHtml(name)} × ${count}`)
+          .join(' · ');
+        html += `<li class="pt-2 border-t border-white/10 text-xs text-gray-300"><strong>Total de galletas: ${totalCookieCount}</strong><br>Sabores acumulados: ${flavorSummary}</li>`;
+        html += `<li class="font-bold text-goldLight">Total estimado: $${computedTotalAmount.toLocaleString('es-AR')}</li>`;
       }
 
       summaryList.innerHTML = html;
     }
 
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[character]);
+    }
+
     function openWhatsApp() {
-      const validBoxes = activeBoxes.filter(b => b.length > 0);
+      const validBoxes = activeBoxes
+        .map((box, index) => ({ box, index }))
+        .filter(entry => entry.box.length > 0);
       if(validBoxes.length === 0) {
         alert('Por favor, armá al menos una caja antes de continuar.');
         return;
       }
       document.getElementById('order-dialog').showModal();
-      let previewText = validBoxes.map((box, i) => `Caja #${i+1}:\n` + box.map(p => ` - ${p.name} ($${p.price})`).join('\n')).join('\n\n');
+      let previewText = validBoxes.map(({ box, index }) => {
+        const personalization = boxSizes[index] === 3 ? boxNames[index]?.trim() : '';
+        const boxLabel = boxSizes[index] === 1 ? 'Cajita individual' : 'Caja de 3';
+        return `Caja #${index + 1} — ${boxLabel} (${box.length}/${boxSizes[index]} galletas)${personalization ? ` (personalizada para: ${personalization})` : ''}:\n`
+          + box.map(p => ` - ${p.name} ($${p.price})`).join('\n');
+      }).join('\n\n');
       document.getElementById('order-preview-flavors').textContent = previewText;
-      document.getElementById('order-preview-total').textContent = `Total a pagar: $${computedTotalAmount.toLocaleString('es-AR')}`;
+      const totalCookieCount = validBoxes.reduce((total, entry) => total + entry.box.length, 0);
+      document.getElementById('order-preview-total').textContent = `Total de galletas: ${totalCookieCount} · Total a pagar: $${computedTotalAmount.toLocaleString('es-AR')}`;
     }
+
+    const shippingMethodSelect = document.getElementById('box-shipping-method');
+    const paymentMethodSelect = document.getElementById('box-payment-method');
+    shippingMethodSelect.addEventListener('change', updateCheckoutOptions);
+    paymentMethodSelect.addEventListener('change', updateCheckoutOptions);
+
+    function updateCheckoutOptions(event) {
+      let isTakeaway = shippingMethodSelect.value === 'Retiro Take Away en Villa Dominico';
+      const selectedPayment = paymentMethodSelect.selectedOptions[0];
+      if(selectedPayment?.dataset.takeawayOnly && !isTakeaway) {
+        if(event?.target === shippingMethodSelect) {
+          paymentMethodSelect.value = '';
+        } else {
+          shippingMethodSelect.value = 'Retiro Take Away en Villa Dominico';
+          isTakeaway = true;
+        }
+      }
+
+      const isPedidosYa = shippingMethodSelect.value === 'Envío por Pedidos Ya Envíos';
+      const takeawayOnlyOrder = requiresTakeawayForIndividualBoxes();
+      document.getElementById('takeaway-details').classList.toggle('hidden', !isTakeaway);
+      document.getElementById('pedidos-ya-details').classList.toggle('hidden', !isPedidosYa);
+      document.getElementById('takeaway-payment-details').classList.toggle('hidden', isTakeaway);
+
+      const shippingOptions = Array.from(shippingMethodSelect.options);
+      shippingOptions.forEach(option => {
+        if(option.value === 'Envío por Pedidos Ya Envíos') {
+          option.disabled = takeawayOnlyOrder;
+        }
+      });
+      if(takeawayOnlyOrder && !isTakeaway && shippingMethodSelect.value) {
+        shippingMethodSelect.value = '';
+      }
+      document.getElementById('box-shipping-address').required = shippingMethodSelect.value === 'Envío por Pedidos Ya Envíos';
+
+      Array.from(paymentMethodSelect.options).forEach(option => {
+        if(!option.dataset.takeawayOnly) return;
+        option.disabled = false;
+      });
+    }
+
+    updateCheckoutOptions();
 
     document.getElementById('order-form').addEventListener('submit', (e) => {
       e.preventDefault();
+      if(!e.currentTarget.reportValidity()) return;
       const customName = document.getElementById('box-custom-name').value;
       const shippingAddress = document.getElementById('box-shipping-address').value;
       const paymentMethod = document.getElementById('box-payment-method').value;
+      const shippingMethod = document.getElementById('box-shipping-method').value;
       const wantRegister = document.getElementById('client-register-check').checked;
+      const totalCookieCount = activeBoxes.reduce((total, box) => total + box.length, 0);
 
       let clientsList = JSON.parse(localStorage.getItem('dulce_feliz_clients') || '[]');
-      const orderDetailsSummary = activeBoxes.filter(b => b.length > 0).map((box, i) => `Caja #${i+1}: ` + box.map(p => p.name).join(', ')).join(' | ');
+      const orderDetailsSummary = activeBoxes
+        .map((box, index) => ({ box, index }))
+        .filter(entry => entry.box.length > 0)
+        .map(({ box, index }) => {
+          const personalization = boxSizes[index] === 3 ? boxNames[index]?.trim() : '';
+          const boxLabel = boxSizes[index] === 1 ? 'Cajita individual' : 'Caja de 3';
+          return `Caja #${index + 1} — ${boxLabel} (${box.length}/${boxSizes[index]})${personalization ? ` (personalizada para: ${personalization})` : ''}: `
+            + box.map(p => p.name).join(', ');
+        }).join(' | ');
       
       clientsList.push({
         date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
         name: customName,
         address: shippingAddress,
         payment: paymentMethod,
+        shipping: shippingMethod,
+        cookieCount: totalCookieCount,
         total: computedTotalAmount,
         order: orderDetailsSummary,
         registered: wantRegister
@@ -863,17 +1074,22 @@
 
       let text = `Hola Dulce & Feliz! Quiero encargar mi pedido:\n\n`;
       text += `*Cliente:* ${customName}\n`;
-      text += `*Dirección de envío:* ${shippingAddress}\n`;
-      text += `*Medio de pago:* ${paymentMethod}\n`;
+      text += `*Opción de envío:* ${shippingMethod}\n`;
+      text += `*Dirección o detalle para coordinar:* ${shippingAddress}\n`;
+      text += `*Opción de abono:* ${paymentMethod}\n`;
       if(wantRegister) text += `*Registro VIP:* Sí, deseo registrarme.\n\n`;
       text += `*Detalle del pedido:*\n`;
       
-      activeBoxes.filter(b => b.length > 0).forEach((box, i) => {
-        text += `• Caja #${i+1}:\n`;
+      activeBoxes.forEach((box, i) => {
+        if(box.length === 0) return;
+        const personalization = boxSizes[i] === 3 ? boxNames[i]?.trim() : '';
+        const boxLabel = boxSizes[i] === 1 ? 'Cajita individual' : 'Caja de 3';
+        text += `• Caja #${i+1} — ${boxLabel} (${box.length}/${boxSizes[i]} galletas)${personalization ? ` (personalizada para: ${personalization})` : ''}:\n`;
         box.forEach(p => { text += `  - ${p.name} ($${p.price})\n`; });
       });
 
-      text += `\n*Total a pagar: $${computedTotalAmount.toLocaleString('es-AR')}*\n\nQuedo atento/a para coordinar. ¡Muchas gracias!`;
+      text += `\n*Total de galletas: ${totalCookieCount}*\n`;
+      text += `*Total a pagar: $${computedTotalAmount.toLocaleString('es-AR')}*\n\nQuedo atento/a para coordinar. ¡Muchas gracias!`;
 
       const encoded = encodeURIComponent(text);
       window.open(`https://wa.me/541127401426?text=${encoded}`, '_blank');
