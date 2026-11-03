@@ -45,7 +45,7 @@ Esta función requiere `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `AD
 
 ### Checkout Nave (sandbox)
 
-El checkout está deshabilitado en Production. Para probarlo en un entorno Preview, configura `NAVE_CHECKOUT_ENABLED=true` solo en ese entorno; la API también rechaza solicitudes de pago en Production y mientras la variable no esté habilitada.
+El checkout está temporalmente deshabilitado en todos los entornos, tanto en la interfaz como en la API. No puede habilitarse con variables de Vercel; antes de reactivarlo hay que completar y validar las pruebas de Nave.
 
 El checkout crea la intención desde el servidor y redirige al `checkout_url` de Nave. En desktop, el checkout ofrece QR; en móviles, MODO y billeteras compatibles. Las tarjetas deben estar vinculadas a esos medios. El ingreso manual de tarjeta no está habilitado por defecto en producción; Nave debe aprobarlo por separado.
 

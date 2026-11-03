@@ -4,13 +4,9 @@ const { createPaymentRequest, getNaveConfig } = require('../lib/nave');
 const ORDERS_KEY = 'dulce-feliz-generated-orders';
 const GITHUB_API = 'https://api.github.com';
 const NAVE_PAYMENT_METHOD = 'Sistema Nave de Galicia / MODO';
+const NAVE_CHECKOUT_ENABLED = false;
 
 class CheckoutValidationError extends Error {}
-
-function isNaveCheckoutEnabled() {
-  return process.env.NAVE_CHECKOUT_ENABLED === 'true'
-    && process.env.VERCEL_ENV !== 'production';
-}
 
 function respond(res, status, payload) {
   res.setHeader('Cache-Control', 'no-store');
@@ -105,7 +101,7 @@ function getVerifiedProducts(order, catalog) {
 
 async function handler(req, res) {
   if (req.method === 'GET') {
-    if (!isNaveCheckoutEnabled()) {
+    if (!NAVE_CHECKOUT_ENABLED) {
       return respond(res, 200, {
         available: false,
         environment: process.env.NAVE_ENVIRONMENT || 'sandbox',
@@ -142,7 +138,7 @@ async function handler(req, res) {
     res.setHeader('Allow', 'POST');
     return respond(res, 405, { error: 'Método no permitido.' });
   }
-  if (!isNaveCheckoutEnabled()) {
+  if (!NAVE_CHECKOUT_ENABLED) {
     return respond(res, 503, { error: 'El pago online con Nave no está disponible por el momento.' });
   }
 
