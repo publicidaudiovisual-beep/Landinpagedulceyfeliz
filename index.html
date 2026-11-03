@@ -99,6 +99,11 @@
     .slot-exacto-3 img, .slot-exacto-1 img { width: 85%; height: 85%; object-fit: contain; filter: drop-shadow(0px 6px 12px rgba(0,0,0,0.9)); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     @keyframes popIn { 0% { transform: scale(0.4) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
 
+    @media (prefers-reduced-motion: reduce) {
+      .footer-desktop-video { display: none !important; }
+      .footer-desktop-static { display: block !important; }
+    }
+
     .slot-remove { position: absolute; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 0.7rem; font-weight: bold; opacity: 0; border-radius: 0.75rem; transition: opacity 0.2s; }
     .slot-exacto-3:hover .slot-remove, .slot-exacto-1:hover .slot-remove { opacity: 1; }
 
@@ -367,10 +372,11 @@
 
   <footer class="border-t border-gold/20 bg-[#0B0B0C] py-8 relative">
     <div class="mx-auto mb-8 flex max-w-7xl flex-col items-center gap-3 px-4 text-center sm:px-6 lg:px-8">
-      <picture class="block w-full">
-        <source media="(max-width: 639px)" srcset="/logo-footer-mobile.webp" />
-        <img src="/logo-footer-desktop.webp" alt="Dulce y Feliz - Repostería artesanal" class="mx-auto block h-auto w-full max-w-[11rem] object-contain sm:max-w-3xl" />
-      </picture>
+      <img src="/logo-footer-mobile.webp" alt="Dulce y Feliz - Repostería artesanal" class="mx-auto block h-auto w-full max-w-[11rem] object-contain sm:hidden" />
+      <video class="footer-desktop-video mx-auto hidden h-auto w-full max-w-3xl object-contain sm:block" autoplay muted loop playsinline preload="metadata" poster="/logo-footer-desktop.webp" aria-label="Logo animado de Dulce y Feliz">
+        <source src="/logo-footer-desktop.mp4" type="video/mp4" media="(min-width: 640px) and (prefers-reduced-motion: no-preference)" />
+      </video>
+      <img src="/logo-footer-desktop.webp" alt="Dulce y Feliz - Repostería artesanal" class="footer-desktop-static mx-auto hidden h-auto w-full max-w-3xl object-contain" />
       <p class="text-xs tracking-wide text-gray-400">Esta página fue elaborada por publicidaudiovisual@gmail.com</p>
     </div>
     <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 text-center text-sm text-gray-400 sm:flex-row sm:text-left sm:px-6 lg:px-8">

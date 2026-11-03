@@ -29,6 +29,8 @@ La tienda puede agregarse a la pantalla de inicio como una aplicación web (PWA)
 
 El archivo `QR-Tienda-Dulce-y-Feliz.png` contiene únicamente el código QR de la marca y dirige a `https://www.dulceyfeliz.online/`. Para compartir un enlace que vuelva a mostrar el aviso de instalación aunque se haya cerrado antes, se puede enviar `https://www.dulceyfeliz.online/?instalar=1`. El navegador no permite lanzar la instalación sin una acción del cliente: debe tocar **Agregar al inicio** y confirmar. En iPhone, se indican los pasos de Safari → **Compartir** → **Agregar a pantalla de inicio**; en Android compatible, se abre el aviso nativo de instalación.
 
+En el pie de página, los celulares muestran el logo optimizado para móvil; en pantallas grandes se reproduce en silencio el video comprimido en bucle. Si el dispositivo tiene activada la preferencia de movimiento reducido, se muestra la imagen estática.
+
 ### Registro de pedidos y descuento de inventario
 
 El sitio guarda un pedido en Upstash antes de abrir WhatsApp. Esto registra que se inició el pedido, pero no confirma que el cliente haya enviado el mensaje. Se conservan como máximo 200 pedidos; el más antiguo se elimina al superar el límite. El panel los agrupa por día (hora de Argentina).
