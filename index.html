@@ -11,6 +11,17 @@
   <link rel="icon" type="image/png" href="/icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
   <link rel="manifest" href="/manifest.webmanifest" />
+  <script>
+    const appLaunchedAsInstalled = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    if (appLaunchedAsInstalled) {
+      document.documentElement.classList.add('app-launching');
+      const welcomeImagePreload = document.createElement('link');
+      welcomeImagePreload.rel = 'preload';
+      welcomeImagePreload.as = 'image';
+      welcomeImagePreload.href = '/logo-bienvenida.webp';
+      document.head.append(welcomeImagePreload);
+    }
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -42,6 +53,14 @@
   <style>
     html { scroll-behavior: smooth; }
     body { background: #0B0B0C; color: #F2F2F2; font-family: 'Montserrat', sans-serif; line-height: 1.6; }
+    #app-welcome-screen { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom)); background: #0B0B0C; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s ease; }
+    html.app-launching { overflow: hidden; }
+    html.app-launching #app-welcome-screen { display: flex; opacity: 1; visibility: visible; }
+    html.app-launching #app-welcome-screen.is-leaving { opacity: 0; visibility: hidden; }
+    #app-welcome-screen img { display: block; width: min(100%, 42rem); max-height: 100%; object-fit: contain; border-radius: 1rem; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55); }
+    @media (prefers-reduced-motion: reduce) {
+      #app-welcome-screen { transition: none; }
+    }
     .hero-section { min-height: min(880px, calc(100vh - 5rem)); }
     .hero-background-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
     .hero-background-overlay { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,11,12,0.8), rgba(11,11,12,0.35) 75%), linear-gradient(0deg, rgba(11,11,12,0.5), rgba(11,11,12,0.3) 50%); }
@@ -138,6 +157,9 @@
   </style>
 </head>
 <body>
+  <div id="app-welcome-screen" role="status" aria-live="polite" aria-hidden="true">
+    <img data-src="/logo-bienvenida.webp" alt="Bienvenidos a Dulce y Feliz" />
+  </div>
   <header class="sticky top-0 z-50 border-b border-white/10 bg-[#0B0B0C]/85 backdrop-blur-md">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="flex h-20 items-center justify-between gap-4">
@@ -1299,6 +1321,18 @@
     const installBannerDismiss = document.getElementById('install-banner-dismiss');
     const installHelpDialog = document.getElementById('install-help-dialog');
     const isInstalled = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    const appWelcomeScreen = document.getElementById('app-welcome-screen');
+    if (appLaunchedAsInstalled && appWelcomeScreen) {
+      appWelcomeScreen.setAttribute('aria-hidden', 'false');
+      appWelcomeScreen.querySelector('img').src = appWelcomeScreen.querySelector('img').dataset.src;
+      window.setTimeout(() => {
+        appWelcomeScreen.classList.add('is-leaving');
+        window.setTimeout(() => {
+          appWelcomeScreen.remove();
+          document.documentElement.classList.remove('app-launching');
+        }, 450);
+      }, 1500);
+    }
     const installDismissedKey = 'dulce-y-feliz-install-prompt-dismissed-at';
     const forceInstallPrompt = new URLSearchParams(window.location.search).get('instalar') === '1';
 
