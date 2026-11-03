@@ -380,12 +380,28 @@
     </div>
   </footer>
 
+  <aside id="install-app-banner" class="fixed inset-x-3 bottom-3 z-[60] mx-auto hidden max-w-md rounded-2xl border border-gold/50 bg-[#121214]/95 p-4 text-white shadow-2xl shadow-black/60 backdrop-blur-xl sm:inset-x-auto sm:bottom-5 sm:right-5" role="region" aria-label="Instalar acceso directo de Dulce y Feliz">
+    <div class="flex items-start gap-3">
+      <img src="/icon-192.png" alt="" class="h-12 w-12 shrink-0 rounded-xl" />
+      <div class="min-w-0 flex-1">
+        <p class="font-serif-luxury text-lg text-goldLight">Dulce y Feliz en tu inicio</p>
+        <p class="mt-0.5 text-xs leading-relaxed text-gray-300">Agregá la tienda a tu celular y tenela siempre a mano.</p>
+        <button id="install-banner-action" type="button" class="gold-button mt-3 rounded-lg px-4 py-2 text-[10px] font-bold uppercase tracking-[0.15em]">
+          Agregar al inicio
+        </button>
+      </div>
+      <button id="install-banner-dismiss" type="button" aria-label="Cerrar aviso de instalación" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/15 text-gray-300 hover:bg-white/10">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+  </aside>
+
   <dialog id="install-help-dialog" class="order-dialog">
     <div class="space-y-4 p-6 sm:p-8">
       <div class="flex items-start justify-between gap-4">
         <div>
           <p class="text-[10px] uppercase tracking-[0.25em] text-goldLight">Acceso directo</p>
-          <h2 class="mt-1 font-serif-luxury text-3xl text-white">Llevá Dulce & Feliz a tu inicio</h2>
+          <h2 class="mt-1 font-serif-luxury text-3xl text-white">Llevá Dulce y Feliz a tu inicio</h2>
         </div>
         <button type="button" onclick="document.getElementById('install-help-dialog').close()" aria-label="Cerrar instrucciones" class="h-8 w-8 shrink-0 rounded-full border border-white/20 text-gray-300"><i class="fa-solid fa-xmark"></i></button>
       </div>
@@ -394,7 +410,7 @@
         <li><strong class="text-goldLight">iPhone:</strong> toca <strong>Compartir</strong> en Safari y elige <strong>Agregar a pantalla de inicio</strong>.</li>
         <li><strong class="text-goldLight">Android:</strong> abre el menú <strong>⋮</strong> de Chrome y toca <strong>Instalar app</strong> o <strong>Agregar a pantalla principal</strong>.</li>
       </ul>
-      <p class="text-xs text-gray-500">El nombre y el ícono de Dulce & Feliz aparecerán junto a tus otras aplicaciones.</p>
+      <p class="text-xs text-gray-500">El nombre y el ícono de Dulce y Feliz aparecerán junto a tus otras aplicaciones.</p>
     </div>
   </dialog>
 
@@ -1265,33 +1281,88 @@
 
     let deferredInstallPrompt = null;
     const installAppButton = document.getElementById('install-app-button');
+    const installBanner = document.getElementById('install-app-banner');
+    const installBannerAction = document.getElementById('install-banner-action');
+    const installBannerDismiss = document.getElementById('install-banner-dismiss');
     const installHelpDialog = document.getElementById('install-help-dialog');
     const isInstalled = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    const installDismissedKey = 'dulce-y-feliz-install-prompt-dismissed-at';
+    const forceInstallPrompt = new URLSearchParams(window.location.search).get('instalar') === '1';
 
-    if (isInstalled) installAppButton.classList.add('hidden');
-
-    window.addEventListener('beforeinstallprompt', event => {
-      event.preventDefault();
-      deferredInstallPrompt = event;
-    });
-
-    window.addEventListener('appinstalled', () => {
-      deferredInstallPrompt = null;
+    function hideInstallOptions() {
       installAppButton.classList.add('hidden');
-    });
+      installBanner.classList.add('hidden');
+    }
 
-    installAppButton.addEventListener('click', async () => {
+    function showInstallHelp() {
+      installHelpDialog.showModal();
+    }
+
+    function isInstallBannerDismissed() {
+      try {
+        const dismissedAt = Number(localStorage.getItem(installDismissedKey));
+        const dismissalDuration = 30 * 24 * 60 * 60 * 1000;
+        if (!dismissedAt) return false;
+        if (Date.now() - dismissedAt >= dismissalDuration) {
+          localStorage.removeItem(installDismissedKey);
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.warn('No se pudo consultar si se descartó el aviso de instalación:', error);
+        return false;
+      }
+    }
+
+    function dismissInstallBanner() {
+      installBanner.classList.add('hidden');
+      try {
+        localStorage.setItem(installDismissedKey, String(Date.now()));
+      } catch (error) {
+        console.warn('No se pudo guardar que se descartó el aviso de instalación:', error);
+      }
+    }
+
+    function showInstallBannerIfEligible() {
+      if (isInstalled || (!forceInstallPrompt && isInstallBannerDismissed())) return;
+      installBanner.classList.remove('hidden');
+    }
+
+    async function startInstallFlow() {
       if (!deferredInstallPrompt) {
-        installHelpDialog.showModal();
+        showInstallHelp();
         return;
       }
 
       const installPrompt = deferredInstallPrompt;
       deferredInstallPrompt = null;
-      await installPrompt.prompt();
-      const choice = await installPrompt.userChoice;
-      if (choice.outcome === 'accepted') installAppButton.classList.add('hidden');
+      try {
+        await installPrompt.prompt();
+        const choice = await installPrompt.userChoice;
+        if (choice.outcome === 'accepted') hideInstallOptions();
+      } catch (error) {
+        console.error('No se pudo iniciar la instalación desde el aviso:', error);
+        showInstallHelp();
+      }
+    }
+
+    if (isInstalled) hideInstallOptions();
+    else window.setTimeout(showInstallBannerIfEligible, 900);
+
+    window.addEventListener('beforeinstallprompt', event => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      installBannerAction.textContent = 'Instalar app';
     });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      hideInstallOptions();
+    });
+
+    installAppButton.addEventListener('click', startInstallFlow);
+    installBannerAction.addEventListener('click', startInstallFlow);
+    installBannerDismiss.addEventListener('click', dismissInstallBanner);
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
