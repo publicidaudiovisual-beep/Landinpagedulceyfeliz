@@ -493,7 +493,7 @@
           <select id="box-shipping-method" class="w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white" required>
             <option value="" disabled selected>Seleccioná una opción de entrega</option>
             <option value="Retiro Take Away en Villa Dominico">Retiro Take Away en Villa Dominico</option>
-            <option value="Envío por Envia.com" disabled>Envío por Envia.com — Próximamente</option>
+            <option value="Envío por Envia.com">Envío por Envia.com</option>
             <option value="Envío por Pedidos Ya Envíos">Envío por Pedidos Ya Envíos (solo zonas cercanas a Villa Dominico)</option>
           </select>
           <div id="takeaway-details" class="hidden rounded-lg border border-gold/20 bg-[#17171A] p-3 text-xs text-gray-300" aria-live="polite">
@@ -1119,22 +1119,14 @@
 
       const isPedidosYa = shippingMethodSelect.value === 'Envío por Pedidos Ya Envíos';
       const isNavePayment = paymentMethodSelect.value === 'Sistema Nave de Galicia / MODO';
-      const takeawayOnlyOrder = requiresTakeawayForIndividualBoxes();
       document.getElementById('takeaway-details').classList.toggle('hidden', !isTakeaway);
       document.getElementById('pedidos-ya-details').classList.toggle('hidden', !isPedidosYa);
       document.getElementById('takeaway-payment-details').classList.toggle('hidden', isTakeaway);
       document.getElementById('nave-payment-details').classList.toggle('hidden', !isNavePayment);
 
-      const shippingOptions = Array.from(shippingMethodSelect.options);
-      shippingOptions.forEach(option => {
-        if(option.value === 'Envío por Pedidos Ya Envíos') {
-          option.disabled = takeawayOnlyOrder;
-        }
-      });
-      if(takeawayOnlyOrder && !isTakeaway && shippingMethodSelect.value) {
-        shippingMethodSelect.value = '';
-      }
-      document.getElementById('box-shipping-address').required = shippingMethodSelect.value === 'Envío por Pedidos Ya Envíos';
+      document.getElementById('box-shipping-address').required =
+        shippingMethodSelect.value === 'Envío por Pedidos Ya Envíos'
+        || shippingMethodSelect.value === 'Envío por Envia.com';
 
       Array.from(paymentMethodSelect.options).forEach(option => {
         if(!option.dataset.takeawayOnly) return;
