@@ -1120,19 +1120,26 @@
       const form = e.currentTarget;
       const submitButton = form.querySelector('button[type="submit"]');
       const status = document.getElementById('order-save-status');
+      const paymentMethod = document.getElementById('box-payment-method').value;
+      const isNavePayment = paymentMethod === 'Sistema Nave de Galicia / MODO';
       status.classList.add('hidden');
 
-      const checkoutWindow = window.open('about:blank', '_blank');
-      if(!checkoutWindow) {
-        status.textContent = 'El navegador bloqueó la nueva ventana. Permití las ventanas emergentes para continuar con el pedido.';
+      let checkoutWindow = null;
+      if(!isNavePayment) {
+        checkoutWindow = window.open('about:blank', '_blank');
+        if(!checkoutWindow) {
+          status.textContent = 'El navegador bloqueó la nueva ventana. Permití las ventanas emergentes para continuar con el pedido.';
+          status.classList.remove('hidden');
+          return;
+        }
+      } else {
+        status.textContent = 'Preparando el pago seguro de Nave…';
         status.classList.remove('hidden');
-        return;
       }
 
       submitButton.disabled = true;
       const customName = document.getElementById('box-custom-name').value;
       const shippingAddress = document.getElementById('box-shipping-address').value;
-      const paymentMethod = document.getElementById('box-payment-method').value;
       const shippingMethod = document.getElementById('box-shipping-method').value;
       const wantRegister = document.getElementById('client-register-check').checked;
       const totalCookieCount = activeBoxes.reduce((total, box) => total + box.length, 0);
@@ -1223,7 +1230,7 @@
           if(!paymentResponse.ok) throw new Error(paymentResult.error || 'No se pudo iniciar el pago con Nave.');
           if(typeof paymentResult.checkoutUrl !== 'string') throw new Error('Nave no devolvió el enlace de pago.');
 
-          checkoutWindow.location.href = paymentResult.checkoutUrl;
+          window.location.assign(paymentResult.checkoutUrl);
           pendingOrderRequestId = null;
           pendingOrderPayload = '';
           document.getElementById('order-dialog').close();
@@ -1256,7 +1263,7 @@
         pendingOrderPayload = '';
         document.getElementById('order-dialog').close();
       } catch (error) {
-        checkoutWindow.close();
+        if(checkoutWindow && !checkoutWindow.closed) checkoutWindow.close();
         const nextStep = paymentMethod === 'Sistema Nave de Galicia / MODO'
           ? 'El pedido quedó registrado, pero el pago no se inició. Vuelve a intentarlo.'
           : 'El pedido no se envió; vuelve a intentarlo.';
