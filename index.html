@@ -8,8 +8,8 @@
   <meta name="theme-color" content="#0B0B0C" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Dulce y Feliz" />
-  <link rel="icon" type="image/png" href="/icon-192.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
+  <link rel="icon" type="image/png" href="/icon-192-v4.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icon-180-v4.png" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <script>
     const appLaunchedAsInstalled = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
@@ -417,7 +417,7 @@
 
   <aside id="install-app-banner" class="fixed inset-x-3 bottom-3 z-[60] mx-auto hidden max-w-md rounded-2xl border border-gold/50 bg-[#121214]/95 p-4 text-white shadow-2xl shadow-black/60 backdrop-blur-xl sm:inset-x-auto sm:bottom-5 sm:right-5" role="region" aria-label="Instalar acceso directo de Dulce y Feliz">
     <div class="flex items-start gap-3">
-      <img src="/icon-192.png" alt="" class="h-12 w-12 shrink-0 rounded-xl" />
+      <img src="/logo-banner-instalacion.webp" alt="Logo Dulce y Feliz" class="h-12 w-12 shrink-0 rounded-xl object-contain" />
       <div class="min-w-0 flex-1">
         <p class="font-serif-luxury text-lg text-goldLight">Dulce y Feliz en tu inicio</p>
         <p class="mt-0.5 text-xs leading-relaxed text-gray-300">Agregá la tienda a tu celular y tenela siempre a mano.</p>
@@ -1323,15 +1323,27 @@
     const isInstalled = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     const appWelcomeScreen = document.getElementById('app-welcome-screen');
     if (appLaunchedAsInstalled && appWelcomeScreen) {
+      const welcomeStartedAt = performance.now();
+      let welcomeScreenDismissed = false;
+      const dismissWelcomeScreen = () => {
+        if (welcomeScreenDismissed) return;
+        welcomeScreenDismissed = true;
+        const minimumDisplayTime = 600;
+        const remainingDisplayTime = Math.max(0, minimumDisplayTime - (performance.now() - welcomeStartedAt));
+        window.setTimeout(() => {
+          appWelcomeScreen.classList.add('is-leaving');
+          window.setTimeout(() => {
+            appWelcomeScreen.remove();
+            document.documentElement.classList.remove('app-launching');
+          }, 450);
+        }, remainingDisplayTime);
+      };
+
       appWelcomeScreen.setAttribute('aria-hidden', 'false');
       appWelcomeScreen.querySelector('img').src = appWelcomeScreen.querySelector('img').dataset.src;
-      window.setTimeout(() => {
-        appWelcomeScreen.classList.add('is-leaving');
-        window.setTimeout(() => {
-          appWelcomeScreen.remove();
-          document.documentElement.classList.remove('app-launching');
-        }, 450);
-      }, 1500);
+      window.addEventListener('load', dismissWelcomeScreen, { once: true });
+      window.setTimeout(dismissWelcomeScreen, 10000);
+      if (document.readyState === 'complete') dismissWelcomeScreen();
     }
     const installDismissedKey = 'dulce-y-feliz-install-prompt-dismissed-at';
     const forceInstallPrompt = new URLSearchParams(window.location.search).get('instalar') === '1';
