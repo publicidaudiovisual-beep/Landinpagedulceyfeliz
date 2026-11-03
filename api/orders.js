@@ -1,7 +1,8 @@
 const crypto = require('node:crypto');
+const { getRedisKey } = require('../lib/redis-keys');
 
-const ORDERS_KEY = 'dulce-feliz-generated-orders';
-const ORDER_SEQUENCE_KEY = 'dulce-feliz-order-sequence';
+const ORDERS_KEY = getRedisKey('dulce-feliz-generated-orders');
+const ORDER_SEQUENCE_KEY = getRedisKey('dulce-feliz-order-sequence');
 const MAX_ORDERS = 200;
 const GITHUB_API = 'https://api.github.com';
 

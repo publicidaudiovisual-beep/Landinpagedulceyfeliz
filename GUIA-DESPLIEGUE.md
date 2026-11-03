@@ -43,11 +43,13 @@ En **Pedidos generados**, selecciona y guarda el estado correspondiente: **Compr
 
 Esta función requiere `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `ADMIN_PASSWORD`, `GITHUB_TOKEN`, `GITHUB_REPOSITORY` y `GITHUB_BRANCH` en Vercel. El token de GitHub debe tener permiso **Contents: Read and write**. Si falta alguna configuración o GitHub no puede actualizar el catálogo, el pedido queda pendiente y el panel muestra el error para poder reintentar.
 
+En los despliegues que no sean de Producción, el sistema agrega el sufijo `:sandbox` a las claves de pedidos, secuencia y visitas en Redis. Así se puede reutilizar la misma base de Upstash sin mezclar esos datos con los de Producción. Configura las credenciales de esa base también para **Preview**; no copies sus valores en el código ni los compartas.
+
 ### Checkout Nave (sandbox)
 
 El checkout crea la intención desde el servidor y redirige al `checkout_url` de Nave. En desktop, el checkout ofrece QR; en móviles, MODO y billeteras compatibles. Las tarjetas deben estar vinculadas a esos medios. El ingreso manual de tarjeta no está habilitado por defecto en producción; Nave debe aprobarlo por separado.
 
-Lo más seguro es probar primero en un despliegue **Preview**. En **Vercel → Project Settings → Environment Variables**, agrega las credenciales sandbox seleccionando solo el entorno **Preview**; no las agregues a Production. No las pongas en archivos del sitio ni las compartas por chat:
+Lo más seguro es probar primero en un despliegue **Preview**. En **Vercel → Project Settings → Environment Variables**, agrega las credenciales sandbox seleccionando solo el entorno **Preview** y, si Vercel lo permite, limita la variable a la rama `sandbox-nave`; no las agregues a Production. No las pongas en archivos del sitio ni las compartas por chat:
 
 | Variable | Valor |
 |---|---|
@@ -59,7 +61,7 @@ Lo más seguro es probar primero en un despliegue **Preview**. En **Vercel → P
 
 Para obtener el dominio de notificaciones sandbox, crea un despliegue Preview desde una rama distinta de la rama de producción. Vercel genera un dominio `*.vercel.app` cuando recibe un commit nuevo para esa rama; no hace falta tener las credenciales de Nave para que se genere el dominio. Si Vercel tiene activada la protección de despliegues Preview, el endpoint debe quedar accesible para que Nave pueda enviarle solicitudes.
 
-Configura en Nave la URL de notificaciones sandbox con la URL estable del despliegue Preview: `https://TU-URL-PREVIEW/api/nave-notifications`. El endpoint consulta el pago directamente a Nave antes de marcarlo como aprobado y descontar stock; no confía solamente en el contenido de la notificación. Para que las notificaciones lleguen, el sitio debe estar desplegado y accesible públicamente. La opción de pago de Nave queda desactivada automáticamente si falta alguna variable requerida.
+Configura `GITHUB_REPOSITORY` con el repositorio y `GITHUB_BRANCH` con `sandbox-nave` en Preview. El token `GITHUB_TOKEN` debe tener permiso **Contents: Read and write**, porque un pago sandbox aprobado actualiza el stock de esa rama. No uses `main` para las pruebas. Configura en Nave la URL de notificaciones sandbox con la URL estable del despliegue Preview: `https://TU-URL-PREVIEW/api/nave-notifications`. El endpoint consulta el pago directamente a Nave antes de marcarlo como aprobado y descontar stock; no confía solamente en el contenido de la notificación. Para que las notificaciones lleguen, el sitio debe estar desplegado y accesible públicamente. La opción de pago de Nave queda desactivada automáticamente si falta alguna variable requerida.
 
 Vuelve a desplegar el Preview y realiza una compra de prueba. Verifica que el pedido aparezca en el panel y pase a **Compra concretada** después de aprobarse el pago. No habilites producción hasta confirmar con Nave las credenciales y el punto de venta productivo. Para la publicación productiva, configura las credenciales de producción solo en **Production**, cambia `NAVE_ENVIRONMENT` a `production` en ese entorno y registra en Nave la URL productiva de notificaciones. Nunca reutilices credenciales sandbox en producción.
 

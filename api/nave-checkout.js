@@ -1,7 +1,8 @@
 const crypto = require('node:crypto');
 const { createPaymentRequest, getNaveConfig } = require('../lib/nave');
+const { getRedisKey } = require('../lib/redis-keys');
 
-const ORDERS_KEY = 'dulce-feliz-generated-orders';
+const ORDERS_KEY = getRedisKey('dulce-feliz-generated-orders');
 const GITHUB_API = 'https://api.github.com';
 const NAVE_PAYMENT_METHOD = 'Sistema Nave de Galicia / MODO';
 
