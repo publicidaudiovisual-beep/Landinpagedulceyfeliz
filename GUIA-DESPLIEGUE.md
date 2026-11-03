@@ -45,6 +45,8 @@ Esta función requiere `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `AD
 
 ### Checkout Nave (sandbox)
 
+El checkout está deshabilitado en Production. Para probarlo en un entorno Preview, configura `NAVE_CHECKOUT_ENABLED=true` solo en ese entorno; la API también rechaza solicitudes de pago en Production y mientras la variable no esté habilitada.
+
 El checkout crea la intención desde el servidor y redirige al `checkout_url` de Nave. En desktop, el checkout ofrece QR; en móviles, MODO y billeteras compatibles. Las tarjetas deben estar vinculadas a esos medios. El ingreso manual de tarjeta no está habilitado por defecto en producción; Nave debe aprobarlo por separado.
 
 Lo más seguro es probar primero en un despliegue **Preview**. En **Vercel → Project Settings → Environment Variables**, agrega las credenciales sandbox seleccionando solo el entorno **Preview**; no las agregues a Production. No las pongas en archivos del sitio ni las compartas por chat:
@@ -58,6 +60,8 @@ Lo más seguro es probar primero en un despliegue **Preview**. En **Vercel → P
 | `NAVE_POS_ID` | ID del punto de venta online obtenido en Nave |
 
 Configura en Nave la URL de notificaciones sandbox con la URL estable del despliegue Preview: `https://TU-URL-PREVIEW/api/nave-notifications`. El endpoint consulta el pago directamente a Nave antes de marcarlo como aprobado y descontar stock; no confía solamente en el contenido de la notificación. Para que las notificaciones lleguen, el sitio debe estar desplegado y accesible públicamente. La opción de pago de Nave queda desactivada automáticamente si falta alguna variable requerida.
+
+El envío por Envia.com también permanece marcado como **Próximamente** y no se puede seleccionar hasta terminar su integración.
 
 Vuelve a desplegar el Preview y realiza una compra de prueba. Verifica que el pedido aparezca en el panel y pase a **Compra concretada** después de aprobarse el pago. No habilites producción hasta confirmar con Nave las credenciales y el punto de venta productivo. Para la publicación productiva, configura las credenciales de producción solo en **Production**, cambia `NAVE_ENVIRONMENT` a `production` en ese entorno y registra en Nave la URL productiva de notificaciones. Nunca reutilices credenciales sandbox en producción.
 

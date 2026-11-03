@@ -490,7 +490,7 @@
           <select id="box-shipping-method" class="w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white" required>
             <option value="" disabled selected>Seleccioná una opción de entrega</option>
             <option value="Retiro Take Away en Villa Dominico">Retiro Take Away en Villa Dominico</option>
-            <option value="Envío por Envia.com">Envío por Envia.com</option>
+            <option value="Envío por Envia.com" disabled>Envío por Envia.com — Próximamente</option>
             <option value="Envío por Pedidos Ya Envíos">Envío por Pedidos Ya Envíos (solo zonas cercanas a Villa Dominico)</option>
           </select>
           <div id="takeaway-details" class="hidden rounded-lg border border-gold/20 bg-[#17171A] p-3 text-xs text-gray-300" aria-live="polite">
@@ -511,11 +511,11 @@
             <option value="Pago en efectivo (solo Take Away en Villa Dominico)" data-takeaway-only="true">Pago en efectivo (solo Take Away en Villa Dominico)</option>
             <option value="Pago con QR, tarjeta de crédito o débito por Postner (al retirar en Villa Dominico)" data-takeaway-only="true">Pago con QR, TDC o TDD por Postner (al retirar personalmente en Villa Dominico)</option>
             <option value="Transferencia bancaria por CBU, CTA o Alias">Transferencia bancaria por CBU, CTA o Alias</option>
-            <option id="nave-payment-option" value="Sistema Nave de Galicia / MODO" disabled>Pago online con Nave (QR / MODO) — Configurando</option>
+            <option id="nave-payment-option" value="Sistema Nave de Galicia / MODO" disabled>Pago online con Nave (QR / MODO) — Próximamente</option>
           </select>
           <p id="takeaway-payment-details" class="hidden text-[11px] text-amber-200" aria-live="polite">El efectivo y el pago con Postner están disponibles únicamente al retirar personalmente en Villa Dominico.</p>
           <p id="nave-payment-details" class="hidden text-[11px] text-gray-300" aria-live="polite">Vas a continuar al checkout seguro de Nave. En computadora se ofrece QR y desde el celular podés pagar con MODO o billeteras compatibles; las tarjetas deben estar vinculadas a esos medios.</p>
-          <p id="nave-availability-status" class="text-[11px] text-gray-400" aria-live="polite">Nave estará disponible al terminar la configuración del entorno de prueba.</p>
+          <p id="nave-availability-status" class="text-[11px] text-gray-400" aria-live="polite">Por el momento, el pago online con Nave no está disponible.</p>
           <p class="text-[11px] text-gray-400">Los datos de transferencia (CBU, CTA o Alias) se coordinan por WhatsApp.</p>
         </section>
 
@@ -1071,10 +1071,10 @@
         option.disabled = !result.available;
         option.textContent = result.available
           ? 'Pago online con Nave (QR / MODO)'
-          : 'Pago online con Nave (QR / MODO) — Configurando';
+          : 'Pago online con Nave (QR / MODO) — Próximamente';
         status.textContent = result.available
           ? `Checkout Nave habilitado (${result.environment === 'production' ? 'producción' : 'sandbox'}).`
-          : 'Nave estará disponible al terminar la configuración del entorno de prueba.';
+          : result.message || 'Por el momento, el pago online con Nave no está disponible.';
       } catch (error) {
         option.disabled = true;
         status.textContent = error.message || 'No se pudo verificar la configuración de Nave.';

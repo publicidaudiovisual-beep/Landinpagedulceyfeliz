@@ -7,6 +7,11 @@ const NAVE_PAYMENT_METHOD = 'Sistema Nave de Galicia / MODO';
 
 class CheckoutValidationError extends Error {}
 
+function isNaveCheckoutEnabled() {
+  return process.env.NAVE_CHECKOUT_ENABLED === 'true'
+    && process.env.VERCEL_ENV !== 'production';
+}
+
 function respond(res, status, payload) {
   res.setHeader('Cache-Control', 'no-store');
   return res.status(status).json(payload);
@@ -100,6 +105,14 @@ function getVerifiedProducts(order, catalog) {
 
 async function handler(req, res) {
   if (req.method === 'GET') {
+    if (!isNaveCheckoutEnabled()) {
+      return respond(res, 200, {
+        available: false,
+        environment: process.env.NAVE_ENVIRONMENT || 'sandbox',
+        message: 'El pago online con Nave no está disponible por el momento.'
+      });
+    }
+
     try {
       getNaveConfig();
       const requiredEnvironment = [
@@ -128,6 +141,9 @@ async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return respond(res, 405, { error: 'Método no permitido.' });
+  }
+  if (!isNaveCheckoutEnabled()) {
+    return respond(res, 503, { error: 'El pago online con Nave no está disponible por el momento.' });
   }
 
   let body;
