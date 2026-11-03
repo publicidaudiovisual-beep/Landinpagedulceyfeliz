@@ -167,7 +167,7 @@
       "line": "vip",
       "condition": "",
       "price": 6000,
-      "stockQuantity": 15,
+      "stockQuantity": 14,
       "ingredients": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate, nueces, manteca, azúcar, harina, vainilla y crema brigadeiro",
       "desc": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate, nueces, manteca, azúcar, harina, vainilla y crema brigadeiro",
       "img": "Briga Nut.jpg",
@@ -302,5 +302,16 @@
     "title": "Un presente muy especial para regalar o regalarte...",
     "text": "Una presentación alargada y refinada, diseñada para albergar perfectamente 3 galletas de autor con detalles dorados. Y nombre grabado de la persona que recibirá el presente. Un detalle no menor, que evoca la importancia que representa el agasajado.",
     "media": "Video de Caja VIP.mp4"
+  },
+  "processedSaleIds": [
+    "9e108f09-42f5-4bb5-9a77-7efc24e8fb92"
+  ],
+  "processedSales": {
+    "9e108f09-42f5-4bb5-9a77-7efc24e8fb92": [
+      {
+        "productId": "briganut",
+        "quantity": 1
+      }
+    ]
   }
 }
