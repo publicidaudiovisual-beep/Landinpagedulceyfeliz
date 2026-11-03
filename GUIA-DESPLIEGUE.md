@@ -57,6 +57,8 @@ Lo más seguro es probar primero en un despliegue **Preview**. En **Vercel → P
 | `NAVE_AUDIENCE` | `audience` de las credenciales sandbox de Nave |
 | `NAVE_POS_ID` | ID del punto de venta online obtenido en Nave |
 
+Para obtener el dominio de notificaciones sandbox, crea un despliegue Preview desde una rama distinta de la rama de producción. Vercel genera un dominio `*.vercel.app` cuando recibe un commit nuevo para esa rama; no hace falta tener las credenciales de Nave para que se genere el dominio. Si Vercel tiene activada la protección de despliegues Preview, el endpoint debe quedar accesible para que Nave pueda enviarle solicitudes.
+
 Configura en Nave la URL de notificaciones sandbox con la URL estable del despliegue Preview: `https://TU-URL-PREVIEW/api/nave-notifications`. El endpoint consulta el pago directamente a Nave antes de marcarlo como aprobado y descontar stock; no confía solamente en el contenido de la notificación. Para que las notificaciones lleguen, el sitio debe estar desplegado y accesible públicamente. La opción de pago de Nave queda desactivada automáticamente si falta alguna variable requerida.
 
 Vuelve a desplegar el Preview y realiza una compra de prueba. Verifica que el pedido aparezca en el panel y pase a **Compra concretada** después de aprobarse el pago. No habilites producción hasta confirmar con Nave las credenciales y el punto de venta productivo. Para la publicación productiva, configura las credenciales de producción solo en **Production**, cambia `NAVE_ENVIRONMENT` a `production` en ese entorno y registra en Nave la URL productiva de notificaciones. Nunca reutilices credenciales sandbox en producción.
