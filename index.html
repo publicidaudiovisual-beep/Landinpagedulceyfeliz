@@ -393,11 +393,12 @@
     <form id="order-form" class="p-6 sm:p-8 space-y-4">
       <div class="flex justify-between items-center">
         <div>
-          <p class="text-[10px] uppercase tracking-[0.25em] text-goldLight">Checkout por WhatsApp</p>
+          <p class="text-[10px] uppercase tracking-[0.25em] text-goldLight">Checkout</p>
           <h2 class="font-serif-luxury text-3xl text-white">Finalizar tu pedido</h2>
         </div>
         <button type="button" onclick="document.getElementById('order-dialog').close()" class="h-8 w-8 rounded-full border border-white/20 text-gray-300 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
       </div>
+      <p id="order-save-status" class="hidden rounded-lg border border-red-500/30 bg-red-950/30 p-3 text-xs text-red-200" aria-live="polite"></p>
 
       <div class="space-y-3">
         <div>
@@ -436,10 +437,12 @@
             <option value="Pago en efectivo (solo Take Away en Villa Dominico)" data-takeaway-only="true">Pago en efectivo (solo Take Away en Villa Dominico)</option>
             <option value="Pago con QR, tarjeta de crédito o débito por Postner (al retirar en Villa Dominico)" data-takeaway-only="true">Pago con QR, TDC o TDD por Postner (al retirar personalmente en Villa Dominico)</option>
             <option value="Transferencia bancaria por CBU, CTA o Alias">Transferencia bancaria por CBU, CTA o Alias</option>
-            <option value="Sistema Nave de Galicia, incluye MODO — Próximamente" disabled>Sistema Nave de Galicia (incluye MODO) — Próximamente</option>
+            <option id="nave-payment-option" value="Sistema Nave de Galicia / MODO" disabled>Pago online con Nave (QR / MODO) — Configurando</option>
           </select>
           <p id="takeaway-payment-details" class="hidden text-[11px] text-amber-200" aria-live="polite">El efectivo y el pago con Postner están disponibles únicamente al retirar personalmente en Villa Dominico.</p>
-          <p class="text-[11px] text-gray-400">Los datos de transferencia (CBU, CTA o Alias) se coordinan por WhatsApp. Nave de Galicia / MODO: Próximamente.</p>
+          <p id="nave-payment-details" class="hidden text-[11px] text-gray-300" aria-live="polite">Vas a continuar al checkout seguro de Nave. En computadora se ofrece QR y desde el celular podés pagar con MODO o billeteras compatibles; las tarjetas deben estar vinculadas a esos medios.</p>
+          <p id="nave-availability-status" class="text-[11px] text-gray-400" aria-live="polite">Nave estará disponible al terminar la configuración del entorno de prueba.</p>
+          <p class="text-[11px] text-gray-400">Los datos de transferencia (CBU, CTA o Alias) se coordinan por WhatsApp.</p>
         </section>
 
         <div class="flex items-center gap-2 pt-1">
@@ -456,7 +459,7 @@
 
       <div class="flex justify-end gap-3 pt-2">
         <button type="button" onclick="document.getElementById('order-dialog').close()" class="px-4 py-2 rounded-lg border border-white/15 text-xs text-gray-300">Volver</button>
-        <button type="submit" class="bg-whatsapp hover:bg-whatsappHover text-white px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider shadow-lg">Enviar pedido a WhatsApp</button>
+        <button type="submit" class="bg-whatsapp hover:bg-whatsappHover text-white px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider shadow-lg">Continuar</button>
       </div>
     </form>
   </dialog>
@@ -471,12 +474,13 @@
     let computedTotalAmount = 0;
     let mobileCarouselTimer = null;
     let mobileCarouselResumeTimer = null;
+    let pendingOrderRequestId = null;
+    let pendingOrderPayload = '';
 
     async function loadPublicData() {
       try {
         const res = await fetch('./catalog-data.json', { cache: 'no-store' });
         appData = await res.json();
-        appData.stats.visits = (appData.stats.visits || 0) + 1;
 
         if(appData.heroVideo) {
           const vSource = document.getElementById('hero-video-source');
@@ -1001,6 +1005,29 @@
     shippingMethodSelect.addEventListener('change', updateCheckoutOptions);
     paymentMethodSelect.addEventListener('change', updateCheckoutOptions);
 
+    async function updateNaveCheckoutAvailability() {
+      const option = document.getElementById('nave-payment-option');
+      const status = document.getElementById('nave-availability-status');
+      try {
+        const response = await fetch('./api/nave-checkout', { cache: 'no-store' });
+        const result = await response.json();
+        if(!response.ok || typeof result.available !== 'boolean') {
+          throw new Error(result.error || 'No se pudo verificar la configuración de Nave.');
+        }
+        option.disabled = !result.available;
+        option.textContent = result.available
+          ? 'Pago online con Nave (QR / MODO)'
+          : 'Pago online con Nave (QR / MODO) — Configurando';
+        status.textContent = result.available
+          ? `Checkout Nave habilitado (${result.environment === 'production' ? 'producción' : 'sandbox'}).`
+          : 'Nave estará disponible al terminar la configuración del entorno de prueba.';
+      } catch (error) {
+        option.disabled = true;
+        status.textContent = error.message || 'No se pudo verificar la configuración de Nave.';
+        console.error('No se pudo verificar la disponibilidad de Nave:', error);
+      }
+    }
+
     function updateCheckoutOptions(event) {
       let isTakeaway = shippingMethodSelect.value === 'Retiro Take Away en Villa Dominico';
       const selectedPayment = paymentMethodSelect.selectedOptions[0];
@@ -1014,10 +1041,12 @@
       }
 
       const isPedidosYa = shippingMethodSelect.value === 'Envío por Pedidos Ya Envíos';
+      const isNavePayment = paymentMethodSelect.value === 'Sistema Nave de Galicia / MODO';
       const takeawayOnlyOrder = requiresTakeawayForIndividualBoxes();
       document.getElementById('takeaway-details').classList.toggle('hidden', !isTakeaway);
       document.getElementById('pedidos-ya-details').classList.toggle('hidden', !isPedidosYa);
       document.getElementById('takeaway-payment-details').classList.toggle('hidden', isTakeaway);
+      document.getElementById('nave-payment-details').classList.toggle('hidden', !isNavePayment);
 
       const shippingOptions = Array.from(shippingMethodSelect.options);
       shippingOptions.forEach(option => {
@@ -1037,10 +1066,24 @@
     }
 
     updateCheckoutOptions();
+    updateNaveCheckoutAvailability();
 
-    document.getElementById('order-form').addEventListener('submit', (e) => {
+    document.getElementById('order-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       if(!e.currentTarget.reportValidity()) return;
+      const form = e.currentTarget;
+      const submitButton = form.querySelector('button[type="submit"]');
+      const status = document.getElementById('order-save-status');
+      status.classList.add('hidden');
+
+      const checkoutWindow = window.open('about:blank', '_blank');
+      if(!checkoutWindow) {
+        status.textContent = 'El navegador bloqueó la nueva ventana. Permití las ventanas emergentes para continuar con el pedido.';
+        status.classList.remove('hidden');
+        return;
+      }
+
+      submitButton.disabled = true;
       const customName = document.getElementById('box-custom-name').value;
       const shippingAddress = document.getElementById('box-shipping-address').value;
       const paymentMethod = document.getElementById('box-payment-method').value;
@@ -1048,7 +1091,6 @@
       const wantRegister = document.getElementById('client-register-check').checked;
       const totalCookieCount = activeBoxes.reduce((total, box) => total + box.length, 0);
 
-      let clientsList = JSON.parse(localStorage.getItem('dulce_feliz_clients') || '[]');
       const orderDetailsSummary = activeBoxes
         .map((box, index) => ({ box, index }))
         .filter(entry => entry.box.length > 0)
@@ -1058,42 +1100,123 @@
           return `Caja #${index + 1} — ${boxLabel} (${box.length}/${boxSizes[index]})${personalization ? ` (personalizada para: ${personalization})` : ''}: `
             + box.map(p => p.name).join(', ');
         }).join(' | ');
-      
-      clientsList.push({
-        date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
-        name: customName,
+
+      const orderBoxes = activeBoxes.map((box, index) => {
+        if(box.length === 0) return null;
+        const groupedItems = new Map();
+        box.forEach(product => {
+          const productId = product.id;
+          const existing = groupedItems.get(productId);
+          if(existing) existing.quantity += 1;
+          else groupedItems.set(productId, {
+            productId,
+            name: product.name,
+            quantity: 1,
+            unitPrice: Number(product.price)
+          });
+        });
+        return {
+          size: boxSizes[index],
+          customName: boxSizes[index] === 3 ? boxNames[index] || '' : '',
+          items: [...groupedItems.values()]
+        };
+      }).filter(Boolean);
+
+      const order = {
+        customerName: customName,
         address: shippingAddress,
-        payment: paymentMethod,
-        shipping: shippingMethod,
-        cookieCount: totalCookieCount,
-        total: computedTotalAmount,
-        order: orderDetailsSummary,
-        registered: wantRegister
-      });
-      localStorage.setItem('dulce_feliz_clients', JSON.stringify(clientsList));
+        shippingMethod,
+        paymentMethod,
+        registered: wantRegister,
+        boxes: orderBoxes
+      };
+      const orderPayload = JSON.stringify(order);
+      if(!pendingOrderRequestId || pendingOrderPayload !== orderPayload) {
+        pendingOrderRequestId = crypto.randomUUID();
+        pendingOrderPayload = orderPayload;
+      }
 
-      let text = `Hola Dulce & Feliz! Quiero encargar mi pedido:\n\n`;
-      text += `*Cliente:* ${customName}\n`;
-      text += `*Opción de envío:* ${shippingMethod}\n`;
-      text += `*Dirección o detalle para coordinar:* ${shippingAddress}\n`;
-      text += `*Opción de abono:* ${paymentMethod}\n`;
-      if(wantRegister) text += `*Registro VIP:* Sí, deseo registrarme.\n\n`;
-      text += `*Detalle del pedido:*\n`;
-      
-      activeBoxes.forEach((box, i) => {
-        if(box.length === 0) return;
-        const personalization = boxSizes[i] === 3 ? boxNames[i]?.trim() : '';
-        const boxLabel = boxSizes[i] === 1 ? 'Cajita individual' : 'Caja de 3';
-        text += `• Caja #${i+1} — ${boxLabel} (${box.length}/${boxSizes[i]} galletas)${personalization ? ` (personalizada para: ${personalization})` : ''}:\n`;
-        box.forEach(p => { text += `  - ${p.name} ($${p.price})\n`; });
-      });
+      try {
+        const response = await fetch('./api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create', requestId: pendingOrderRequestId, order })
+        });
+        const result = await response.json();
+        if(!response.ok) throw new Error(result.error || 'No se pudo registrar el pedido.');
 
-      text += `\n*Total de galletas: ${totalCookieCount}*\n`;
-      text += `*Total a pagar: $${computedTotalAmount.toLocaleString('es-AR')}*\n\nQuedo atento/a para coordinar. ¡Muchas gracias!`;
+        try {
+          const clientsList = JSON.parse(localStorage.getItem('dulce_feliz_clients') || '[]');
+          if(!clientsList.some(client => client.orderId === result.orderId)) {
+            clientsList.push({
+              orderId: result.orderId,
+              date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
+              name: customName,
+              address: shippingAddress,
+              payment: paymentMethod,
+              shipping: shippingMethod,
+              cookieCount: totalCookieCount,
+              total: computedTotalAmount,
+              order: orderDetailsSummary,
+              registered: wantRegister
+            });
+          }
+          localStorage.setItem('dulce_feliz_clients', JSON.stringify(clientsList));
+        } catch (error) {
+          console.warn('No se pudo guardar la copia local del pedido:', error);
+        }
 
-      const encoded = encodeURIComponent(text);
-      window.open(`https://wa.me/541127401426?text=${encoded}`, '_blank');
-      document.getElementById('order-dialog').close();
+        if(paymentMethod === 'Sistema Nave de Galicia / MODO') {
+          const paymentResponse = await fetch('./api/nave-checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: result.orderId })
+          });
+          const paymentResult = await paymentResponse.json();
+          if(!paymentResponse.ok) throw new Error(paymentResult.error || 'No se pudo iniciar el pago con Nave.');
+          if(typeof paymentResult.checkoutUrl !== 'string') throw new Error('Nave no devolvió el enlace de pago.');
+
+          checkoutWindow.location.href = paymentResult.checkoutUrl;
+          pendingOrderRequestId = null;
+          pendingOrderPayload = '';
+          document.getElementById('order-dialog').close();
+          return;
+        }
+
+        let text = `Hola Dulce & Feliz! Quiero encargar mi pedido:\n\n`;
+        text += `*Cliente:* ${customName}\n`;
+        text += `*Opción de envío:* ${shippingMethod}\n`;
+        text += `*Dirección o detalle para coordinar:* ${shippingAddress}\n`;
+        text += `*Opción de abono:* ${paymentMethod}\n`;
+        if(wantRegister) text += `*Registro VIP:* Sí, deseo registrarme.\n\n`;
+        text += `*Detalle del pedido:*\n`;
+
+        activeBoxes.forEach((box, i) => {
+          if(box.length === 0) return;
+          const personalization = boxSizes[i] === 3 ? boxNames[i]?.trim() : '';
+          const boxLabel = boxSizes[i] === 1 ? 'Cajita individual' : 'Caja de 3';
+          text += `• Caja #${i+1} — ${boxLabel} (${box.length}/${boxSizes[i]} galletas)${personalization ? ` (personalizada para: ${personalization})` : ''}:\n`;
+          box.forEach(p => { text += `  - ${p.name} ($${p.price})\n`; });
+        });
+
+        text += `\n*Total de galletas: ${totalCookieCount}*\n`;
+        text += `*Total a pagar: $${computedTotalAmount.toLocaleString('es-AR')}*\n\nQuedo atento/a para coordinar. ¡Muchas gracias!`;
+
+        const encoded = encodeURIComponent(text);
+        checkoutWindow.location.href = `https://wa.me/541127401426?text=${encoded}`;
+        pendingOrderRequestId = null;
+        pendingOrderPayload = '';
+        document.getElementById('order-dialog').close();
+      } catch (error) {
+        checkoutWindow.close();
+        const nextStep = paymentMethod === 'Sistema Nave de Galicia / MODO'
+          ? 'El pedido quedó registrado, pero el pago no se inició. Vuelve a intentarlo.'
+          : 'El pedido no se envió; vuelve a intentarlo.';
+        status.textContent = `${error.message || 'No se pudo completar el pedido.'} ${nextStep}`;
+        status.classList.remove('hidden');
+      } finally {
+        submitButton.disabled = false;
+      }
     });
 
     let resizeTimer;
@@ -1102,6 +1225,17 @@
       resizeTimer = setTimeout(() => { renderBuilder(); }, 150);
     });
 
+    async function registerPageVisit() {
+      try {
+        const response = await fetch('./api/visits', { method: 'POST' });
+        const result = await response.json();
+        if(!response.ok) throw new Error(result.error || 'No se pudo registrar la visita.');
+      } catch (error) {
+        console.warn('No se pudo registrar la visita para el KPI:', error);
+      }
+    }
+
+    registerPageVisit();
     loadPublicData();
   </script>
 </body>

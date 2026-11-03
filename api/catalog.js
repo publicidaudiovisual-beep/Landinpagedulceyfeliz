@@ -75,11 +75,6 @@ module.exports = async function handler(req, res) {
     return respond(res, 503, { error: 'Falta configurar GITHUB_TOKEN, GITHUB_REPOSITORY o GITHUB_BRANCH en Vercel.' });
   }
 
-  const serializedCatalog = JSON.stringify(body.data, null, 2);
-  if (Buffer.byteLength(serializedCatalog, 'utf8') > MAX_CATALOG_BYTES) {
-    return respond(res, 413, { error: 'El catálogo supera el tamaño máximo permitido.' });
-  }
-
   const headers = {
     Accept: 'application/vnd.github+json',
     Authorization: `Bearer ${token}`,
@@ -104,6 +99,61 @@ module.exports = async function handler(req, res) {
       return respond(res, currentResponse.status === 404 ? 404 : 502, {
         error: errorMessage
       });
+    }
+
+    let currentCatalog;
+    try {
+      currentCatalog = JSON.parse(Buffer.from(currentFile.content, 'base64').toString('utf8'));
+    } catch (error) {
+      console.error('Invalid current catalog JSON while saving admin changes', error);
+      return respond(res, 502, { error: 'El catálogo actual de GitHub no tiene un formato válido.' });
+    }
+
+    const currentSaleIds = Array.isArray(currentCatalog.processedSaleIds)
+      ? currentCatalog.processedSaleIds.filter(id => typeof id === 'string')
+      : [];
+    const currentSales = currentCatalog.processedSales && typeof currentCatalog.processedSales === 'object'
+      && !Array.isArray(currentCatalog.processedSales)
+      ? currentCatalog.processedSales
+      : {};
+    const submittedSaleIds = Array.isArray(body.data.processedSaleIds)
+      ? body.data.processedSaleIds.filter(id => typeof id === 'string')
+      : [];
+    const submittedSales = body.data.processedSales && typeof body.data.processedSales === 'object'
+      && !Array.isArray(body.data.processedSales)
+      ? body.data.processedSales
+      : {};
+    const newerSaleIds = currentSaleIds.filter(id => !submittedSaleIds.includes(id));
+
+    for (const saleId of newerSaleIds) {
+      const saleItems = currentSales[saleId];
+      if (!Array.isArray(saleItems)) {
+        return respond(res, 409, { error: 'El inventario tiene ventas recientes sin datos de conciliación. Espera el despliegue más reciente y vuelve a cargar el panel antes de guardar.' });
+      }
+      for (const item of saleItems) {
+        const product = body.data.products.find(candidate => candidate.id === item.productId);
+        if (!product || !Number.isSafeInteger(item.quantity) || item.quantity < 1) {
+          return respond(res, 409, { error: 'El catálogo cambió después de cerrar una venta. Recarga el panel antes de guardar para no sobrescribir el inventario.' });
+        }
+        const stock = product.stockQuantity ?? 10;
+        if (!Number.isSafeInteger(stock) || stock < item.quantity) {
+          return respond(res, 409, { error: `No se puede conciliar el inventario de "${product.name}". Recarga el panel antes de guardar.` });
+        }
+        product.stockQuantity = stock - item.quantity;
+      }
+    }
+
+    const retainedSaleIds = [...new Set([...submittedSaleIds, ...currentSaleIds])].slice(-200);
+    body.data.processedSaleIds = retainedSaleIds;
+    body.data.processedSales = Object.fromEntries(
+      retainedSaleIds
+        .map(id => [id, currentSales[id] || submittedSales[id]])
+        .filter(([, sale]) => Array.isArray(sale))
+    );
+
+    const serializedCatalog = JSON.stringify(body.data, null, 2);
+    if (Buffer.byteLength(serializedCatalog, 'utf8') > MAX_CATALOG_BYTES) {
+      return respond(res, 413, { error: 'El catálogo supera el tamaño máximo permitido.' });
     }
 
     const updateResponse = await fetch(contentsUrl, {
