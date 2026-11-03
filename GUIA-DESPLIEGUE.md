@@ -27,7 +27,7 @@ No escribas estos secretos en el código ni los compartas por chat. Después de 
 
 La tienda puede agregarse a la pantalla de inicio como una aplicación web (PWA), sin pasar por App Store o Play Store. El manifiesto, los íconos y el service worker se publican junto al sitio; el service worker solo conserva esos recursos de instalación y no almacena pedidos ni datos de clientes. Al abrir el sitio aparece un aviso flotante para instalar o agregar el acceso. Si el cliente lo descarta, se oculta durante 30 días en ese dispositivo.
 
-El archivo `QR-Tienda-Dulce-y-Feliz.png` conserva el diseño visual de la marca e incluye debajo un QR funcional que abre `https://www.dulceyfeliz.online/?instalar=1`. Para compartir un enlace que vuelva a mostrar el aviso aunque se haya cerrado antes, se puede enviar esa misma URL. El navegador no permite lanzar la instalación sin una acción del cliente: debe tocar **Agregar al inicio** y confirmar. En iPhone, se indican los pasos de Safari → **Compartir** → **Agregar a pantalla de inicio**; en Android compatible, se abre el aviso nativo de instalación.
+El archivo `QR-Tienda-Dulce-y-Feliz.png` contiene únicamente el código QR de la marca y dirige a `https://www.dulceyfeliz.online/`. Para compartir un enlace que vuelva a mostrar el aviso de instalación aunque se haya cerrado antes, se puede enviar `https://www.dulceyfeliz.online/?instalar=1`. El navegador no permite lanzar la instalación sin una acción del cliente: debe tocar **Agregar al inicio** y confirmar. En iPhone, se indican los pasos de Safari → **Compartir** → **Agregar a pantalla de inicio**; en Android compatible, se abre el aviso nativo de instalación.
 
 ### Registro de pedidos y descuento de inventario
 
