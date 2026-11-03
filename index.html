@@ -353,14 +353,11 @@
 
             <div id="builder-completion-toast" class="hidden completion-tag mt-4">
               <p class="text-xs font-bold text-goldLight"><i class="fa-solid fa-sparkles mr-1"></i> ¡Caja completa!</p>
-              <div class="mt-3 flex gap-2">
-                <button class="bg-whatsapp hover:bg-whatsappHover flex-1 py-2 rounded-lg text-[10px] uppercase tracking-wider text-white font-bold" onclick="openWhatsApp()">Finalizar WhatsApp</button>
-              </div>
             </div>
 
             <div class="mt-6 flex flex-col gap-3 sm:flex-row">
               <button id="add-box-button" type="button" onclick="toggleNewBoxOptions()" aria-expanded="false" aria-controls="new-box-options" class="gold-button flex-1 rounded-xl px-4 py-3 text-[10px] uppercase tracking-[0.2em] disabled:cursor-not-allowed disabled:opacity-40" disabled>Agregar otra caja</button>
-              <button onclick="openWhatsApp()" class="flex-1 rounded-xl bg-whatsapp px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-white hover:bg-whatsappHover">Continuar por WhatsApp</button>
+              <button type="button" onclick="openOrderCheckout()" class="gold-button flex-1 rounded-xl px-4 py-3 text-[10px] uppercase tracking-[0.2em]">Continuar con la compra</button>
             </div>
             <div id="new-box-options" class="mt-3 hidden rounded-xl border border-gold/30 bg-[#0f0f10] p-4" aria-label="Elegí el formato de la nueva caja">
               <p class="mb-3 text-xs text-gray-300">¿Qué formato querés agregar?</p>
@@ -549,8 +546,7 @@
     let boxSizes = [3];
     let visibleBoxPage = 0;
     let computedTotalAmount = 0;
-    let mobileCarouselTimer = null;
-    let mobileCarouselResumeTimer = null;
+    let mobileCarouselWrapTimer = null;
     let pendingOrderRequestId = null;
     let pendingOrderPayload = '';
 
@@ -726,54 +722,12 @@
 
     function scrollMobileCarousel(direction) {
       const container = document.getElementById('builder-selector-container');
-      const firstCard = container?.firstElementChild;
-      if (!container || !firstCard) return;
-
-      const gap = Number.parseFloat(getComputedStyle(container).columnGap) || 0;
-      const scrollAmount = firstCard.getBoundingClientRect().width + gap;
-      const loopWidth = Number(container.dataset.carouselLoopWidth) || 0;
-
-      if (direction === 'left' && loopWidth && container.scrollLeft <= 1) {
-        container.scrollLeft = loopWidth;
-      }
-
-      const nextScroll = direction === 'left'
-        ? Math.max(0, container.scrollLeft - scrollAmount)
-        : container.scrollLeft + scrollAmount;
-
-      container.scrollTo({ left: nextScroll, behavior: 'smooth' });
-      resumeMobileCarousel();
-    }
-
-    function pauseMobileCarousel() {
-      clearInterval(mobileCarouselTimer);
-      clearTimeout(mobileCarouselResumeTimer);
-      mobileCarouselTimer = null;
-      mobileCarouselResumeTimer = null;
-    }
-
-    function startMobileCarousel() {
-      pauseMobileCarousel();
-      const container = document.getElementById('builder-selector-container');
-      if (window.innerWidth >= 768
-        || window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        || !container
-        || container.children.length < 2) return;
-
-      mobileCarouselTimer = setInterval(() => {
-        const firstCard = container.firstElementChild;
-        if (!firstCard || container.scrollWidth <= container.clientWidth) return;
-
-        const gap = Number.parseFloat(getComputedStyle(container).columnGap) || 0;
-        container.scrollBy({ left: firstCard.getBoundingClientRect().width + gap, behavior: 'smooth' });
-      }, 3200);
-    }
-
-    function resumeMobileCarousel() {
-      clearTimeout(mobileCarouselResumeTimer);
-      clearInterval(mobileCarouselTimer);
-      mobileCarouselTimer = null;
-      mobileCarouselResumeTimer = setTimeout(startMobileCarousel, 3500);
+      const scrollAmount = Number(container?.dataset.carouselStep) || 0;
+      if (!container || !scrollAmount) return;
+      container.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
     }
 
     function configureMobileCarousel() {
@@ -781,41 +735,64 @@
       if (!container) return;
 
       if (!container.dataset.carouselListenersBound) {
-        container.addEventListener('pointerdown', pauseMobileCarousel);
-        container.addEventListener('pointerup', resumeMobileCarousel);
-        container.addEventListener('pointercancel', resumeMobileCarousel);
-        container.addEventListener('mouseenter', pauseMobileCarousel);
-        container.addEventListener('mouseleave', resumeMobileCarousel);
-        container.addEventListener('focusin', pauseMobileCarousel);
-        container.addEventListener('focusout', resumeMobileCarousel);
-        container.addEventListener('scroll', () => {
+        const normalizeCarouselPosition = () => {
+          const baseOffset = Number(container.dataset.carouselBaseOffset) || 0;
           const loopWidth = Number(container.dataset.carouselLoopWidth) || 0;
-          if (loopWidth && container.scrollLeft >= loopWidth) {
-            container.scrollLeft -= loopWidth;
-          }
-        }, { passive: true });
+          if (!baseOffset || !loopWidth) return;
+
+          let nextScrollLeft = container.scrollLeft;
+          while (nextScrollLeft < baseOffset) nextScrollLeft += loopWidth;
+          while (nextScrollLeft >= baseOffset + loopWidth) nextScrollLeft -= loopWidth;
+          if (nextScrollLeft === container.scrollLeft) return;
+
+          container.style.scrollBehavior = 'auto';
+          container.scrollLeft = nextScrollLeft;
+          requestAnimationFrame(() => { container.style.scrollBehavior = ''; });
+        };
+        if ('onscrollend' in container) {
+          container.addEventListener('scrollend', normalizeCarouselPosition);
+        } else {
+          container.addEventListener('scroll', () => {
+            clearTimeout(mobileCarouselWrapTimer);
+            mobileCarouselWrapTimer = setTimeout(normalizeCarouselPosition, 250);
+          }, { passive: true });
+        }
         container.dataset.carouselListenersBound = 'true';
       }
 
       if (window.innerWidth < 768) {
         const cards = Array.from(container.children);
         if (cards.length > 1) {
-          const clones = cards.map(card => {
+          const createClones = () => cards.map(card => {
             const clone = card.cloneNode(true);
             clone.setAttribute('aria-hidden', 'true');
             return clone;
           });
-          clones.forEach(clone => container.appendChild(clone));
-          const firstCard = container.firstElementChild;
-          const firstClone = container.children[cards.length];
+          const beforeClones = document.createDocumentFragment();
+          createClones().forEach(clone => beforeClones.appendChild(clone));
+          container.prepend(beforeClones);
+          createClones().forEach(clone => container.appendChild(clone));
+
+          const firstOriginal = container.children[cards.length];
+          const secondOriginal = container.children[cards.length + 1];
+          const firstAfterLoop = container.children[cards.length * 2];
+          const containerLeft = container.getBoundingClientRect().left;
+          const baseOffset = firstOriginal.getBoundingClientRect().left - containerLeft + container.scrollLeft;
+          container.dataset.carouselBaseOffset = String(baseOffset);
           container.dataset.carouselLoopWidth = String(
-            firstClone.getBoundingClientRect().left - firstCard.getBoundingClientRect().left
+            firstAfterLoop.getBoundingClientRect().left - firstOriginal.getBoundingClientRect().left
           );
+          container.dataset.carouselStep = String(
+            secondOriginal.getBoundingClientRect().left - firstOriginal.getBoundingClientRect().left
+          );
+          container.style.scrollBehavior = 'auto';
+          container.scrollLeft = baseOffset;
+          requestAnimationFrame(() => { container.style.scrollBehavior = ''; });
         }
-        startMobileCarousel();
       } else {
+        delete container.dataset.carouselBaseOffset;
         delete container.dataset.carouselLoopWidth;
-        pauseMobileCarousel();
+        delete container.dataset.carouselStep;
       }
     }
 
@@ -1057,7 +1034,7 @@
       })[character]);
     }
 
-    function openWhatsApp() {
+    function openOrderCheckout() {
       const validBoxes = activeBoxes
         .map((box, index) => ({ box, index }))
         .filter(entry => entry.box.length > 0);
