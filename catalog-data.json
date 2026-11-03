@@ -233,18 +233,13 @@
       "id": "happycookie",
       "name": "Happy Cookie",
       "line": "clasica",
-      "condition": "descontinuado",
+      "condition": "",
       "price": 5500,
-      "stockQuantity": 0,
+      "stockQuantity": 10,
       "ingredients": "Lentejas de chocolate de colores, pepitas de colores, gotas de chocolate oscuro, manteca, azúcar, harina y vainilla",
       "desc": "Lentejas de chocolate de colores, pepitas de colores, gotas de chocolate oscuro, manteca, azúcar, harina y vainilla",
       "img": "Happy Cookie.png",
-      "imgCenital": "Happy Cookie cenital sin fondo.png",
-      "size": "Diámetro 9 0 10 cm. Peso 120gr.",
-      "taste": "Sabor a chocolate y caramelo. Dulce y avainallado en la masa. ",
-      "texture": "Muy crocante, por las lentejas y los granitos de colores. Dulce achocolatado, Dulce del caramelo, la masa mas suave para hacerla agradable en constraste de texturas. ",
-      "ideal": "Infantil, 100%. Alegria, dinamismo y una visual muy alegre y dinámica",
-      "presentation": "Caja elegante de colores pasteles"
+      "imgCenital": "Happy Cookie cenital sin fondo.png"
     },
     {
       "id": "granola",
