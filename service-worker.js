@@ -1,6 +1,7 @@
-const CACHE_NAME = 'dulce-feliz-app-assets-v1';
+const CACHE_NAME = 'dulce-feliz-app-assets-v2';
 const APP_ASSETS = new Set([
   '/manifest.webmanifest',
+  '/Logo%20Dulce%20y%20Feliz%20Logo%20Nuevo.png',
   '/icon-180.png',
   '/icon-192.png',
   '/icon-512.png',
