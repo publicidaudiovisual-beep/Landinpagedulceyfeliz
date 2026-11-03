@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 
 const ORDERS_KEY = 'dulce-feliz-generated-orders';
+const ORDER_SEQUENCE_KEY = 'dulce-feliz-order-sequence';
 const MAX_ORDERS = 200;
 const GITHUB_API = 'https://api.github.com';
 
@@ -47,9 +48,33 @@ async function redisCommand(command) {
 }
 
 async function readOrders() {
-  const result = await redisCommand(['GET', ORDERS_KEY]);
-  if (result === null) return [];
-  const orders = JSON.parse(result);
+  const migrationScript = `
+    local raw = redis.call('GET', KEYS[1])
+    if not raw then return cjson.encode({}) end
+    local orders = cjson.decode(raw)
+    local sequence = tonumber(redis.call('GET', KEYS[2]) or '0')
+    local maxNumber = sequence
+    for _, order in ipairs(orders) do
+      local number = tonumber(order.orderNumber)
+      if number and number > maxNumber then maxNumber = number end
+    end
+    local changed = false
+    for index = #orders, 1, -1 do
+      local order = orders[index]
+      if not tonumber(order.orderNumber) then
+        maxNumber = maxNumber + 1
+        order.orderNumber = maxNumber
+        orders[index] = order
+        changed = true
+      end
+    end
+    if maxNumber > sequence then redis.call('SET', KEYS[2], maxNumber) end
+    if changed then redis.call('SET', KEYS[1], cjson.encode(orders)) end
+    return cjson.encode(orders)
+  `;
+  const result = await redisCommand(['EVAL', migrationScript, '2', ORDERS_KEY, ORDER_SEQUENCE_KEY]);
+  const orders = typeof result === 'string' ? JSON.parse(result) : result;
+  if (orders && !Array.isArray(orders) && Object.keys(orders).length === 0) return [];
   if (!Array.isArray(orders)) throw new Error('El registro de pedidos tiene un formato inválido.');
   return orders;
 }
@@ -115,6 +140,7 @@ function getOrderSubmission(body) {
 async function createOrder(req, res, body) {
   const order = getOrderSubmission(body);
   if (!order) return respond(res, 400, { error: 'El pedido enviado no tiene un formato válido.' });
+  await readOrders();
 
   const script = `
     local raw = redis.call('GET', KEYS[1])
@@ -122,23 +148,64 @@ async function createOrder(req, res, body) {
     for _, existing in ipairs(orders) do
       if existing.id == ARGV[1] then return cjson.encode(existing) end
     end
-    table.insert(orders, 1, cjson.decode(ARGV[1]))
-    while #orders > tonumber(ARGV[2]) do table.remove(orders) end
+    local order = cjson.decode(ARGV[2])
+    order.orderNumber = redis.call('INCR', KEYS[2])
+    table.insert(orders, 1, order)
+    while #orders > tonumber(ARGV[3]) do table.remove(orders) end
     redis.call('SET', KEYS[1], cjson.encode(orders))
     return cjson.encode(orders[1])
   `;
-  const stored = await redisCommand(['EVAL', script, '1', ORDERS_KEY, JSON.stringify(order), String(MAX_ORDERS)]);
+  const stored = await redisCommand([
+    'EVAL', script, '2', ORDERS_KEY, ORDER_SEQUENCE_KEY,
+    body.requestId, JSON.stringify(order), String(MAX_ORDERS)
+  ]);
   const savedOrder = typeof stored === 'string' ? JSON.parse(stored) : stored;
-  return respond(res, 201, { saved: true, orderId: savedOrder.id });
+  return respond(res, 201, {
+    saved: true,
+    orderId: savedOrder.id,
+    orderNumber: savedOrder.orderNumber
+  });
 }
 
-async function confirmOrder(req, res, body) {
-  if (!hasAdminAccess(req)) return respond(res, 401, { error: 'No tienes autorización para cerrar pedidos.' });
+async function saveOrderStatus(orderId, status, paymentId = '') {
+  const paymentStatus = paymentId ? 'APPROVED' : '';
+  const script = `
+    local raw = redis.call('GET', KEYS[1])
+    if not raw then return nil end
+    local orders = cjson.decode(raw)
+    for index, order in ipairs(orders) do
+      if order.id == ARGV[1] then
+        order.status = ARGV[2]
+        order.statusUpdatedAt = ARGV[3]
+        if ARGV[4] == 'APPROVED' then
+          order.paymentStatus = ARGV[4]
+          order.paymentId = ARGV[5]
+        end
+        orders[index] = order
+        redis.call('SET', KEYS[1], cjson.encode(orders))
+        return cjson.encode(order)
+      end
+    end
+    return nil
+  `;
+  const result = await redisCommand([
+    'EVAL', script, '1', ORDERS_KEY, orderId, status,
+    new Date().toISOString(), paymentStatus, paymentId
+  ]);
+  return typeof result === 'string' ? JSON.parse(result) : result;
+}
+
+async function updateOrderStatus(req, res, body) {
+  if (!hasAdminAccess(req)) return respond(res, 401, { error: 'No tienes autorización para actualizar pedidos.' });
   if (typeof body.orderId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.orderId)) {
     return respond(res, 400, { error: 'El identificador del pedido no es válido.' });
   }
+  const targetStatus = body.action === 'confirm' ? 'completed' : body.status;
+  if (!['completed', 'refunded', 'not_completed', 'rejected'].includes(targetStatus)) {
+    return respond(res, 400, { error: 'El estado seleccionado no es válido.' });
+  }
 
-  const lockKey = `${ORDERS_KEY}:confirm:${body.orderId}`;
+  const lockKey = `${ORDERS_KEY}:status:${body.orderId}`;
   const lockToken = crypto.randomUUID();
   const lockResult = await redisCommand(['SET', lockKey, lockToken, 'NX', 'EX', '60']);
   if (lockResult !== 'OK') return respond(res, 409, { error: 'Este pedido ya se está procesando. Actualiza la lista e inténtalo de nuevo.' });
@@ -147,28 +214,22 @@ async function confirmOrder(req, res, body) {
     const orders = await readOrders();
     const order = orders.find(item => item.id === body.orderId);
     if (!order) return respond(res, 404, { error: 'El pedido no está en el registro de los últimos 200 pedidos.' });
-    if (order.status === 'confirmed') {
-      if (body.paymentStatus === 'APPROVED' && order.paymentStatus !== 'APPROVED') {
-        const paymentScript = `
-          local raw = redis.call('GET', KEYS[1])
-          if not raw then return nil end
-          local orders = cjson.decode(raw)
-          for index, existing in ipairs(orders) do
-            if existing.id == ARGV[1] then
-              existing.paymentStatus = 'APPROVED'
-              existing.paymentId = ARGV[2]
-              orders[index] = existing
-              redis.call('SET', KEYS[1], cjson.encode(orders))
-              return cjson.encode(existing)
-            end
-          end
-          return nil
-        `;
-        const updated = await redisCommand(['EVAL', paymentScript, '1', ORDERS_KEY, order.id, body.paymentId || '']);
-        const updatedOrder = typeof updated === 'string' ? JSON.parse(updated) : updated;
-        return respond(res, 200, { confirmed: true, order: updatedOrder || order });
+    const currentStatus = order.status === 'confirmed' ? 'completed' : order.status;
+    const paymentId = body.paymentStatus === 'APPROVED' && typeof body.paymentId === 'string'
+      ? body.paymentId
+      : '';
+    if (currentStatus === targetStatus) {
+      if (paymentId && order.paymentStatus !== 'APPROVED') {
+        const updatedOrder = await saveOrderStatus(order.id, targetStatus, paymentId);
+        return respond(res, 200, { updated: true, order: updatedOrder || order });
       }
-      return respond(res, 200, { confirmed: true, order });
+      return respond(res, 200, { updated: true, order });
+    }
+
+    if (targetStatus !== 'completed') {
+      const updatedOrder = await saveOrderStatus(order.id, targetStatus, paymentId);
+      if (!updatedOrder) return respond(res, 404, { error: 'No se encontró el pedido al guardar el estado.' });
+      return respond(res, 200, { updated: true, order: updatedOrder });
     }
 
     const token = process.env.GITHUB_TOKEN;
@@ -262,16 +323,14 @@ async function confirmOrder(req, res, body) {
       }
     }
 
-    const paymentStatus = body.paymentStatus === 'APPROVED' ? 'APPROVED' : '';
-    const paymentId = typeof body.paymentId === 'string' ? body.paymentId : '';
     const markScript = `
       local raw = redis.call('GET', KEYS[1])
       if not raw then return nil end
       local orders = cjson.decode(raw)
       for index, order in ipairs(orders) do
         if order.id == ARGV[1] then
-          order.status = 'confirmed'
-          order.confirmedAt = ARGV[2]
+          order.status = 'completed'
+          order.statusUpdatedAt = ARGV[2]
           if ARGV[3] == 'APPROVED' then
             order.paymentStatus = ARGV[3]
             order.paymentId = ARGV[4]
@@ -285,7 +344,7 @@ async function confirmOrder(req, res, body) {
     `;
     const result = await redisCommand([
       'EVAL', markScript, '1', ORDERS_KEY, order.id,
-      new Date().toISOString(), paymentStatus, paymentId
+      new Date().toISOString(), paymentId ? 'APPROVED' : '', paymentId
     ]);
     if (!result) {
       console.error('Inventory was updated, but the order status could not be saved in Redis', { orderId: order.id });
@@ -297,6 +356,7 @@ async function confirmOrder(req, res, body) {
       return product ? [[item.productId, product.stockQuantity ?? 10]] : [];
     }));
     return respond(res, 200, {
+      updated: true,
       confirmed: true,
       order: confirmedOrder,
       stockByProductId,
@@ -313,7 +373,7 @@ async function confirmOrder(req, res, body) {
     try {
       await redisCommand(['EVAL', releaseScript, '1', lockKey, lockToken]);
     } catch (error) {
-      console.error('Could not release order confirmation lock', error);
+      console.error('Could not release order status lock', error);
     }
   }
 }
@@ -332,10 +392,11 @@ async function confirmOrderForNave(orderId, paymentId) {
       return this;
     }
   };
-  await confirmOrder({
+  await updateOrderStatus({
     headers: { authorization: `Bearer ${process.env.ADMIN_PASSWORD || ''}` }
   }, res, {
     orderId,
+    status: 'completed',
     paymentStatus: 'APPROVED',
     paymentId
   });
@@ -364,7 +425,7 @@ module.exports = async function handler(req, res) {
       return respond(res, 400, { error: 'La solicitud no tiene un formato válido.' });
     }
     if (body.action === 'create') return await createOrder(req, res, body);
-    if (body.action === 'confirm') return await confirmOrder(req, res, body);
+    if (body.action === 'confirm' || body.action === 'update-status') return await updateOrderStatus(req, res, body);
     return respond(res, 400, { error: 'La acción solicitada no es válida.' });
   } catch (error) {
     console.error('Order request failed', error);

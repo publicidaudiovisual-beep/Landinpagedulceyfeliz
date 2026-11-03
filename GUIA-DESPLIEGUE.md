@@ -23,11 +23,19 @@ No escribas estos secretos en el código ni los compartas por chat. Después de 
 2. En Vercel, abre **Project Settings → Environment Variables** y agrega `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` para **Production**.
 3. Vuelve a desplegar el proyecto. Cada carga de la página principal incrementa un contador persistente; el panel de administración lo consulta para el KPI de visitas.
 
+### Acceso directo instalable y código QR
+
+La tienda puede agregarse a la pantalla de inicio como una aplicación web (PWA), sin pasar por App Store o Play Store. El manifiesto, los íconos y el service worker se publican junto al sitio; el service worker solo conserva esos recursos de instalación y no almacena pedidos ni datos de clientes.
+
+El archivo `QR-Tienda-Dulce-y-Feliz.png` abre `https://www.dulceyfeliz.online/`. Después de escanearlo, el cliente debe instalar el acceso desde el navegador: en iPhone, Safari → **Compartir** → **Agregar a pantalla de inicio**; en Android, Chrome → menú **⋮** → **Instalar app** o **Agregar a pantalla principal**. La instalación siempre requiere la confirmación del cliente.
+
 ### Registro de pedidos y descuento de inventario
 
 El sitio guarda un pedido en Upstash antes de abrir WhatsApp. Esto registra que se inició el pedido, pero no confirma que el cliente haya enviado el mensaje. Se conservan como máximo 200 pedidos; el más antiguo se elimina al superar el límite. El panel los agrupa por día (hora de Argentina).
 
-En **Pedidos generados**, marca **Confirmar cierre y descontar stock** únicamente cuando la venta esté cerrada. Esa acción descuenta las cantidades del catálogo en GitHub y cambia el pedido a **Venta cerrada**. La operación es idempotente: reintentar el mismo cierre no vuelve a descontar el inventario.
+Cada pedido recibe un número correlativo `DF-000001`, compartido por los pedidos iniciados por WhatsApp y por Nave. Los pedidos anteriores reciben números estables automáticamente al consultar o registrar pedidos.
+
+En **Pedidos generados**, selecciona y guarda el estado correspondiente: **Compra concretada**, **Compra con devolución**, **Compra no concluida** o **Compra rechazada**. Solo **Compra concretada** descuenta las cantidades del catálogo en GitHub; los demás estados no modifican el stock. El descuento es idempotente y no se repite al actualizar un pedido. Los pagos aprobados por Nave se registran automáticamente como compra concretada.
 
 Esta función requiere `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `ADMIN_PASSWORD`, `GITHUB_TOKEN`, `GITHUB_REPOSITORY` y `GITHUB_BRANCH` en Vercel. El token de GitHub debe tener permiso **Contents: Read and write**. Si falta alguna configuración o GitHub no puede actualizar el catálogo, el pedido queda pendiente y el panel muestra el error para poder reintentar.
 
@@ -47,7 +55,7 @@ Lo más seguro es probar primero en un despliegue **Preview**. En **Vercel → P
 
 Configura en Nave la URL de notificaciones sandbox con la URL estable del despliegue Preview: `https://TU-URL-PREVIEW/api/nave-notifications`. El endpoint consulta el pago directamente a Nave antes de marcarlo como aprobado y descontar stock; no confía solamente en el contenido de la notificación. Para que las notificaciones lleguen, el sitio debe estar desplegado y accesible públicamente. La opción de pago de Nave queda desactivada automáticamente si falta alguna variable requerida.
 
-Vuelve a desplegar el Preview y realiza una compra de prueba. Verifica que el pedido aparezca en el panel y pase a **Venta cerrada** después de aprobarse el pago. No habilites producción hasta confirmar con Nave las credenciales y el punto de venta productivo. Para la publicación productiva, configura las credenciales de producción solo en **Production**, cambia `NAVE_ENVIRONMENT` a `production` en ese entorno y registra en Nave la URL productiva de notificaciones. Nunca reutilices credenciales sandbox en producción.
+Vuelve a desplegar el Preview y realiza una compra de prueba. Verifica que el pedido aparezca en el panel y pase a **Compra concretada** después de aprobarse el pago. No habilites producción hasta confirmar con Nave las credenciales y el punto de venta productivo. Para la publicación productiva, configura las credenciales de producción solo en **Production**, cambia `NAVE_ENVIRONMENT` a `production` en ese entorno y registra en Nave la URL productiva de notificaciones. Nunca reutilices credenciales sandbox en producción.
 
 En **Settings → Git**, confirma que la rama indicada en `GITHUB_BRANCH` sea la rama de producción. El panel requiere esa configuración para acceder; sin ella, no se puede validar el acceso ni guardar cambios.
 

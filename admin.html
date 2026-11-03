@@ -423,6 +423,10 @@
       return element.innerHTML;
     }
 
+    function formatOrderNumber(number) {
+      return `DF-${String(number || 0).padStart(6, '0')}`;
+    }
+
     function getOrderDateKey(dateValue) {
       const date = new Date(dateValue);
       if (Number.isNaN(date.getTime())) return 'Fecha desconocida';
@@ -463,8 +467,18 @@
             year: 'numeric'
           });
         const orderCards = orders.map(order => {
-          const confirmed = order.status === 'confirmed';
-          const orderLines = (order.boxes || []).map((box, index) => {
+            const storedStatus = order.status === 'confirmed' ? 'completed' : order.status;
+            const currentStatus = ['completed', 'refunded', 'not_completed', 'rejected'].includes(storedStatus)
+              ? storedStatus
+              : 'generated';
+            const statusLabels = {
+              generated: 'Pendiente de clasificar',
+              completed: 'Compra concretada',
+              refunded: 'Compra con devolución',
+              not_completed: 'Compra no concluida',
+              rejected: 'Compra rechazada'
+            };
+            const orderLines = (order.boxes || []).map((box, index) => {
             const boxName = box.size === 1 ? 'Cajita individual' : 'Caja de 3';
             const personalization = box.customName
               ? ` · Personalizada para: ${escapeOrderHTML(box.customName)}`
@@ -484,16 +498,31 @@
             });
           const registered = order.registered ? 'Sí' : 'No';
           const isNavePayment = order.paymentMethod === 'Sistema Nave de Galicia / MODO';
-          const confirmationControl = confirmed
-            ? `<span class="rounded-full border border-emerald-500/30 bg-emerald-950/30 px-3 py-1 text-xs text-emerald-300">Venta cerrada</span><p class="mt-1 text-[10px] text-gray-500">Inventario descontado</p>`
-            : isNavePayment
-              ? `<span class="rounded-full border border-amber-500/30 bg-amber-950/30 px-3 py-1 text-xs text-amber-200">Esperando confirmación de Nave</span>`
-              : `<label class="flex items-center gap-2 text-xs text-goldLight"><input type="checkbox" class="h-4 w-4 accent-emerald-500" onchange="confirmGeneratedOrder('${order.id}', this)" />Confirmar cierre y descontar stock</label>`;
+          const statusOptions = [
+            ['completed', 'Compra concretada'],
+            ['refunded', 'Compra con devolución'],
+            ['not_completed', 'Compra no concluida'],
+            ['rejected', 'Compra rechazada']
+          ].map(([value, label]) =>
+            `<option value="${value}" ${currentStatus === value ? 'selected' : ''}>${label}</option>`
+          ).join('');
+          const pendingOption = currentStatus === 'generated'
+            ? '<option value="generated" selected disabled>Pendiente de clasificar</option>'
+            : '';
+          const navePending = isNavePayment && currentStatus === 'generated'
+            ? '<p class="text-[10px] text-amber-200">Esperando confirmación de Nave</p>'
+            : '';
+          const statusControl = `<span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-200">${escapeOrderHTML(statusLabels[currentStatus] || statusLabels.generated)}</span>
+            <label class="mt-2 text-left text-[10px] uppercase tracking-wider text-gray-500" for="order-status-${escapeOrderHTML(order.id)}">Actualizar estado</label>
+            <select id="order-status-${escapeOrderHTML(order.id)}" data-order-status class="rounded-lg border border-gold/30 bg-[#121214] px-3 py-2 text-xs text-white">${pendingOption}${statusOptions}</select>
+            <button type="button" onclick="updateGeneratedOrderStatus('${escapeOrderHTML(order.id)}', this)" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight hover:bg-gold/10">Guardar estado</button>
+            ${currentStatus === 'completed' ? '<p class="text-[10px] text-emerald-300">Inventario descontado</p>' : ''}
+            ${navePending}`;
           return `<article class="rounded-2xl border border-white/10 bg-[#161618] p-4 sm:p-5">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div class="min-w-0 flex-1 space-y-3">
                 <div>
-                  <h4 class="font-medium text-white">${escapeOrderHTML(order.customerName)} <span class="text-xs text-gray-500">${escapeOrderHTML(time)}</span></h4>
+                  <h4 class="font-medium text-white">${formatOrderNumber(order.orderNumber)} · ${escapeOrderHTML(order.customerName)} <span class="text-xs text-gray-500">${escapeOrderHTML(time)}</span></h4>
                   <p class="mt-1 text-xs text-gray-400">${escapeOrderHTML(order.shippingMethod)} · ${escapeOrderHTML(order.paymentMethod)}</p>
                   ${order.address ? `<p class="mt-1 text-xs text-gray-500">${escapeOrderHTML(order.address)}</p>` : ''}
                 </div>
@@ -502,7 +531,7 @@
               </div>
               <div class="flex shrink-0 flex-col gap-2 sm:items-end">
                 <p class="font-serif-luxury text-2xl text-goldLight">$${Number(order.total || 0).toLocaleString('es-AR')}</p>
-                ${confirmationControl}
+                ${statusControl}
               </div>
             </div>
           </article>`;
@@ -514,9 +543,10 @@
       }).join('');
     }
 
-    async function confirmGeneratedOrder(orderId, checkbox) {
-      if (!checkbox.checked) return;
-      checkbox.disabled = true;
+    async function updateGeneratedOrderStatus(orderId, button) {
+      const select = button.parentElement.querySelector('[data-order-status]');
+      if (!select || select.value === 'generated') return;
+      button.disabled = true;
       try {
         const response = await fetch('./api/orders', {
           method: 'POST',
@@ -524,10 +554,10 @@
             'Content-Type': 'application/json',
             Authorization: `Bearer ${adminPassword}`
           },
-          body: JSON.stringify({ action: 'confirm', orderId })
+          body: JSON.stringify({ action: 'update-status', orderId, status: select.value })
         });
         const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'No se pudo cerrar el pedido.');
+        if (!response.ok) throw new Error(result.error || 'No se pudo actualizar el estado del pedido.');
 
         if (result.stockByProductId) {
           adminData.products.forEach(product => {
@@ -542,9 +572,8 @@
         await loadGeneratedOrders();
         renderAdminDashboard();
       } catch (error) {
-        checkbox.checked = false;
-        checkbox.disabled = false;
-        alert(error.message || 'No se pudo cerrar el pedido.');
+        button.disabled = false;
+        alert(error.message || 'No se pudo actualizar el estado del pedido.');
       }
     }
 
@@ -560,17 +589,19 @@
       const conv = persistentVisitCount > 0 ? ((orderCount / persistentVisitCount) * 100).toFixed(1) : 0;
       document.getElementById('kpi-conversion').textContent = `${conv}%`;
 
-      const confirmedOrders = generatedOrders.filter(order => order.status === 'confirmed');
+      const completedOrders = generatedOrders.filter(order =>
+        order.status === 'completed' || order.status === 'confirmed'
+      );
       const now = Date.now();
-      const weekSales = confirmedOrders
+      const weekSales = completedOrders
         .filter(order => {
-          const age = now - new Date(order.confirmedAt).getTime();
+          const age = now - new Date(order.statusUpdatedAt || order.confirmedAt || order.createdAt).getTime();
           return age >= 0 && age <= 7 * 24 * 60 * 60 * 1000;
         })
         .reduce((total, order) => total + Number(order.total || 0), 0);
-      const monthSales = confirmedOrders
+      const monthSales = completedOrders
         .filter(order => {
-          const age = now - new Date(order.confirmedAt).getTime();
+          const age = now - new Date(order.statusUpdatedAt || order.confirmedAt || order.createdAt).getTime();
           return age >= 0 && age <= 30 * 24 * 60 * 60 * 1000;
         })
         .reduce((total, order) => total + Number(order.total || 0), 0);

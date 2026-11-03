@@ -5,8 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dulce & Feliz | Cookies de Lujo</title>
   <meta name="description" content="Colección premium y clásica de cookies gourmet con armado de caja personalizado y envío por WhatsApp." />
+  <meta name="theme-color" content="#0B0B0C" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Dulce & Feliz" />
   <link rel="icon" type="image/png" href="Isotipo Sin fondo.png" />
-  <link rel="apple-touch-icon" href="Isotipo Sin fondo.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -182,6 +186,10 @@
               </a>
               <span class="text-xs uppercase tracking-[0.2em] font-bold text-goldLight drop-shadow">Armá tu caja aquí</span>
             </div>
+            <button id="install-app-button" type="button" class="inline-flex items-center gap-2 rounded-xl border border-gold/50 px-5 py-3 text-[10px] uppercase tracking-[0.18em] text-goldLight transition-colors hover:bg-gold/10">
+              <i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i>
+              Agregar al inicio
+            </button>
           </div>
         </div>
       </div>
@@ -371,6 +379,24 @@
       </div>
     </div>
   </footer>
+
+  <dialog id="install-help-dialog" class="order-dialog">
+    <div class="space-y-4 p-6 sm:p-8">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-[10px] uppercase tracking-[0.25em] text-goldLight">Acceso directo</p>
+          <h2 class="mt-1 font-serif-luxury text-3xl text-white">Llevá Dulce & Feliz a tu inicio</h2>
+        </div>
+        <button type="button" onclick="document.getElementById('install-help-dialog').close()" aria-label="Cerrar instrucciones" class="h-8 w-8 shrink-0 rounded-full border border-white/20 text-gray-300"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="text-sm text-gray-300">La tienda se abre desde tu navegador. Para dejar el ícono en la pantalla de inicio:</p>
+      <ul class="space-y-3 text-sm text-gray-300">
+        <li><strong class="text-goldLight">iPhone:</strong> toca <strong>Compartir</strong> en Safari y elige <strong>Agregar a pantalla de inicio</strong>.</li>
+        <li><strong class="text-goldLight">Android:</strong> abre el menú <strong>⋮</strong> de Chrome y toca <strong>Instalar app</strong> o <strong>Agregar a pantalla principal</strong>.</li>
+      </ul>
+      <p class="text-xs text-gray-500">El nombre y el ícono de Dulce & Feliz aparecerán junto a tus otras aplicaciones.</p>
+    </div>
+  </dialog>
 
   <dialog id="flavor-detail-dialog" class="order-dialog flavor-detail-dialog">
     <div class="grid sm:grid-cols-[0.85fr_1.15fr]">
@@ -1150,6 +1176,7 @@
           if(!clientsList.some(client => client.orderId === result.orderId)) {
             clientsList.push({
               orderId: result.orderId,
+              orderNumber: result.orderNumber,
               date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
               name: customName,
               address: shippingAddress,
@@ -1184,6 +1211,7 @@
         }
 
         let text = `Hola Dulce & Feliz! Quiero encargar mi pedido:\n\n`;
+        text += `*N.º de pedido:* DF-${String(result.orderNumber).padStart(6, '0')}\n`;
         text += `*Cliente:* ${customName}\n`;
         text += `*Opción de envío:* ${shippingMethod}\n`;
         text += `*Dirección o detalle para coordinar:* ${shippingAddress}\n`;
@@ -1233,6 +1261,44 @@
       } catch (error) {
         console.warn('No se pudo registrar la visita para el KPI:', error);
       }
+    }
+
+    let deferredInstallPrompt = null;
+    const installAppButton = document.getElementById('install-app-button');
+    const installHelpDialog = document.getElementById('install-help-dialog');
+    const isInstalled = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+    if (isInstalled) installAppButton.classList.add('hidden');
+
+    window.addEventListener('beforeinstallprompt', event => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      installAppButton.classList.add('hidden');
+    });
+
+    installAppButton.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) {
+        installHelpDialog.showModal();
+        return;
+      }
+
+      const installPrompt = deferredInstallPrompt;
+      deferredInstallPrompt = null;
+      await installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
+      if (choice.outcome === 'accepted') installAppButton.classList.add('hidden');
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js').catch(error => {
+          console.error('No se pudo habilitar la instalación de la tienda:', error);
+        });
+      });
     }
 
     registerPageVisit();

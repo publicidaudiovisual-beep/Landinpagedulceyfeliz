@@ -157,7 +157,7 @@ async function handler(req, res) {
     if (order.paymentMethod !== NAVE_PAYMENT_METHOD) {
       return respond(res, 409, { error: 'Este pedido no fue creado con Nave como medio de pago.' });
     }
-    if (order.status === 'confirmed' || order.paymentStatus === 'APPROVED') {
+    if (order.status === 'confirmed' || order.status === 'completed' || order.paymentStatus === 'APPROVED') {
       return respond(res, 409, { error: 'Este pedido ya figura como pagado.' });
     }
     if (order.paymentRequest?.checkoutUrl) {
