@@ -95,7 +95,7 @@ function getOrderSubmission(body) {
   const boxes = [];
   const itemCounts = new Map();
   for (const box of order.boxes) {
-    if (!box || ![1, 3].includes(box.size) || !Array.isArray(box.items) || box.items.length < 1) return null;
+    if (!box || ![1, 3, 4].includes(box.size) || !Array.isArray(box.items) || box.items.length < 1) return null;
     let cookieCount = 0;
     const items = [];
     for (const item of box.items) {
@@ -116,7 +116,7 @@ function getOrderSubmission(body) {
       itemCounts.set(item.productId.trim(), current);
     }
     if (cookieCount > box.size) return null;
-    const customName = box.size === 3 && typeof box.customName === 'string'
+    const customName = box.size >= 3 && typeof box.customName === 'string'
       ? box.customName.trim().slice(0, 40)
       : '';
     boxes.push({ size: box.size, customName, items });

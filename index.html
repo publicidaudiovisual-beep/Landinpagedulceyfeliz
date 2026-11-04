@@ -107,11 +107,15 @@
 
     .caja-foto-container { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 1.25rem; overflow: hidden; border: 2px solid rgba(212,175,55,0.45); box-shadow: 0 15px 35px rgba(0,0,0,0.6); background-color: #17171a; background-image: url('Caja vacía para el armador.png'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center; }
     
-    .slot-exacto-3 { position: absolute; top: 12%; bottom: 12%; width: 28%; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 0.75rem; transition: background 0.2s; }
+    .caja-foto-4 { aspect-ratio: 3064 / 1376; background-image: url('Caja de 4 galletas para armador.jpg'); }
+    .caja-foto-1 { aspect-ratio: 550 / 560; max-width: 380px; margin: 0 auto; background-image: url('Caja pequena para el armador.jpg'); }
+    .caja-foto-1 .slot-exacto-1 { inset: 11% 10% 10% 10%; }
+    .slot-exacto-3 { position: absolute; top: 53%; height: 42%; width: 16.4%; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 0.75rem; transition: background 0.2s; }
     .slot-exacto-3:hover { background: rgba(212,175,55,0.12); }
-    .slot-1 { left: 5%; }
-    .slot-2 { left: 36%; }
-    .slot-3 { left: 67%; }
+    .slot-1 { left: 18.6%; }
+    .slot-2 { left: 35.2%; }
+    .slot-3 { left: 51.8%; }
+    .slot-4 { left: 68.4%; }
     
     .slot-exacto-1 { position: absolute; inset: 15% 30%; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 0.75rem; }
     
@@ -248,14 +252,14 @@
         <div class="mx-auto max-w-3xl text-center">
           <p class="text-[11px] uppercase tracking-[0.3em] text-goldLight">Presentación Exclusiva</p>
           <h2 id="pkg-title-render" class="mt-3 font-serif-luxury text-4xl text-white sm:text-5xl">Nuestra Caja de Lujo</h2>
-          <p id="pkg-text-render" class="mt-4 text-gray-300">Una presentación alargada y refinada diseñada para albergar perfectamente 3 galletas de autor con detalles dorados.</p>
+          <p id="pkg-text-render" class="mt-4 text-gray-300">Una presentación alargada y refinada diseñada para albergar perfectamente 4 galletas de autor con detalles dorados.</p>
         </div>
         <div class="mt-12 max-w-2xl mx-auto rounded-[2rem] border border-gold/30 bg-[#17171A] p-6 shadow-2xl">
           <div id="pkg-media-render" class="overflow-hidden rounded-[1.5rem] border border-gold/25">
             <img id="packaging-img-render" src="Caja modelo.jpg" alt="Caja Dulce y Feliz" class="h-80 w-full object-cover" />
           </div>
           <div class="mt-6 text-center">
-            <h3 class="font-serif-luxury text-3xl text-white">Caja Alargada de 3 Unidades</h3>
+            <h3 class="font-serif-luxury text-3xl text-white">Caja Alargada de 4 Unidades</h3>
             <p class="mt-2 text-sm text-gray-300">Personalizada con el nombre que elijas para regalar o disfrutar.</p>
           </div>
         </div>
@@ -314,7 +318,7 @@
           <div class="glass-card rounded-[2rem] p-6">
             <div class="mb-6 flex items-center justify-between">
               <div class="flex gap-3">
-                <button class="size-option active rounded-full px-5 py-2.5 text-[10px] uppercase tracking-[0.2em]" data-size="3">Caja de 3 galletas</button>
+                <button class="size-option active rounded-full px-5 py-2.5 text-[10px] uppercase tracking-[0.2em]" data-size="4">Caja de 4 galletas</button>
                 <button class="size-option rounded-full px-5 py-2.5 text-[10px] uppercase tracking-[0.2em]" data-size="1">Cajita individual</button>
               </div>
             </div>
@@ -338,7 +342,7 @@
             <div>
               <div class="mb-4 flex items-center justify-between">
                 <h3 class="font-serif-luxury text-2xl text-white">Vista previa</h3>
-                <span id="builder-size-label" class="text-[10px] uppercase tracking-[0.2em] text-goldLight">Caja de 3</span>
+                <span id="builder-size-label" class="text-[10px] uppercase tracking-[0.2em] text-goldLight">Caja de 4</span>
               </div>
 
               <div id="builder-boxes-wrapper" class="space-y-6 mb-4"></div>
@@ -362,7 +366,7 @@
             <div id="new-box-options" class="mt-3 hidden rounded-xl border border-gold/30 bg-[#0f0f10] p-4" aria-label="Elegí el formato de la nueva caja">
               <p class="mb-3 text-xs text-gray-300">¿Qué formato querés agregar?</p>
               <div class="flex flex-col gap-2 sm:flex-row">
-                <button type="button" onclick="addNewBox(3)" class="flex-1 rounded-xl border border-gold/30 bg-[#1C1C1E] px-4 py-3 text-[10px] uppercase tracking-[0.15em] text-white hover:border-gold/70">Caja de 3 galletas</button>
+                <button type="button" onclick="addNewBox(4)" class="flex-1 rounded-xl border border-gold/30 bg-[#1C1C1E] px-4 py-3 text-[10px] uppercase tracking-[0.15em] text-white hover:border-gold/70">Caja de 4 galletas</button>
                 <button type="button" onclick="addNewBox(1)" class="flex-1 rounded-xl border border-gold/30 bg-[#1C1C1E] px-4 py-3 text-[10px] uppercase tracking-[0.15em] text-white hover:border-gold/70">Cajita individual</button>
               </div>
             </div>
@@ -540,10 +544,10 @@
 
   <script>
     let appData = { stats: { visits: 0, whatsappOrders: 0 }, products: [] };
-    let currentSize = 3;
+    let currentSize = 4;
     let activeBoxes = [[]]; 
     let boxNames = [''];
-    let boxSizes = [3];
+    let boxSizes = [4];
     let visibleBoxPage = 0;
     let computedTotalAmount = 0;
     let mobileCarouselWrapTimer = null;
@@ -808,7 +812,7 @@
       const currentBoxIndex = activeBoxes.length - 1;
       currentSize = boxSizes[currentBoxIndex] || currentSize;
 
-      sizeLabel.textContent = currentSize === 3 ? 'Caja de 3' : 'Caja individual';
+      sizeLabel.textContent = currentSize === 4 ? 'Caja de 4' : 'Caja individual';
       singleNotice.classList.toggle('hidden', !requiresTakeawayForIndividualBoxes());
 
       const activeCurrentBox = activeBoxes[currentBoxIndex];
@@ -860,22 +864,22 @@
       const firstVisibleBox = visibleBoxPage * 4;
       activeBoxes.slice(firstVisibleBox, firstVisibleBox + 4).forEach((box, pageOffset) => {
         const globalIdx = firstVisibleBox + pageOffset;
-        const size = boxSizes[globalIdx] || 3;
+        const size = boxSizes[globalIdx] || 4;
         const capacity = size;
         const isComplete = box.length === capacity;
         boxesHtml += `
           <div class="space-y-2 rounded-xl border border-gold/20 bg-[#0f0f10] p-3">
-            ${size === 3 ? `<label for="box-name-${globalIdx}" class="block text-[10px] uppercase tracking-wider text-goldLight">Nombre para personalizar la caja #${globalIdx + 1} (opcional)</label>
+            ${size === 4 ? `<label for="box-name-${globalIdx}" class="block text-[10px] uppercase tracking-wider text-goldLight">Nombre para personalizar la caja #${globalIdx + 1} (opcional)</label>
             <input id="box-name-${globalIdx}" data-box-name="${globalIdx}" type="text" maxlength="40" class="w-full rounded-lg border border-gold/30 bg-[#1C1C1E] px-3 py-2 text-sm text-white" placeholder="Dejá el campo vacío si no querés personalizarla" />` : ''}
             <p class="text-[10px] text-gray-400">${isComplete ? 'Caja completa' : `Seleccionadas: ${box.length} de ${capacity}`}</p>
         `;
-        if(size === 3) {
+        if(size === 4) {
           boxesHtml += `
             <div class="space-y-1">
-              <p class="text-[10px] text-goldLight uppercase font-bold">Caja #${globalIdx+1} (3 Unidades)</p>
-              <div class="caja-foto-container">
+              <p class="text-[10px] text-goldLight uppercase font-bold">Caja #${globalIdx+1} (4 Unidades)</p>
+              <div class="caja-foto-container caja-foto-4">
           `;
-          for(let i=0; i<3; i++) {
+          for(let i=0; i<4; i++) {
             const slotClass = `slot-exacto-3 slot-${i+1}`;
             if(box[i]) {
               boxesHtml += `
@@ -893,7 +897,7 @@
           boxesHtml += `
             <div class="space-y-1">
               <p class="text-[10px] text-goldLight uppercase font-bold">Cajita Individual #${globalIdx+1}</p>
-              <div class="caja-foto-container">
+              <div class="caja-foto-container caja-foto-1">
           `;
           if(box[0]) {
             boxesHtml += `
@@ -946,7 +950,7 @@
       const currentBoxIndex = activeBoxes.length - 1;
       const currentBox = activeBoxes[currentBoxIndex];
       currentSize = boxSizes[currentBoxIndex];
-      if(currentBox.length !== currentSize || ![1, 3].includes(size)) return;
+      if(currentBox.length !== currentSize || ![1, 4].includes(size)) return;
       activeBoxes.push([]);
       boxNames.push('');
       boxSizes.push(size);
@@ -977,7 +981,7 @@
         return count + (boxSizes[index] === 1 && box.length > 0 ? 1 : 0);
       }, 0);
       const hasLargeBox = boxSizes.some((size, index) => {
-        return size === 3 && activeBoxes[index].length > 0;
+        return size === 4 && activeBoxes[index].length > 0;
       });
 
       return !hasLargeBox && individualBoxCount >= 1 && individualBoxCount <= 3;
@@ -1001,8 +1005,8 @@
           computedTotalAmount += boxTotal;
           totalCookieCount += box.length;
           box.forEach(product => flavorCounts.set(product.name, (flavorCounts.get(product.name) || 0) + 1));
-          const boxName = boxSizes[i] === 3 ? boxNames[i]?.trim() : '';
-          const boxLabel = boxSizes[i] === 1 ? 'Cajita individual' : 'Caja de 3';
+          const boxName = boxSizes[i] === 4 ? boxNames[i]?.trim() : '';
+          const boxLabel = boxSizes[i] === 1 ? 'Cajita individual' : 'Caja de 4';
           html += `<li class="rounded-lg bg-white/5 p-2">
             <p class="font-semibold">Caja #${i+1} — ${boxLabel} (${box.length}/${boxSizes[i]} galletas)${boxName ? ` · Personalizada para: ${escapeHtml(boxName)}` : ''}</p>
             <p class="text-xs text-gray-400">${box.map(product => escapeHtml(product.name)).join(' · ')}</p>
@@ -1044,8 +1048,8 @@
       }
       document.getElementById('order-dialog').showModal();
       let previewText = validBoxes.map(({ box, index }) => {
-        const personalization = boxSizes[index] === 3 ? boxNames[index]?.trim() : '';
-        const boxLabel = boxSizes[index] === 1 ? 'Cajita individual' : 'Caja de 3';
+        const personalization = boxSizes[index] === 4 ? boxNames[index]?.trim() : '';
+        const boxLabel = boxSizes[index] === 1 ? 'Cajita individual' : 'Caja de 4';
         return `Caja #${index + 1} — ${boxLabel} (${box.length}/${boxSizes[index]} galletas)${personalization ? ` (personalizada para: ${personalization})` : ''}:\n`
           + box.map(p => ` - ${p.name} ($${p.price})`).join('\n');
       }).join('\n\n');
@@ -1148,8 +1152,8 @@
         .map((box, index) => ({ box, index }))
         .filter(entry => entry.box.length > 0)
         .map(({ box, index }) => {
-          const personalization = boxSizes[index] === 3 ? boxNames[index]?.trim() : '';
-          const boxLabel = boxSizes[index] === 1 ? 'Cajita individual' : 'Caja de 3';
+          const personalization = boxSizes[index] === 4 ? boxNames[index]?.trim() : '';
+          const boxLabel = boxSizes[index] === 1 ? 'Cajita individual' : 'Caja de 4';
           return `Caja #${index + 1} — ${boxLabel} (${box.length}/${boxSizes[index]})${personalization ? ` (personalizada para: ${personalization})` : ''}: `
             + box.map(p => p.name).join(', ');
         }).join(' | ');
@@ -1170,7 +1174,7 @@
         });
         return {
           size: boxSizes[index],
-          customName: boxSizes[index] === 3 ? boxNames[index] || '' : '',
+          customName: boxSizes[index] === 4 ? boxNames[index] || '' : '',
           items: [...groupedItems.values()]
         };
       }).filter(Boolean);
@@ -1248,8 +1252,8 @@
 
         activeBoxes.forEach((box, i) => {
           if(box.length === 0) return;
-          const personalization = boxSizes[i] === 3 ? boxNames[i]?.trim() : '';
-          const boxLabel = boxSizes[i] === 1 ? 'Cajita individual' : 'Caja de 3';
+          const personalization = boxSizes[i] === 4 ? boxNames[i]?.trim() : '';
+          const boxLabel = boxSizes[i] === 1 ? 'Cajita individual' : 'Caja de 4';
           text += `• Caja #${i+1} — ${boxLabel} (${box.length}/${boxSizes[i]} galletas)${personalization ? ` (personalizada para: ${personalization})` : ''}:\n`;
           box.forEach(p => { text += `  - ${p.name} ($${p.price})\n`; });
         });

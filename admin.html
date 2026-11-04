@@ -484,7 +484,7 @@
               rejected: 'Compra rechazada'
             };
             const orderLines = (order.boxes || []).map((box, index) => {
-            const boxName = box.size === 1 ? 'Cajita individual' : 'Caja de 3';
+            const boxName = box.size === 1 ? 'Cajita individual' : `Caja de ${box.size}`;
             const personalization = box.customName
               ? ` · Personalizada para: ${escapeOrderHTML(box.customName)}`
               : '';
@@ -618,7 +618,7 @@
         : 'No disponible';
 
       document.getElementById('input-hero-video').value = adminData.heroVideo || 'Cookie de lujo.mp4';
-      const pkg = adminData.packagingConfig || { title: 'Nuestra Caja de Lujo', text: 'Una presentación alargada y refinada diseñada para albergar perfectamente 3 galletas de autor con detalles dorados.', media: 'Caja modelo.jpg' };
+      const pkg = adminData.packagingConfig || { title: 'Nuestra Caja de Lujo', text: 'Una presentación alargada y refinada diseñada para albergar perfectamente 4 galletas de autor con detalles dorados.', media: 'Caja modelo.jpg' };
       document.getElementById('input-pkg-title').value = pkg.title || '';
       document.getElementById('input-pkg-text').value = pkg.text || '';
       document.getElementById('input-pkg-media').value = pkg.media || '';
