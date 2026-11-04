@@ -724,10 +724,28 @@
       renderBuilder();
     }
 
+    const CAROUSEL_AUTOPLAY_MS = 6000;
+    const CAROUSEL_IDLE_MS = 10000;
+    let carouselIdleUntil = 0;
+
+    function markCarouselInteraction() {
+      carouselIdleUntil = Date.now() + CAROUSEL_IDLE_MS;
+    }
+
+    // Avance lento y automático que cede siempre ante cualquier gesto del cliente.
+    setInterval(() => {
+      const container = document.getElementById('builder-selector-container');
+      const step = Number(container?.dataset.carouselStep) || 0;
+      if (!step || document.hidden || Date.now() < carouselIdleUntil
+        || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      container.scrollBy({ left: step, behavior: 'smooth' });
+    }, CAROUSEL_AUTOPLAY_MS);
+
     function scrollMobileCarousel(direction) {
       const container = document.getElementById('builder-selector-container');
       const scrollAmount = Number(container?.dataset.carouselStep) || 0;
       if (!container || !scrollAmount) return;
+      markCarouselInteraction();
       container.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
@@ -739,6 +757,9 @@
       if (!container) return;
 
       if (!container.dataset.carouselListenersBound) {
+        ['pointerdown', 'touchstart', 'touchmove', 'wheel', 'click', 'keydown'].forEach(eventName => {
+          container.addEventListener(eventName, markCarouselInteraction, { passive: true });
+        });
         const normalizeCarouselPosition = () => {
           const baseOffset = Number(container.dataset.carouselBaseOffset) || 0;
           const loopWidth = Number(container.dataset.carouselLoopWidth) || 0;
