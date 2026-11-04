@@ -1,8 +1,9 @@
 const crypto = require('node:crypto');
+const { getRedisKey } = require('../lib/redis-keys');
 
-const ORDERS_KEY = 'dulce-feliz-generated-orders';
-const ORDER_SEQUENCE_KEY = 'dulce-feliz-order-sequence';
-const MAX_ORDERS = 200;
+const ORDERS_KEY = getRedisKey('dulce-feliz-generated-orders');
+const ORDER_SEQUENCE_KEY = getRedisKey('dulce-feliz-order-sequence');
+const MAX_ORDERS = 400;
 const GITHUB_API = 'https://api.github.com';
 
 function respond(res, status, payload) {
@@ -121,6 +122,8 @@ function getOrderSubmission(body) {
     boxes.push({ size: box.size, customName, items });
   }
 
+  const shippingCost = Number(order.shippingCost ?? 0);
+  if (!Number.isFinite(shippingCost) || shippingCost < 0) return null;
   if (!Number.isSafeInteger(Math.round(total)) || total > Number.MAX_SAFE_INTEGER) return null;
   return {
     id: body.requestId,
@@ -130,6 +133,8 @@ function getOrderSubmission(body) {
     shippingMethod: order.shippingMethod.trim(),
     paymentMethod: order.paymentMethod.trim(),
     registered: order.registered,
+    shippingCost: Number(shippingCost.toFixed(2)),
+    shippingProvider: typeof order.shippingProvider === 'string' ? order.shippingProvider.trim() : '',
     boxes,
     items: [...itemCounts.values()],
     total,
@@ -213,7 +218,7 @@ async function updateOrderStatus(req, res, body) {
   try {
     const orders = await readOrders();
     const order = orders.find(item => item.id === body.orderId);
-    if (!order) return respond(res, 404, { error: 'El pedido no está en el registro de los últimos 200 pedidos.' });
+    if (!order) return respond(res, 404, { error: 'El pedido no está en el registro de los últimos 400 pedidos.' });
     const currentStatus = order.status === 'confirmed' ? 'completed' : order.status;
     const paymentId = body.paymentStatus === 'APPROVED' && typeof body.paymentId === 'string'
       ? body.paymentId

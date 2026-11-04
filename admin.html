@@ -255,22 +255,26 @@
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/10 pb-4">
         <div>
           <h2 class="font-serif-luxury text-3xl text-white">Registro y Base de Datos de Clientes VIP</h2>
-          <p class="text-xs text-gray-400 mt-1">Clientes que realizaron pedidos y se registraron para una atención personalizada</p>
+          <p class="text-xs text-gray-400 mt-1">Resumen mensual de compras concretadas por cliente. Es VIP quien compra 3 o más veces en el mes; el conteo se reinicia cada mes.</p>
+          <p id="clients-month-totals" class="text-xs text-goldLight mt-1"></p>
         </div>
-        <button onclick="exportClientsCSV()" class="rounded-xl border border-gold/40 bg-surface hover:bg-surfaceLight px-4 py-2 text-xs uppercase tracking-wider text-goldLight">
-          <i class="fa-solid fa-download mr-1"></i> Exportar Clientes (CSV)
-        </button>
+        <div class="flex items-center gap-2">
+          <select id="clients-month-select" onchange="renderAdminClients()" aria-label="Mes" class="rounded-xl border border-gold/30 bg-[#121214] px-3 py-2 text-xs capitalize text-white"></select>
+          <button onclick="exportClientsCSV()" class="rounded-xl border border-gold/40 bg-surface hover:bg-surfaceLight px-4 py-2 text-xs uppercase tracking-wider text-goldLight">
+            <i class="fa-solid fa-download mr-1"></i> Exportar (CSV)
+          </button>
+        </div>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs text-gray-300">
           <thead class="bg-[#161618] text-goldLight uppercase tracking-wider">
             <tr>
-              <th class="p-3">Fecha y Hora</th>
-              <th class="p-3">Cliente / Nombre</th>
-              <th class="p-3">Dirección de Envío</th>
-              <th class="p-3">Medio de Pago</th>
-              <th class="p-3">Total Pedido</th>
-              <th class="p-3">Detalle del Pedido</th>
+              <th class="p-3">Cliente</th>
+              <th class="p-3 text-center">Compras</th>
+              <th class="p-3 text-center">Galletas</th>
+              <th class="p-3">Total Comprado</th>
+              <th class="p-3">Ticket Promedio</th>
+              <th class="p-3">Primera → Última</th>
               <th class="p-3 text-center">VIP</th>
             </tr>
           </thead>
@@ -407,7 +411,7 @@
         if (!Array.isArray(result.orders)) throw new Error('El registro de pedidos tiene un formato inválido.');
         generatedOrders = result.orders;
         generatedOrdersAvailable = true;
-        status.textContent = `Mostrando ${generatedOrders.length} de hasta ${result.limit || 200} pedidos guardados.`;
+        status.textContent = `Mostrando ${generatedOrders.length} de hasta ${result.limit || 400} pedidos guardados.`;
       } catch (error) {
         generatedOrders = [];
         generatedOrdersAvailable = false;
@@ -415,6 +419,7 @@
         console.error('No se pudo cargar el registro de pedidos:', error);
       }
       renderGeneratedOrders();
+      renderAdminClients();
     }
 
     function escapeOrderHTML(value) {
@@ -705,41 +710,99 @@
       }).join('');
     }
 
+    const VIP_PURCHASES_THRESHOLD = 3;
+
+    // Resumen mensual derivado de los pedidos ya guardados: no agrega datos nuevos.
+    function getMonthlyClientSummary(monthKey) {
+      const byClient = new Map();
+      generatedOrders.forEach(order => {
+        const status = order.status === 'confirmed' ? 'completed' : order.status;
+        if (status !== 'completed') return;
+        const dateKey = getOrderDateKey(order.createdAt);
+        if (dateKey === 'Fecha desconocida' || dateKey.slice(0, 7) !== monthKey) return;
+        const key = String(order.customerName || '').trim().toLowerCase();
+        if (!key) return;
+        if (!byClient.has(key)) {
+          byClient.set(key, { name: order.customerName.trim(), purchases: 0, cookies: 0, total: 0, first: dateKey, last: dateKey });
+        }
+        const c = byClient.get(key);
+        c.purchases += 1;
+        c.cookies += (order.items || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+        c.total += Number(order.total) || 0;
+        if (dateKey < c.first) c.first = dateKey;
+        if (dateKey > c.last) c.last = dateKey;
+      });
+      return [...byClient.values()]
+        .map(c => ({ ...c, avgTicket: c.total / c.purchases, isVip: c.purchases >= VIP_PURCHASES_THRESHOLD }))
+        .sort((a, b) => b.purchases - a.purchases || b.total - a.total);
+    }
+
+    function getSelectedClientsMonth() {
+      const select = document.getElementById('clients-month-select');
+      return select && select.value ? select.value : getOrderDateKey(new Date()).slice(0, 7);
+    }
+
+    function formatMonthLabel(monthKey) {
+      return new Date(`${monthKey}-15T12:00:00`).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+    }
+
     function renderAdminClients() {
-      const clients = JSON.parse(localStorage.getItem('dulce_feliz_clients') || '[]');
+      const select = document.getElementById('clients-month-select');
       const tbody = document.getElementById('admin-clients-tbody');
-      
-      if(clients.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500 italic">No hay clientes ni pedidos registrados todavía. Realiza una prueba desde la tienda.</td></tr>`;
+      const summaryEl = document.getElementById('clients-month-totals');
+      const previous = select.value;
+      const months = new Set([getOrderDateKey(new Date()).slice(0, 7)]);
+      generatedOrders.forEach(order => {
+        const key = getOrderDateKey(order.createdAt);
+        if (key !== 'Fecha desconocida') months.add(key.slice(0, 7));
+      });
+      const sortedMonths = [...months].sort().reverse();
+      select.innerHTML = sortedMonths.map(m => `<option value="${m}">${escapeOrderHTML(formatMonthLabel(m))}</option>`).join('');
+      select.value = sortedMonths.includes(previous) ? previous : sortedMonths[0];
+
+      const clients = getMonthlyClientSummary(select.value);
+      const vipCount = clients.filter(c => c.isVip).length;
+      const monthTotal = clients.reduce((sum, c) => sum + c.total, 0);
+      const monthPurchases = clients.reduce((sum, c) => sum + c.purchases, 0);
+      summaryEl.textContent = `${clients.length} clientes · ${monthPurchases} compras concretadas · $${monthTotal.toLocaleString('es-AR')} · ${vipCount} VIP`;
+
+      if (clients.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500 italic">No hay compras concretadas en este mes.</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = clients.map(c => `
-        <tr class="hover:bg-white/5">
-          <td class="p-3 text-gray-400">${c.date}</td>
-          <td class="p-3 font-bold text-white">${c.name}</td>
-          <td class="p-3 text-gray-300">${c.address}</td>
-          <td class="p-3 text-goldLight">${c.payment}</td>
+      tbody.innerHTML = clients.map(c => {
+        const badge = c.isVip
+          ? '<span class="font-bold text-emerald-400">VIP</span>'
+          : `<span class="text-gray-500">Faltan ${VIP_PURCHASES_THRESHOLD - c.purchases}</span>`;
+        return `<tr class="hover:bg-white/5">
+          <td class="p-3 font-bold text-white">${escapeOrderHTML(c.name)}</td>
+          <td class="p-3 text-center text-goldLight">${c.purchases}</td>
+          <td class="p-3 text-center text-gray-300">${c.cookies}</td>
           <td class="p-3 font-bold text-emerald-400">$${c.total.toLocaleString('es-AR')}</td>
-          <td class="p-3 text-gray-300 max-w-xs truncate" title="${c.order}">${c.order}</td>
-          <td class="p-3 text-center">${c.registered ? '<span class="text-emerald-400 font-bold">Sí</span>' : '<span class="text-gray-500">No</span>'}</td>
-        </tr>
-      `).join('');
+          <td class="p-3 text-gray-300">$${Math.round(c.avgTicket).toLocaleString('es-AR')}</td>
+          <td class="p-3 text-gray-400">${escapeOrderHTML(c.first)} → ${escapeOrderHTML(c.last)}</td>
+          <td class="p-3 text-center">${badge}</td>
+        </tr>`;
+      }).join('');
     }
 
     function exportClientsCSV() {
-      const clients = JSON.parse(localStorage.getItem('dulce_feliz_clients') || '[]');
-      if(clients.length === 0) { alert('No hay datos para exportar.'); return; }
-      let csv = 'Fecha,Nombre,Dirección,Pago,Total,Pedido,RegistradoVIP\n';
+      const month = getSelectedClientsMonth();
+      const clients = getMonthlyClientSummary(month);
+      if (clients.length === 0) { alert('No hay datos para exportar en este mes.'); return; }
+      const q = value => `"${String(value).replace(/"/g, '""')}"`;
+      let csv = 'Mes,Cliente,Compras,Galletas,TotalComprado,TicketPromedio,PrimeraCompra,UltimaCompra,VIP\n';
       clients.forEach(c => {
-        csv += `"${c.date}","${c.name}","${c.address}","${c.payment}",${c.total},"${c.order}","${c.registered ? 'Sí' : 'No'}"\n`;
+        csv += `${month},${q(c.name)},${c.purchases},${c.cookies},${c.total},${Math.round(c.avgTicket)},${c.first},${c.last},${c.isVip ? 'Sí' : 'No'}\n`;
       });
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'clientes_dulce_y_feliz.csv';
+      a.download = `clientes_vip_${month}.csv`;
       a.click();
+      URL.revokeObjectURL(url);
     }
 
     async function saveHeroVideo() {
