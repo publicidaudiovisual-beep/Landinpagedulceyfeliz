@@ -823,6 +823,9 @@
       });
 
       const isMobile = window.innerWidth < 768;
+      const savedCarouselScroll = isMobile && selectorContainer.classList.contains('mobile-carousel-wrapper')
+        ? selectorContainer.scrollLeft
+        : 0;
 
       if(isMobile) {
         selectorContainer.className = "mobile-carousel-wrapper";
@@ -857,6 +860,11 @@
       }
 
       configureMobileCarousel();
+      if (savedCarouselScroll > 0) {
+        selectorContainer.style.scrollBehavior = 'auto';
+        selectorContainer.scrollLeft = savedCarouselScroll;
+        selectorContainer.style.scrollBehavior = '';
+      }
 
       let boxesHtml = '';
       const pageCount = Math.ceil(activeBoxes.length / 4);
