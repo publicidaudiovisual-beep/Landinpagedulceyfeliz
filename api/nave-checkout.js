@@ -183,6 +183,10 @@ async function handler(req, res) {
     const catalog = await readCatalog();
     const verified = getVerifiedProducts(order, catalog);
     const config = getNaveConfig();
+    const deploymentHost = process.env.VERCEL_URL;
+    if (!deploymentHost || !/^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.vercel\.app$/i.test(deploymentHost)) {
+      throw new Error('No se pudo determinar la dirección del despliegue para volver a la tienda.');
+    }
     const paymentRequest = await createPaymentRequest({
       external_payment_id: order.id,
       seller: { pos_id: config.posId },
@@ -190,6 +194,7 @@ async function handler(req, res) {
         amount: { currency: 'ARS', value: verified.total },
         products: verified.products
       }],
+      additional_info: { callback_url: `https://${deploymentHost}/` },
       duration_time: 86400
     });
 
