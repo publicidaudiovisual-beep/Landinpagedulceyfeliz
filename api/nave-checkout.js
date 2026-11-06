@@ -5,7 +5,7 @@ const { createPaymentRequest, getNaveConfig } = require('../lib/nave');
 const ORDERS_KEY = getRedisKey('dulce-feliz-generated-orders');
 const GITHUB_API = 'https://api.github.com';
 const NAVE_PAYMENT_METHOD = 'Sistema Nave de Galicia / MODO';
-const NAVE_CHECKOUT_ENABLED = false;
+const NAVE_CHECKOUT_ENABLED = true;
 
 class CheckoutValidationError extends Error {}
 
