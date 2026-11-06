@@ -515,7 +515,7 @@
             <option value="Pago en efectivo (solo Take Away en Villa Dominico)" data-takeaway-only="true">Pago en efectivo (solo Take Away en Villa Dominico)</option>
             <option value="Pago con QR, tarjeta de crédito o débito por Postner (al retirar en Villa Dominico)" data-takeaway-only="true">Pago con QR, TDC o TDD por Postner (al retirar personalmente en Villa Dominico)</option>
             <option value="Transferencia bancaria por CBU, CTA o Alias">Transferencia bancaria por CBU, CTA o Alias</option>
-            <option id="nave-payment-option" value="Sistema Nave de Galicia / MODO" disabled>Pago online con Nave (QR / MODO) — Próximamente</option>
+            <option id="nave-payment-option" value="Sistema Nave de Galicia / MODO">Pago online con Nave (QR / MODO) — Próximamente</option>
           </select>
           <p id="takeaway-payment-details" class="hidden text-[11px] text-amber-200" aria-live="polite">El efectivo y el pago con Postner están disponibles únicamente al retirar personalmente en Villa Dominico.</p>
           <p id="nave-payment-details" class="hidden text-[11px] text-gray-300" aria-live="polite">Vas a continuar al checkout seguro de Nave. En computadora se ofrece QR y desde el celular podés pagar con MODO o billeteras compatibles; las tarjetas deben estar vinculadas a esos medios.</p>
@@ -1101,7 +1101,7 @@
         if(!response.ok || typeof result.available !== 'boolean') {
           throw new Error(result.error || 'No se pudo verificar la configuración de Nave.');
         }
-        option.disabled = !result.available;
+        option.disabled = false; // PRUEBA: habilitada siempre en nave-preview
         option.textContent = result.available
           ? 'Pago online con Nave (QR / MODO)'
           : 'Pago online con Nave (QR / MODO) — Próximamente';
@@ -1109,7 +1109,6 @@
           ? `Checkout Nave habilitado (${result.environment === 'production' ? 'producción' : 'sandbox'}).`
           : result.message || 'Por el momento, el pago online con Nave no está disponible.';
       } catch (error) {
-        option.disabled = true;
         status.textContent = error.message || 'No se pudo verificar la configuración de Nave.';
         console.error('No se pudo verificar la disponibilidad de Nave:', error);
       }
