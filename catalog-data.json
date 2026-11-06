@@ -99,7 +99,7 @@
       "line": "vip",
       "condition": "nuevo",
       "price": 6000,
-      "stockQuantity": 15,
+      "stockQuantity": 14,
       "ingredients": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate, nueces, manteca, trocitos de panceta aumada,cacao en polvo, azúcar, harina, vainilla y relleno de crema de queso con panceta",
       "desc": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate, nueces, manteca, trocitos de panceta aumada,cacao en polvo, azúcar, harina, vainilla y relleno de crema de queso con panceta",
       "img": "Creamy Bacon.jpg",
@@ -294,12 +294,19 @@
     "media": "Regalo DYF.mp4"
   },
   "processedSaleIds": [
-    "9e108f09-42f5-4bb5-9a77-7efc24e8fb92"
+    "9e108f09-42f5-4bb5-9a77-7efc24e8fb92",
+    "3d3330d6-7021-4a6e-9846-7b023e191dc9"
   ],
   "processedSales": {
     "9e108f09-42f5-4bb5-9a77-7efc24e8fb92": [
       {
         "productId": "briganut",
+        "quantity": 1
+      }
+    ],
+    "3d3330d6-7021-4a6e-9846-7b023e191dc9": [
+      {
+        "productId": "creamybacon",
         "quantity": 1
       }
     ]
