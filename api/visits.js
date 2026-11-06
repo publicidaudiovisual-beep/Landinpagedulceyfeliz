@@ -1,4 +1,6 @@
-const VISIT_COUNTER_KEY = 'dulce-feliz-page-visits';
+const { getRedisKey } = require('../lib/redis-keys');
+
+const VISIT_COUNTER_KEY = getRedisKey('dulce-feliz-page-visits');
 
 function respond(res, status, payload) {
   res.setHeader('Cache-Control', 'no-store');

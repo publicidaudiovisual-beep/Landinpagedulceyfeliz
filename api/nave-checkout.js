@@ -1,10 +1,10 @@
 const crypto = require('node:crypto');
 const { createPaymentRequest, getNaveConfig } = require('../lib/nave');
+const { getRedisKey } = require('../lib/redis-keys');
 
-const ORDERS_KEY = 'dulce-feliz-generated-orders';
+const ORDERS_KEY = getRedisKey('dulce-feliz-generated-orders');
 const GITHUB_API = 'https://api.github.com';
 const NAVE_PAYMENT_METHOD = 'Sistema Nave de Galicia / MODO';
-const NAVE_CHECKOUT_ENABLED = false;
 
 class CheckoutValidationError extends Error {}
 
@@ -101,14 +101,6 @@ function getVerifiedProducts(order, catalog) {
 
 async function handler(req, res) {
   if (req.method === 'GET') {
-    if (!NAVE_CHECKOUT_ENABLED) {
-      return respond(res, 200, {
-        available: false,
-        environment: process.env.NAVE_ENVIRONMENT || 'sandbox',
-        message: 'El pago online con Nave no está disponible por el momento.'
-      });
-    }
-
     try {
       getNaveConfig();
       const requiredEnvironment = [
@@ -137,9 +129,6 @@ async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return respond(res, 405, { error: 'Método no permitido.' });
-  }
-  if (!NAVE_CHECKOUT_ENABLED) {
-    return respond(res, 503, { error: 'El pago online con Nave no está disponible por el momento.' });
   }
 
   let body;
