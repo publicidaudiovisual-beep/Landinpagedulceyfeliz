@@ -993,8 +993,15 @@
 
     function removeFlavor(boxIdx, flavorIdx) {
       activeBoxes[boxIdx].splice(flavorIdx, 1);
-      if(boxIdx === activeBoxes.length - 1) currentSize = boxSizes[boxIdx];
+      if(activeBoxes[boxIdx].length === 0 && activeBoxes.length > 1) {
+        activeBoxes.splice(boxIdx, 1);
+        boxNames.splice(boxIdx, 1);
+        boxSizes.splice(boxIdx, 1);
+      }
+      currentSize = boxSizes[activeBoxes.length - 1];
       document.getElementById('builder-completion-toast').classList.add('hidden');
+      document.getElementById('new-box-options').classList.add('hidden');
+      document.getElementById('add-box-button').setAttribute('aria-expanded', 'false');
       renderBuilder();
     }
 
