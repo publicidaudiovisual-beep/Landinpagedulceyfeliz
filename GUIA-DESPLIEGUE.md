@@ -43,9 +43,9 @@ En **Pedidos generados**, selecciona y guarda el estado correspondiente: **Compr
 
 Esta función requiere `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `ADMIN_PASSWORD`, `GITHUB_TOKEN`, `GITHUB_REPOSITORY` y `GITHUB_BRANCH` en Vercel. El token de GitHub debe tener permiso **Contents: Read and write**. Si falta alguna configuración o GitHub no puede actualizar el catálogo, el pedido queda pendiente y el panel muestra el error para poder reintentar.
 
-### Checkout Nave (sandbox)
+### Checkout Nave
 
-El checkout está temporalmente deshabilitado en todos los entornos, tanto en la interfaz como en la API. No puede habilitarse con variables de Vercel; antes de reactivarlo hay que completar y validar las pruebas de Nave.
+En esta rama el checkout está habilitado únicamente cuando `NAVE_ENVIRONMENT` es `production` y se cumplen las verificaciones de configuración. Está deshabilitado en los demás entornos, tanto en la interfaz como en la API. Una prueba en producción genera un cobro real.
 
 El checkout crea la intención desde el servidor y redirige al `checkout_url` de Nave. En desktop, el checkout ofrece QR; en móviles, MODO y billeteras compatibles. Las tarjetas deben estar vinculadas a esos medios. El ingreso manual de tarjeta no está habilitado por defecto en producción; Nave debe aprobarlo por separado.
 
@@ -63,7 +63,7 @@ Configura en Nave la URL de notificaciones sandbox con la URL estable del despli
 
 El envío por Envia.com también permanece marcado como **Próximamente** y no se puede seleccionar hasta terminar su integración.
 
-Vuelve a desplegar el Preview y realiza una compra de prueba. Verifica que el pedido aparezca en el panel y pase a **Compra concretada** después de aprobarse el pago. No habilites producción hasta confirmar con Nave las credenciales y el punto de venta productivo. Para la publicación productiva, configura las credenciales de producción solo en **Production**, cambia `NAVE_ENVIRONMENT` a `production` en ese entorno y registra en Nave la URL productiva de notificaciones. Nunca reutilices credenciales sandbox en producción.
+Para probar en sandbox usa una rama de pruebas que habilite expresamente el checkout en ese entorno. En producción, configura las credenciales productivas solo en **Production**, establece `NAVE_ENVIRONMENT` en `production` y registra en Nave la URL productiva de notificaciones. Nunca reutilices credenciales sandbox en producción. Realiza una compra controlada y verifica que el pedido aparezca en el panel y pase a **Compra concretada** después de aprobarse el pago, y que se descuente el stock. Si el pago se aprueba pero el pedido no se actualiza, conserva el comprobante y revisa la notificación antes de volver a pagar.
 
 En **Settings → Git**, confirma que la rama indicada en `GITHUB_BRANCH` sea la rama de producción. El panel requiere esa configuración para acceder; sin ella, no se puede validar el acceso ni guardar cambios.
 
