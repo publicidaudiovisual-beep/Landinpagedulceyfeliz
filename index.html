@@ -15,11 +15,6 @@
     const appLaunchedAsInstalled = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
     if (appLaunchedAsInstalled) {
       document.documentElement.classList.add('app-launching');
-      const welcomeImagePreload = document.createElement('link');
-      welcomeImagePreload.rel = 'preload';
-      welcomeImagePreload.as = 'image';
-      welcomeImagePreload.href = '/logo-bienvenida-v4.webp';
-      document.head.append(welcomeImagePreload);
     }
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -57,9 +52,7 @@
     html.app-launching { overflow: hidden; }
     html.app-launching #app-welcome-screen { display: flex; opacity: 1; visibility: visible; }
     html.app-launching #app-welcome-screen.is-leaving { opacity: 0; visibility: hidden; }
-    #app-welcome-screen .welcome-media { display: grid; place-items: center; width: min(100%, 42rem); max-height: 100%; }
-    #app-welcome-screen img, #app-welcome-screen video { grid-area: 1 / 1; display: block; max-width: 100%; max-height: calc(100dvh - 2rem); object-fit: contain; border-radius: 1rem; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55); }
-    #app-welcome-screen video { visibility: hidden; }
+    #app-welcome-screen video { display: block; max-width: 100%; max-height: calc(100dvh - 2rem); object-fit: contain; border-radius: 1rem; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55); visibility: hidden; }
     #app-welcome-screen video.is-playing { visibility: visible; }
     @media (prefers-reduced-motion: reduce) {
       #app-welcome-screen { transition: none; }
@@ -72,8 +65,8 @@
       font-family: 'Great Vibes', 'Cormorant Garamond', serif;
       font-weight: 400;
       font-size: clamp(2.7rem, 9vw, 6.5rem);
-      line-height: 1.12;
-      padding-bottom: 0.12em;
+      line-height: 1.5;
+      padding: 0.12em 0.1em 0.18em;
       background: linear-gradient(135deg, #F3E5AB 0%, #D4AF37 45%, #AA771C 100%);
       -webkit-background-clip: text;
       background-clip: text;
@@ -164,11 +157,8 @@
   </style>
 </head>
 <body>
-  <div id="app-welcome-screen" role="status" aria-live="polite" aria-hidden="true">
-    <div class="welcome-media">
-      <img data-src="/logo-bienvenida-v4.webp" alt="Bienvenidos a Dulce y Feliz" />
-      <video muted playsinline loop preload="none" aria-hidden="true"></video>
-    </div>
+  <div id="app-welcome-screen" role="status" aria-live="polite" aria-label="Bienvenidos a Dulce y Feliz" aria-hidden="true">
+    <video muted playsinline loop preload="none" aria-hidden="true"></video>
   </div>
   <script>
     if (appLaunchedAsInstalled) {
@@ -195,8 +185,6 @@
       };
 
       welcomeScreen.setAttribute('aria-hidden', 'false');
-      const welcomeImage = welcomeScreen.querySelector('img');
-      welcomeImage.src = welcomeImage.dataset.src;
       if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         welcomeVideo.addEventListener('playing', () => welcomeVideo.classList.add('is-playing'), { once: true });
         welcomeVideo.addEventListener('error', () => {
