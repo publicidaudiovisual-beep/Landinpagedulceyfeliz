@@ -66,3 +66,45 @@ test('production payment creation reaches request validation', async () => {
   const response = await request(variables, 'POST', {});
   assert.equal(response.statusCode, 400);
 });
+
+test('new production payment requests include the public store return URL', async () => {
+  const originalFetch = global.fetch;
+  const orderId = '12345678-1234-1234-1234-123456789abc';
+  const order = {
+    id: orderId,
+    paymentMethod: 'Sistema Nave de Galicia / MODO',
+    items: [{ productId: 'cookie', quantity: 1 }],
+    total: 6000
+  };
+  let paymentBody;
+  global.fetch = async (url, options) => {
+    const reply = result => ({ ok: true, json: async () => result });
+    if (url === variables.UPSTASH_REDIS_REST_URL) {
+      const command = JSON.parse(options.body);
+      if (command[0] === 'SET') return reply({ result: 'OK' });
+      if (command[0] === 'GET') return reply({ result: JSON.stringify([order]) });
+      if (command[0] === 'EVAL' && command.length === 6) return reply({ result: command[5] });
+      if (command[0] === 'EVAL') return reply({ result: 1 });
+    }
+    if (url.startsWith('https://api.github.com/')) {
+      const catalog = { products: [{ id: 'cookie', name: 'Cookie', price: 6000, stockQuantity: 1 }] };
+      return reply({ content: Buffer.from(JSON.stringify(catalog)).toString('base64') });
+    }
+    if (url.startsWith('https://services.apinaranja.com/')) {
+      return reply({ access_token: 'test-access-token', expires_in: 3600 });
+    }
+    if (url === 'https://api.ranty.io/integrations/payment_requests/ecommerce') {
+      paymentBody = JSON.parse(options.body);
+      return reply({ id: 'test-request', checkout_url: 'https://checkout.ranty.io/test' });
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  };
+  try {
+    const response = await request(variables, 'POST', { orderId });
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.body.checkoutUrl, 'https://checkout.ranty.io/test');
+    assert.deepEqual(paymentBody.additional_info, { callback_url: 'https://www.dulceyfeliz.online/' });
+  } finally {
+    global.fetch = originalFetch;
+  }
+});

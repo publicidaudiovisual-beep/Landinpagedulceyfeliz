@@ -190,6 +190,7 @@ async function handler(req, res) {
         amount: { currency: 'ARS', value: verified.total },
         products: verified.products
       }],
+      additional_info: { callback_url: 'https://www.dulceyfeliz.online/' },
       duration_time: 86400
     });
 

@@ -49,6 +49,8 @@ En esta rama el checkout está habilitado únicamente cuando `NAVE_ENVIRONMENT` 
 
 El checkout crea la intención desde el servidor y redirige al `checkout_url` de Nave. En desktop, el checkout ofrece QR; en móviles, MODO y billeteras compatibles. Las tarjetas deben estar vinculadas a esos medios. El ingreso manual de tarjeta no está habilitado por defecto en producción; Nave debe aprobarlo por separado.
 
+Las nuevas intenciones de producción incluyen la URL de regreso `https://www.dulceyfeliz.online/`. Esta URL solo sirve para volver a la tienda: la confirmación del pago y el descuento de stock dependen de la notificación de Nave.
+
 Lo más seguro es probar primero en un despliegue **Preview**. En **Vercel → Project Settings → Environment Variables**, agrega las credenciales sandbox seleccionando solo el entorno **Preview**; no las agregues a Production. No las pongas en archivos del sitio ni las compartas por chat:
 
 | Variable | Valor |
