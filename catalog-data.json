@@ -235,7 +235,7 @@
       "line": "clasica",
       "condition": "",
       "price": 1500,
-      "stockQuantity": 9,
+      "stockQuantity": 8,
       "ingredients": "Lentejas de chocolate de colores, pepitas de colores, gotas de chocolate oscuro, manteca, azúcar, harina y vainilla",
       "desc": "Lentejas de chocolate de colores, pepitas de colores, gotas de chocolate oscuro, manteca, azúcar, harina y vainilla",
       "img": "Happy Cookie.png",
@@ -296,7 +296,8 @@
   "processedSaleIds": [
     "9e108f09-42f5-4bb5-9a77-7efc24e8fb92",
     "3d3330d6-7021-4a6e-9846-7b023e191dc9",
-    "8127fae1-a88c-41e6-be24-7bf6fdb17903"
+    "8127fae1-a88c-41e6-be24-7bf6fdb17903",
+    "b52e1601-93cc-41b1-9719-f4c7a37f1fd0"
   ],
   "processedSales": {
     "9e108f09-42f5-4bb5-9a77-7efc24e8fb92": [
@@ -312,6 +313,12 @@
       }
     ],
     "8127fae1-a88c-41e6-be24-7bf6fdb17903": [
+      {
+        "productId": "happycookie",
+        "quantity": 1
+      }
+    ],
+    "b52e1601-93cc-41b1-9719-f4c7a37f1fd0": [
       {
         "productId": "happycookie",
         "quantity": 1
