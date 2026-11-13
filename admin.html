@@ -208,7 +208,7 @@
 
     <div id="admin-print-area"><section id="print-section" class="glass-card p-6 sm:p-8 space-y-3">
       <h2 class="font-serif-luxury text-2xl text-white">Impresión automática de compras</h2>
-      <p class="text-xs text-gray-400">La impresión automática y los PDF locales requieren instalar y configurar el servicio en la computadora. Los trabajos en revisión podrían haberse impreso: detené el servicio y comprobá el papel antes de resolverlos.</p>
+      <p class="text-xs text-gray-400">La impresión automática y los PDF locales requieren instalar y configurar el servicio en la computadora. Los trabajos en revisión podrían haberse impreso: detené el servicio y comprobá el papel antes de resolverlos. Para Nave se imprimen dos tickets; al reintentar se vuelven a enviar ambos.</p>
       <button type="button" id="refresh-print-jobs" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Actualizar cola</button>
       <p id="print-jobs-status" class="text-xs text-gray-400" aria-live="polite">Ingresá al panel para consultar la cola.</p>
       <div id="print-jobs-list" class="space-y-2"></div>
@@ -851,7 +851,7 @@
           </label>
           <p class="text-xs text-gray-400">El pago de envío es independiente del estado de la compra. Confirmá manualmente las transferencias aparte.</p>
           <button type="button" data-save-shipping-payment="${escapeOrderHTML(order.id)}" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight">Guardar pago del envío</button>` : '<p class="text-xs text-gray-400">Envío coordinado: consultar los datos y el pago con el cliente.</p>'}
-          ${['completed', 'confirmed'].includes(order.status) ? `<button type="button" data-shipping-print="${escapeOrderHTML(order.id)}" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight">Imprimir comprobante interno</button>` : ''}
+          ${['completed', 'confirmed'].includes(order.status) ? `<button type="button" data-shipping-print="${escapeOrderHTML(order.id)}" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight">Imprimir comprobante del cliente</button>` : ''}
         </article>`;
       }).join('');
     }
@@ -1178,7 +1178,7 @@
             <label class="mt-2 text-left text-[10px] uppercase tracking-wider text-gray-500" for="order-status-${escapeOrderHTML(order.id)}">Actualizar estado</label>
             <select id="order-status-${escapeOrderHTML(order.id)}" data-order-status class="rounded-lg border border-gold/30 bg-[#121214] px-3 py-2 text-xs text-white">${pendingOption}${statusOptions}</select>
             <button type="button" onclick="updateGeneratedOrderStatus('${escapeOrderHTML(order.id)}', this)" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight hover:bg-gold/10">Guardar estado</button>
-            ${currentStatus === 'completed' ? `<button type="button" data-print-order="${escapeOrderHTML(order.id)}" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight hover:bg-gold/10">Imprimir comprobante</button>` : ''}
+            ${currentStatus === 'completed' ? `<button type="button" data-print-order="${escapeOrderHTML(order.id)}" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight hover:bg-gold/10">Imprimir comprobante del cliente</button>` : ''}
             ${currentStatus === 'completed' ? '<p class="text-[10px] text-emerald-300">Inventario descontado</p>' : ''}
             ${navePending}`;
           return `<article class="rounded-2xl border border-white/10 bg-[#161618] p-4 sm:p-5">
@@ -1226,7 +1226,7 @@
         return;
       }
       try {
-        const data = DulceReceipt.createReceipt(order);
+        const data = DulceReceipt.createCustomerReceipt(order);
         const logoUrl = new URL('Isotipo Sin fondo.png', location.href).href;
         const content = data.blocks.map(block =>
           `<div class="${escapeOrderHTML(block.type)}">${escapeOrderHTML(block.text)}</div>`

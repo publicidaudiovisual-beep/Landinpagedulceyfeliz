@@ -1,8 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
 const jobs = require('../lib/print-jobs');
 const handler = require('../api/print-jobs');
-const { receiptLines, createReceipt, archiveBlocks, flattenOrder, billingData } = require('../print-agent/receipt');
+const { receiptLines, createReceipt, createCustomerReceipt, createPrintReceipts, archiveBlocks, flattenOrder, billingData } = require('../print-agent/receipt');
 const nave = require('../lib/nave');
 const orders = require('../api/orders');
 
@@ -86,6 +89,67 @@ test('el ticket tiene un solo QR pequeño con los datos básicos sin datos de en
   assert.match(receipt.codes[0].payload, /DF-000023/);
   assert.match(receipt.codes[0].payload, /100\.00 ARS/);
   assert.doesNotMatch(receipt.codes[0].payload, /Ana Ñúñez/);
+});
+
+test('el comprobante del cliente incluye la compra y el pago sin datos de entrega', () => {
+  const order = {
+    orderNumber: 23, createdAt: '2026-11-13T01:00:00Z', customerName: 'María Pérez',
+    paymentMethod: 'Transferencia', shippingMethod: 'Envío por Vima', address: 'Dirección privada',
+    total: 120, shippingCost: 20,
+    delivery: { shippingPayment: 'together', street: 'Calle privada', phone: '1100000000' },
+    boxes: [{ size: 4, customName: 'Ana', items: [{ name: 'Galleta', quantity: 2, unitPrice: 50 }] }]
+  };
+  const receipt = createCustomerReceipt(order);
+  const text = receipt.blocks.map(block => block.text).join('\n');
+  assert.match(text, /COMPROBANTE DE COMPRA - NO FISCAL/);
+  assert.match(text, /Fecha: 12\/11\/2026/);
+  assert.match(text, /Cliente: María Pérez/);
+  assert.match(text, /Pago: Transferencia/);
+  assert.match(text, /Galleta: 2 x/);
+  assert.match(text, /Envío incluido en la compra: \$20,00/);
+  assert.match(text, /Total de la compra: \$120,00/);
+  assert.doesNotMatch(text, /Vima|Dirección privada|Calle privada|1100000000/);
+  assert.equal(receipt.codes.length, 1);
+  assert.match(receipt.codes[0].payload, /Fecha: 12\/11\/2026/);
+  assert.doesNotMatch(receipt.codes[0].payload, /María|Vima|1100000000/);
+  order.delivery.shippingPayment = 'separate';
+  assert.doesNotMatch(createCustomerReceipt(order).blocks.map(block => block.text).join('\n'), /Envío incluido/);
+});
+
+test('solo un pago Nave aprobado genera el comprobante interno además del cliente', () => {
+  const order = { orderNumber: 1, createdAt: '2026-11-12T12:00:00Z', customerName: 'Cliente',
+    paymentMethod: 'Transferencia', total: 100, boxes: [] };
+  const texts = job => createPrintReceipts(job).map(receipt => receipt.blocks.map(block => block.text).join('\n'));
+  assert.equal(texts({ order }).length, 1);
+  const naveOrder = { ...order, paymentMethod: 'Sistema Nave de Galicia / MODO', paymentStatus: 'APPROVED' };
+  assert.equal(texts({ order: naveOrder }).length, 1);
+  const naveReceipts = texts({ order: naveOrder, paymentId: 'pago' });
+  assert.equal(naveReceipts.length, 2);
+  assert.match(naveReceipts[0], /COMPROBANTE DE COMPRA/);
+  assert.match(naveReceipts[1], /CONTROL INTERNO/);
+  assert.equal(texts({ order: { ...naveOrder, paymentStatus: 'PENDING' }, paymentId: 'pago' }).length, 1);
+});
+
+test('el servicio envía los tickets como trabajos separados y detiene el proceso si falla la impresión', async () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'print-agent', 'agent.js'), 'utf8');
+  const match = source.match(/async function printTickets\(job\) \{[\s\S]*?\n\}/);
+  assert.ok(match);
+  const sent = [];
+  const context = vm.createContext({
+    createPrintReceipts: () => [
+      { blocks: [{ type: 'title', text: 'Cliente' }], codes: [{ label: 'QR', matrix: [[true]] }] },
+      { blocks: [{ type: 'title', text: 'Interno' }], codes: [] }
+    ],
+    printerCommand: async items => { sent.push(items); }
+  });
+  vm.runInContext(match[0], context);
+  await context.printTickets({});
+  assert.equal(sent.length, 2);
+  assert.equal(sent[0][1].text, 'Cliente');
+  assert.equal(sent[0][2].type, 'qr');
+  assert.equal(sent[1][1].text, 'Interno');
+  context.printerCommand = async () => { throw new Error('Impresora no disponible'); };
+  await assert.rejects(context.printTickets({}), /Impresora no disponible/);
 });
 
 test('los datos para facturar usan el mes del pago en Argentina y distinguen el envío', () => {

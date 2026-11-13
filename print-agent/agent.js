@@ -1,7 +1,7 @@
 const { spawn } = require('node:child_process');
 const path = require('node:path');
 const fs = require('node:fs/promises');
-const { createReceipt, archiveBlocks, billingData } = require('./receipt');
+const { createPrintReceipts, archiveBlocks, billingData } = require('./receipt');
 
 const endpoint = process.env.PRINT_AGENT_URL;
 const token = process.env.PRINT_AGENT_TOKEN;
@@ -97,6 +97,14 @@ async function saveArchive(job) {
   }
 }
 
+async function printTickets(job) {
+  for (const receipt of createPrintReceipts(job)) {
+    const items = [{ type: 'logo' }, ...receipt.blocks,
+      ...receipt.codes.map(code => ({ type: 'qr', label: code.label, matrix: code.matrix }))];
+    await printerCommand(items);
+  }
+}
+
 async function run() {
   validateConfig();
   console.log('Servicio de impresión iniciado. No se mostrarán datos de clientes en el registro.');
@@ -123,10 +131,7 @@ async function run() {
             await wait(10000);
           }
         }
-        const receipt = createReceipt(job.order);
-        const items = [{ type: 'logo' }, ...receipt.blocks,
-          ...receipt.codes.map(code => ({ type: 'qr', label: code.label, matrix: code.matrix }))];
-        await printerCommand(items);
+        await printTickets(job);
       } catch (error) {
         console.error(`No se pudo enviar el trabajo ${job.id}: ${error.message}. Revisá el panel antes de reintentar.`);
         process.exitCode = 1;

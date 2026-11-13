@@ -15,7 +15,7 @@
     const money = value => `$${Number(value).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const section = name => add('section', name);
     add('title', 'DULCE Y FELIZ');
-    add('subtitle', 'CONSUMIDOR FINAL - NO FISCAL');
+    add('subtitle', 'CONTROL INTERNO - NO FISCAL');
     add('number', `DF-${String(order.orderNumber).padStart(6, '0')}`);
     row('Fecha', order.createdAt);
     section('DATOS DEL PEDIDO');
@@ -51,9 +51,16 @@
     return blocks;
   }
 
-  function createReceipt(order) {
-    const blocks = receiptBlocks(order);
-    const payload = `COMPROBANTE NO FISCAL\nPedido: DF-${String(order.orderNumber).padStart(6, '0')}\nFecha: ${String(order.createdAt || '').slice(0, 10)}\nTotal: ${Number(order.total).toFixed(2)} ARS`;
+  function formatReceiptDate(value) {
+    const date = new Date(value);
+    if (!value || Number.isNaN(date.getTime())) return String(value || '');
+    return new Intl.DateTimeFormat('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires', day: '2-digit', month: '2-digit', year: 'numeric'
+    }).format(date);
+  }
+
+  function makeReceipt(order, blocks) {
+    const payload = `COMPROBANTE NO FISCAL\nPedido: DF-${String(order.orderNumber).padStart(6, '0')}\nFecha: ${formatReceiptDate(order.createdAt)}\nTotal: ${Number(order.total).toFixed(2)} ARS`;
     qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
     const qr = qrcode(0, 'M');
     qr.addData(payload, 'Byte');
@@ -67,6 +74,45 @@
         Array.from({ length: count }, (_, column) => qr.isDark(row, column)))
     };
     return { blocks, codes: [code] };
+  }
+
+  function createReceipt(order) {
+    return makeReceipt(order, receiptBlocks(order));
+  }
+
+  function createCustomerReceipt(order) {
+    const clean = value => String(value).replace(/\s+/g, ' ').trim();
+    const money = value => `$${Number(value).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const blocks = [
+      { type: 'title', text: 'DULCE Y FELIZ' },
+      { type: 'subtitle', text: 'COMPROBANTE DE COMPRA - NO FISCAL' },
+      { type: 'number', text: `DF-${String(order.orderNumber).padStart(6, '0')}` },
+      { type: 'line', text: `Fecha: ${formatReceiptDate(order.createdAt)}` },
+      { type: 'line', text: `Cliente: ${clean(order.customerName)}` },
+      { type: 'line', text: `Pago: ${clean(order.paymentMethod)}` },
+      { type: 'section', text: 'PRODUCTOS' }
+    ];
+    for (const [index, box] of (order.boxes || []).entries()) {
+      blocks.push({ type: 'box', text: `Caja ${index + 1} · ${box.size === 1 ? 'Cajita individual' : `Caja de ${box.size}`}` });
+      if (box.customName) blocks.push({ type: 'line', text: `Personalizada para: ${clean(box.customName)}` });
+      for (const item of box.items || []) {
+        blocks.push({ type: 'line', text: `${clean(item.name)}: ${item.quantity} x ${money(item.unitPrice)}` });
+      }
+    }
+    if (order.delivery?.shippingPayment === 'together') {
+      blocks.push({ type: 'line', text: `Envío incluido en la compra: ${money(order.shippingCost)}` });
+    }
+    blocks.push({ type: 'total', text: `Total de la compra: ${money(order.total)}` });
+    return makeReceipt(order, blocks);
+  }
+
+  function createPrintReceipts(job) {
+    const receipts = [createCustomerReceipt(job.order)];
+    if (job.order.paymentMethod === 'Sistema Nave de Galicia / MODO'
+      && job.order.paymentStatus === 'APPROVED' && job.paymentId) {
+      receipts.push(createReceipt(job.order));
+    }
+    return receipts;
   }
 
   function flattenOrder(order) {
@@ -155,5 +201,5 @@
     return { month, blocks };
   }
 
-  return { receiptLines: order => receiptBlocks(order).map(block => block.text), createReceipt, flattenOrder, archiveBlocks, billingData };
+  return { receiptLines: order => receiptBlocks(order).map(block => block.text), createReceipt, createCustomerReceipt, createPrintReceipts, flattenOrder, archiveBlocks, billingData };
 });

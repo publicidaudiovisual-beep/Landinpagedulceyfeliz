@@ -242,7 +242,7 @@ test('el estado del pago de envío exige autenticación y datos válidos', async
   assert.equal(res.body.order.shippingPaymentStatus, 'paid');
 });
 
-test('el comprobante manual incluye datos de entrega y escapa texto del cliente', async () => {
+test('el comprobante manual es para el cliente y no muestra datos de entrega', async () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'admin.html'), 'utf8');
   const match = source.match(/    async function printOrderReceipt\(orderId\) \{[\s\S]*?\n    \}/);
   assert.ok(match);
@@ -250,7 +250,8 @@ test('el comprobante manual incluye datos de entrega y escapa texto del cliente'
   let printed = false;
   const context = vm.createContext({
     generatedOrders: [{
-      id: 'pedido', status: 'completed', orderNumber: 1, total: 200, productTotal: 100,
+      id: 'pedido', status: 'completed', orderNumber: 1, customerName: '<Cliente>', paymentMethod: 'Transferencia',
+      createdAt: '2026-11-12T12:00:00Z', total: 200, productTotal: 100,
       shippingCost: 100, destinationType: 'empresa', businessDeliveryHours: '9 a 12',
       delivery: { companyName: 'Vima', recipient: 'Ana', street: '<Calle>', phone: '1100000000', shippingPayment: 'together' },
       boxes: [{ size: 4, items: [{ name: 'Galleta', quantity: 1, unitPrice: 100 }] }]
@@ -270,10 +271,12 @@ test('el comprobante manual incluye datos de entrega y escapa texto del cliente'
   vm.runInContext(match[0], context);
   await context.printOrderReceipt('pedido');
   assert.equal(printed, true);
-  assert.match(html, /&lt;Calle&gt;/);
+  assert.match(html, /&lt;Cliente&gt;/);
   assert.doesNotMatch(html, /<Calle>/);
+  assert.doesNotMatch(html, /&lt;Calle&gt;/);
   assert.doesNotMatch(html, /9 a 12/);
-  assert.match(html, /Teléfono/);
+  assert.doesNotMatch(html, /Teléfono/);
+  assert.match(html, /Pago: Transferencia/);
   assert.match(html, /Galleta/);
   context.generatedOrders[0].status = 'generated';
   await assert.rejects(context.printOrderReceipt('pedido'), /pedidos concretados/);
