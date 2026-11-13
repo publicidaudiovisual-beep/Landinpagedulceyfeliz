@@ -76,10 +76,37 @@
   </header>
 
   <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-10 space-y-10">
-    <nav class="flex gap-4 border-b border-gold/20" aria-label="Secciones del administrador">
+    <nav class="flex flex-wrap gap-4 border-b border-gold/20" aria-label="Secciones del administrador">
       <button type="button" id="admin-tab" aria-current="page" class="px-4 py-3 text-sm text-goldLight">Panel actual</button>
+      <button type="button" id="orders-tab" class="px-4 py-3 text-sm text-gray-400">Pedidos generados</button>
       <button type="button" id="shipping-tab" class="px-4 py-3 text-sm text-gray-400">Envíos</button>
     </nav>
+    <div id="orders-view" class="space-y-8" hidden>
+      <section class="glass-card p-6 sm:p-8 space-y-5">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-4">
+          <div>
+            <h2 class="font-serif-luxury text-3xl text-white">Pedidos generados</h2>
+            <p class="mt-1 text-xs text-gray-400">Pedidos registrados al iniciar el envío por WhatsApp o el pago en Nave. Se conservan los últimos 400; al superar el límite se reemplaza el más antiguo.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="loadGeneratedOrders()" class="rounded-xl border border-gold/40 px-4 py-2 text-xs uppercase tracking-wider text-goldLight hover:bg-gold/10">
+              <i class="fa-solid fa-rotate mr-1"></i> Actualizar pedidos
+            </button>
+            <button type="button" onclick="exportOrdersCSV()" class="rounded-xl border border-gold/40 px-4 py-2 text-xs uppercase tracking-wider text-goldLight hover:bg-gold/10">Descargar compras (CSV)</button>
+          </div>
+        </div>
+        <label for="orders-search" class="block text-xs text-gray-300">Buscar por número, cliente, teléfono, producto, estado o entrega</label>
+        <input id="orders-search" type="search" autocomplete="off" placeholder="Ej. DF-000123 o nombre del cliente" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-3 text-sm text-white">
+        <p id="admin-orders-status" class="text-xs text-gray-400" aria-live="polite">Cargando pedidos...</p>
+        <p id="orders-results-status" class="text-xs text-gray-400" aria-live="polite"></p>
+        <div id="admin-generated-orders" class="space-y-5"></div>
+        <div id="orders-pagination" class="flex flex-wrap items-center gap-3" hidden>
+          <button type="button" id="orders-previous" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight disabled:opacity-40">Anterior</button>
+          <span id="orders-page" class="text-xs text-gray-300"></span>
+          <button type="button" id="orders-next" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight disabled:opacity-40">Siguiente</button>
+        </div>
+      </section>
+    </div>
     <div id="shipping-view" class="space-y-8" hidden>
       <section class="glass-card p-6 sm:p-8 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -158,21 +185,17 @@
       </div>
     </section>
 
-    <section class="glass-card p-6 sm:p-8 space-y-5">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-4">
-        <div>
-          <h2 class="font-serif-luxury text-3xl text-white">Pedidos generados</h2>
-          <p class="mt-1 text-xs text-gray-400">Pedidos registrados al iniciar el envío por WhatsApp o el pago en Nave. Se conservan los últimos 400; al superar el límite se reemplaza el más antiguo.</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button type="button" onclick="loadGeneratedOrders()" class="rounded-xl border border-gold/40 px-4 py-2 text-xs uppercase tracking-wider text-goldLight hover:bg-gold/10">
-            <i class="fa-solid fa-rotate mr-1"></i> Actualizar pedidos
-          </button>
-          <button type="button" onclick="exportOrdersCSV()" class="rounded-xl border border-gold/40 px-4 py-2 text-xs uppercase tracking-wider text-goldLight hover:bg-gold/10">Descargar compras (CSV)</button>
-        </div>
+    <section class="glass-card p-6 sm:p-8 space-y-4">
+      <h2 class="font-serif-luxury text-3xl text-white">Historial de compras</h2>
+      <p class="text-xs text-gray-400">Compras concretadas de los últimos 400 pedidos conservados, según la fecha de confirmación. Las barras muestran cantidad de compras; los importes incluyen el envío si se pagó junto con la compra.</p>
+      <div id="sales-periods" class="flex flex-wrap gap-2" aria-label="Período del historial">
+        <button type="button" data-sales-period="week" aria-pressed="false" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Una semana</button>
+        <button type="button" data-sales-period="month" aria-pressed="true" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Un mes</button>
+        <button type="button" data-sales-period="six-months" aria-pressed="false" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">6 meses</button>
+        <button type="button" data-sales-period="year" aria-pressed="false" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Un año</button>
       </div>
-      <p id="admin-orders-status" class="text-xs text-gray-400" aria-live="polite">Cargando pedidos...</p>
-      <div id="admin-generated-orders" class="space-y-5"></div>
+      <p id="sales-history-summary" class="text-sm text-goldLight" aria-live="polite">Cargando historial...</p>
+      <div id="sales-history-chart" class="overflow-x-auto"></div>
     </section>
 
     <div id="admin-print-area"><section id="print-section" class="glass-card p-6 sm:p-8 space-y-3">
@@ -399,21 +422,24 @@
     let shippingZones = [];
     let shippingCompanies = [];
     let shippingConfigLoaded = false;
+    let ordersPage = 0;
+    let salesPeriod = 'month';
 
-    function showShippingView(show) {
-      document.getElementById('shipping-view').hidden = !show;
-      document.getElementById('admin-view').hidden = show;
-      const active = document.getElementById(show ? 'shipping-tab' : 'admin-tab');
-      const inactive = document.getElementById(show ? 'admin-tab' : 'shipping-tab');
-      active.setAttribute('aria-current', 'page');
-      inactive.removeAttribute('aria-current');
-      active.className = 'px-4 py-3 text-sm text-goldLight';
-      inactive.className = 'px-4 py-3 text-sm text-gray-400';
-      document.getElementById(show ? 'shipping-print-area' : 'admin-print-area')
+    function showAdminView(view) {
+      ['admin', 'orders', 'shipping'].forEach(name => {
+        const selected = name === view;
+        document.getElementById(`${name}-view`).hidden = !selected;
+        const tab = document.getElementById(`${name}-tab`);
+        if (selected) tab.setAttribute('aria-current', 'page');
+        else tab.removeAttribute('aria-current');
+        tab.className = selected ? 'px-4 py-3 text-sm text-goldLight' : 'px-4 py-3 text-sm text-gray-400';
+      });
+      document.getElementById(view === 'shipping' ? 'shipping-print-area' : 'admin-print-area')
         .append(document.getElementById('print-section'));
     }
-    document.getElementById('shipping-tab').addEventListener('click', () => showShippingView(true));
-    document.getElementById('admin-tab').addEventListener('click', () => showShippingView(false));
+    ['admin', 'orders', 'shipping'].forEach(name => {
+      document.getElementById(`${name}-tab`).addEventListener('click', () => showAdminView(name));
+    });
 
     async function loadShippingCompanies() {
       const status = document.getElementById('shipping-config-status');
@@ -717,6 +743,7 @@
       }
       renderGeneratedOrders();
       renderShippingOrders();
+      renderSalesHistory();
       renderAdminClients();
     }
 
@@ -875,19 +902,145 @@
       }).format(date);
     }
 
+    function buildSalesHistory(orders, period, now = new Date()) {
+      const end = getOrderDateKey(now.toISOString());
+      const today = new Date(`${end}T00:00:00Z`);
+      let startDate;
+      if (period === 'week' || period === 'month') {
+        startDate = new Date(today);
+        startDate.setUTCDate(startDate.getUTCDate() - (period === 'week' ? 6 : 29));
+      } else {
+        const months = period === 'six-months' ? 6 : 12;
+        startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - months, 1));
+        const lastDay = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth() + 1, 0)).getUTCDate();
+        startDate.setUTCDate(Math.min(today.getUTCDate(), lastDay));
+      }
+      const start = startDate.toISOString().slice(0, 10);
+      const monthly = period === 'six-months' || period === 'year';
+      const buckets = new Map();
+      for (const date = new Date(startDate); date <= today; date.setUTCDate(date.getUTCDate() + 1)) {
+        const day = date.toISOString().slice(0, 10);
+        const key = monthly ? day.slice(0, 7) : day;
+        if (!buckets.has(key)) buckets.set(key, { key, count: 0, total: 0 });
+      }
+      let excluded = 0;
+      orders.forEach(order => {
+        if (!['completed', 'confirmed'].includes(order.status)) return;
+        const dateValue = order.statusUpdatedAt || order.confirmedAt || order.createdAt;
+        const timestamp = new Date(dateValue);
+        const amount = Number(order.total);
+        if (Number.isNaN(timestamp.getTime()) || order.total === undefined || order.total === null
+          || !Number.isFinite(amount) || amount < 0) {
+          excluded++;
+          return;
+        }
+        const date = getOrderDateKey(timestamp);
+        if (date < start || date > end || timestamp > now) return;
+        const bucket = buckets.get(monthly ? date.slice(0, 7) : date);
+        bucket.count++;
+        bucket.total += amount;
+      });
+      return { start, end, monthly, buckets: [...buckets.values()], excluded };
+    }
+
+    function renderSalesHistory() {
+      const summary = document.getElementById('sales-history-summary');
+      const chart = document.getElementById('sales-history-chart');
+      document.querySelectorAll('[data-sales-period]').forEach(button => {
+        const selected = button.dataset.salesPeriod === salesPeriod;
+        button.setAttribute('aria-pressed', String(selected));
+        button.classList.toggle('bg-gold/20', selected);
+      });
+      if (!generatedOrdersAvailable) {
+        summary.textContent = 'No se pudo cargar el historial de compras. Actualizá los pedidos.';
+        chart.replaceChildren();
+        return;
+      }
+      const history = buildSalesHistory(generatedOrders, salesPeriod);
+      const count = history.buckets.reduce((sum, bucket) => sum + bucket.count, 0);
+      const total = history.buckets.reduce((sum, bucket) => sum + bucket.total, 0);
+      const money = value => value.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+      const displayDate = value => value.split('-').reverse().join('/');
+      summary.textContent = `${displayDate(history.start)} al ${displayDate(history.end)} · ${count} ${count === 1 ? 'compra' : 'compras'} · ${money(total)}${history.excluded ? ` · ${history.excluded} sin fecha o importe válido` : ''}`;
+      const max = Math.max(1, ...history.buckets.map(bucket => bucket.count));
+      chart.innerHTML = `<div class="flex min-w-max items-end gap-2 pt-4" role="list" aria-label="Compras por ${history.monthly ? 'mes' : 'día'}">
+        ${history.buckets.map(bucket => {
+          const date = new Date(`${bucket.key}${history.monthly ? '-01' : ''}T12:00:00Z`);
+          const label = date.toLocaleDateString('es-AR', history.monthly
+            ? { timeZone: 'UTC', month: 'short', year: '2-digit' }
+            : { timeZone: 'UTC', day: '2-digit', month: '2-digit' });
+          const detail = `${label}: ${bucket.count} ${bucket.count === 1 ? 'compra' : 'compras'}, ${money(bucket.total)}`;
+          return `<div role="listitem" aria-label="${escapeOrderHTML(detail)}" title="${escapeOrderHTML(detail)}" class="flex w-10 flex-col items-center gap-1">
+            <span class="text-xs text-gray-300">${bucket.count}</span>
+            <div class="flex h-32 w-full items-end rounded-t bg-white/5"><div class="w-full rounded-t bg-gold/70" style="height:${bucket.count ? Math.max(3, bucket.count / max * 100) : 0}%"></div></div>
+            <span class="text-center text-[10px] text-gray-400">${escapeOrderHTML(label)}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+
+    document.getElementById('sales-periods').addEventListener('click', event => {
+      const button = event.target.closest('[data-sales-period]');
+      if (!button) return;
+      salesPeriod = button.dataset.salesPeriod;
+      renderSalesHistory();
+    });
+
+    function orderMatchesSearch(order, query) {
+      const normalize = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es-AR');
+      const labels = {
+        generated: 'pendiente de clasificar', completed: 'compra concretada', confirmed: 'compra concretada',
+        refunded: 'compra con devolucion', not_completed: 'compra no concluida', rejected: 'compra rechazada'
+      };
+      const fields = [formatOrderNumber(order.orderNumber), order.orderNumber, order.id, order.customerName,
+        order.createdAt, order.status, labels[order.status], order.paymentMethod, order.shippingMethod, order.address,
+        ...Object.values(order.delivery || {}), ...(order.items || []).map(item => item.name),
+        ...(order.boxes || []).flatMap(box => (box.items || []).map(item => item.name))];
+      return normalize(fields.join(' ')).includes(normalize(query.trim()));
+    }
+
+    document.getElementById('orders-search').addEventListener('input', () => {
+      ordersPage = 0;
+      renderGeneratedOrders();
+    });
+    document.getElementById('orders-previous').addEventListener('click', () => {
+      ordersPage = Math.max(0, ordersPage - 1);
+      renderGeneratedOrders();
+    });
+    document.getElementById('orders-next').addEventListener('click', () => {
+      ordersPage++;
+      renderGeneratedOrders();
+    });
+
     function renderGeneratedOrders() {
       const container = document.getElementById('admin-generated-orders');
+      const resultsStatus = document.getElementById('orders-results-status');
+      const pagination = document.getElementById('orders-pagination');
       if (!generatedOrdersAvailable) {
+        resultsStatus.textContent = '';
+        pagination.hidden = true;
         container.innerHTML = '<p class="rounded-xl border border-red-500/30 bg-red-950/20 p-4 text-sm text-red-300">No se pudo cargar el registro de pedidos. Revisa la configuración y vuelve a actualizar.</p>';
         return;
       }
-      if (generatedOrders.length === 0) {
-        container.innerHTML = '<p class="rounded-xl border border-white/10 bg-[#161618] p-4 text-sm text-gray-400">Todavía no hay pedidos registrados.</p>';
+      const query = document.getElementById('orders-search').value;
+      const matches = generatedOrders.filter(order => orderMatchesSearch(order, query));
+      const pageCount = Math.ceil(matches.length / 20);
+      ordersPage = Math.min(ordersPage, Math.max(0, pageCount - 1));
+      const pageOrders = matches.slice(ordersPage * 20, (ordersPage + 1) * 20);
+      pagination.hidden = pageCount <= 1;
+      document.getElementById('orders-previous').disabled = ordersPage === 0;
+      document.getElementById('orders-next').disabled = ordersPage >= pageCount - 1;
+      document.getElementById('orders-page').textContent = `Página ${ordersPage + 1} de ${pageCount}`;
+      resultsStatus.textContent = matches.length
+        ? `Mostrando ${ordersPage * 20 + 1}–${ordersPage * 20 + pageOrders.length} de ${matches.length} pedidos.`
+        : 'No hay pedidos que coincidan con la búsqueda.';
+      if (!matches.length) {
+        container.innerHTML = `<p class="rounded-xl border border-white/10 bg-[#161618] p-4 text-sm text-gray-400">${generatedOrders.length ? 'Probá otra búsqueda.' : 'Todavía no hay pedidos registrados.'}</p>`;
         return;
       }
 
       const ordersByDate = new Map();
-      generatedOrders.forEach(order => {
+      pageOrders.forEach(order => {
         const dateKey = getOrderDateKey(order.createdAt);
         if (!ordersByDate.has(dateKey)) ordersByDate.set(dateKey, []);
         ordersByDate.get(dateKey).push(order);
