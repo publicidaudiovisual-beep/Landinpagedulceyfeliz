@@ -69,6 +69,9 @@ module.exports = async function handler(req, res) {
       return respond(res, 409, { error: 'El monto aprobado por Nave no coincide con el pedido.' });
     }
 
+    if (order.delivery?.shippingPayment === 'together') {
+      await ordersApi.markNaveShippingPaid(order.id, notification.payment_id);
+    }
     await enqueuePaidOrder(order, notification.payment_id);
     const confirmation = await ordersApi.confirmOrderForNave(order.id, notification.payment_id);
     if (confirmation.status < 200 || confirmation.status >= 300) {

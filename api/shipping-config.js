@@ -1,5 +1,5 @@
 const crypto = require('node:crypto');
-const { readShippingConfig, saveShippingConfig, validateShippingConfig } = require('../lib/shipping-config');
+const { readShippingConfig, saveShippingConfig, validateShippingConfig, companyUnavailableReason } = require('../lib/shipping-config');
 
 function respond(res, status, payload) {
   res.setHeader('Cache-Control', 'no-store');
@@ -19,9 +19,14 @@ module.exports = async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       const config = await readShippingConfig();
+      const admin = isAdmin(req);
+      const now = new Date();
+      const availability = config.companies.map(company => ({ company, reason: companyUnavailableReason(company, now) }));
       return respond(res, 200, {
         zones: config.zones,
-        companies: isAdmin(req) ? config.companies : config.companies.filter(company => company.enabled)
+        companies: admin ? config.companies : availability.filter(item => !item.reason).map(item => item.company),
+        unavailable: admin ? [] : availability.filter(item => item.reason)
+          .map(item => ({ name: item.company.name, reason: item.reason }))
       });
     }
     if (req.method !== 'POST') {

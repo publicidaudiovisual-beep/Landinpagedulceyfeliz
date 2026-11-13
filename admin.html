@@ -76,6 +76,40 @@
   </header>
 
   <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-10 space-y-10">
+    <nav class="flex gap-4 border-b border-gold/20" aria-label="Secciones del administrador">
+      <button type="button" id="admin-tab" aria-current="page" class="px-4 py-3 text-sm text-goldLight">Panel actual</button>
+      <button type="button" id="shipping-tab" class="px-4 py-3 text-sm text-gray-400">Envíos</button>
+    </nav>
+    <div id="shipping-view" class="space-y-8" hidden>
+      <section class="glass-card p-6 sm:p-8 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div><h2 class="font-serif-luxury text-3xl text-white">Gestión de envíos</h2>
+          <p class="text-xs text-gray-400">Pedidos, pagos de envío, empresas y disponibilidad.</p></div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="loadGeneratedOrders()" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Actualizar pedidos</button>
+            <button type="button" onclick="exportOrdersCSV()" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Descargar compras (CSV)</button>
+          </div>
+        </div>
+        <p id="shipping-orders-status" class="text-xs text-gray-400" aria-live="polite"></p>
+        <div id="shipping-orders" class="space-y-4"></div>
+      </section>
+      <section class="glass-card p-6 sm:p-8 space-y-4">
+        <h2 class="font-serif-luxury text-2xl text-white">Empresas, tarifas y disponibilidad</h2>
+        <p class="text-xs text-gray-400">Las zonas son compartidas. Cargá tarifas con IVA; el precio al cliente agrega el 7 %. Los días y cierres usan la hora de Buenos Aires.</p>
+        <p id="shipping-config-status" class="text-xs text-gray-400" aria-live="polite">Ingresá al panel para cargar la configuración.</p>
+        <h3 class="font-serif-luxury text-xl text-goldLight">Zonas compartidas</h3>
+        <div id="shipping-zones" class="space-y-3"></div>
+        <button type="button" id="add-shipping-zone" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Agregar zona</button>
+        <h3 class="font-serif-luxury text-xl text-goldLight">Empresas</h3>
+        <div id="shipping-companies" class="space-y-4"></div>
+        <div class="flex flex-wrap gap-3">
+          <button type="button" id="add-shipping-company" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Agregar empresa</button>
+          <button type="button" id="save-shipping-companies" class="gold-button rounded-xl px-4 py-2 text-xs">Guardar empresas, tarifas y disponibilidad</button>
+        </div>
+      </section>
+      <div id="shipping-print-area"></div>
+    </div>
+    <div id="admin-view" class="space-y-10">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-gold/20 bg-[#161618] p-4">
       <p id="save-status" class="text-xs text-gray-300" aria-live="polite">Cada guardado actualiza GitHub y dispara un despliegue de Vercel.</p>
       <button onclick="persistAdminData()" class="gold-button shrink-0 rounded-xl px-4 py-2 text-xs uppercase tracking-wider">
@@ -141,28 +175,13 @@
       <div id="admin-generated-orders" class="space-y-5"></div>
     </section>
 
-    <section class="glass-card p-6 sm:p-8 space-y-3">
+    <div id="admin-print-area"><section id="print-section" class="glass-card p-6 sm:p-8 space-y-3">
       <h2 class="font-serif-luxury text-2xl text-white">Impresión automática de compras</h2>
-      <p class="text-xs text-gray-400">Los trabajos pendientes esperan al servicio local. Los trabajos en revisión podrían haberse impreso: detené el servicio y comprobá el papel antes de resolverlos.</p>
+      <p class="text-xs text-gray-400">La impresión automática y los PDF locales requieren instalar y configurar el servicio en la computadora. Los trabajos en revisión podrían haberse impreso: detené el servicio y comprobá el papel antes de resolverlos.</p>
       <button type="button" id="refresh-print-jobs" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Actualizar cola</button>
       <p id="print-jobs-status" class="text-xs text-gray-400" aria-live="polite">Ingresá al panel para consultar la cola.</p>
       <div id="print-jobs-list" class="space-y-2"></div>
-    </section>
-
-    <section class="glass-card p-6 sm:p-8 space-y-4">
-      <h2 class="font-serif-luxury text-2xl text-white">Empresas y tarifas de envío</h2>
-      <p class="text-xs text-gray-400">Todas las empresas usan las mismas zonas. Cargá los importes con IVA incluido; el precio al cliente agrega el 7 %. Vima inicia pausada para revisar las tarifas y el posible recargo de recolección.</p>
-      <p id="shipping-config-status" class="text-xs text-gray-400" aria-live="polite">Ingresá al panel para cargar la configuración.</p>
-      <h3 class="font-serif-luxury text-xl text-goldLight">Zonas compartidas</h3>
-      <div id="shipping-zones" class="space-y-3"></div>
-      <button type="button" id="add-shipping-zone" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Agregar zona</button>
-      <h3 class="font-serif-luxury text-xl text-goldLight">Empresas</h3>
-      <div id="shipping-companies" class="space-y-4"></div>
-      <div class="flex flex-wrap gap-3">
-        <button type="button" id="add-shipping-company" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Agregar empresa</button>
-        <button type="button" id="save-shipping-companies" class="gold-button rounded-xl px-4 py-2 text-xs">Guardar empresas y tarifas</button>
-      </div>
-    </section>
+    </section></div>
 
     <!-- Configuración del Hero, Novedades, Ofertas, Packaging e Instagram -->
     <div class="grid gap-8 lg:grid-cols-2">
@@ -310,6 +329,7 @@
         </table>
       </div>
     </section>
+    </div>
   </main>
 
   <!-- Modal Producto -->
@@ -379,6 +399,21 @@
     let shippingZones = [];
     let shippingCompanies = [];
     let shippingConfigLoaded = false;
+
+    function showShippingView(show) {
+      document.getElementById('shipping-view').hidden = !show;
+      document.getElementById('admin-view').hidden = show;
+      const active = document.getElementById(show ? 'shipping-tab' : 'admin-tab');
+      const inactive = document.getElementById(show ? 'admin-tab' : 'shipping-tab');
+      active.setAttribute('aria-current', 'page');
+      inactive.removeAttribute('aria-current');
+      active.className = 'px-4 py-3 text-sm text-goldLight';
+      inactive.className = 'px-4 py-3 text-sm text-gray-400';
+      document.getElementById(show ? 'shipping-print-area' : 'admin-print-area')
+        .append(document.getElementById('print-section'));
+    }
+    document.getElementById('shipping-tab').addEventListener('click', () => showShippingView(true));
+    document.getElementById('admin-tab').addEventListener('click', () => showShippingView(false));
 
     async function loadShippingCompanies() {
       const status = document.getElementById('shipping-config-status');
@@ -468,6 +503,66 @@
           renderShippingCompanies();
         });
         card.append(name, label, remove);
+        const days = document.createElement('fieldset');
+        days.className = 'flex flex-wrap gap-3 text-xs text-gray-300';
+        const legend = document.createElement('legend');
+        legend.textContent = 'Días laborables (fuera de estos días no se puede elegir la empresa)';
+        days.append(legend);
+        [['Lunes', 1], ['Martes', 2], ['Miércoles', 3], ['Jueves', 4], ['Viernes', 5], ['Sábado', 6], ['Domingo', 0]].forEach(([dayName, day]) => {
+          const dayLabel = document.createElement('label');
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.checked = !company.workDays || company.workDays.includes(day);
+          checkbox.addEventListener('change', () => {
+            if (!company.workDays) company.workDays = [0, 1, 2, 3, 4, 5, 6];
+            company.workDays = company.workDays.filter(value => value !== day);
+            if (checkbox.checked) company.workDays.push(day);
+          });
+          dayLabel.append(checkbox, document.createTextNode(` ${dayName}`));
+          days.append(dayLabel);
+        });
+        const hoursLabel = document.createElement('label');
+        hoursLabel.className = 'block text-xs text-gray-300';
+        hoursLabel.textContent = 'Horario de trabajo (informativo; no bloquea por hora)';
+        const hours = document.createElement('input');
+        hours.type = 'text';
+        hours.maxLength = 200;
+        hours.placeholder = 'Ej. 9 a 18';
+        hours.value = company.workingHours || '';
+        hours.className = name.className;
+        hours.addEventListener('input', () => { company.workingHours = hours.value; });
+        hoursLabel.append(hours);
+        const closureLabel = document.createElement('label');
+        closureLabel.className = 'block text-xs text-gray-300';
+        closureLabel.textContent = 'Cierre excepcional';
+        const reason = document.createElement('select');
+        reason.className = name.className;
+        [['', 'Sin cierre'], ['vacation', 'Vacaciones'], ['holiday', 'Feriado'], ['unexpected', 'Causas mayores o imprevistos']].forEach(([value, text]) => reason.add(new Option(text, value)));
+        reason.value = company.closure?.reason || '';
+        closureLabel.append(reason);
+        const dates = document.createElement('div');
+        dates.className = 'flex flex-wrap gap-3';
+        const dateInputs = {};
+        [['start', 'Desde'], ['end', 'Hasta inclusive']].forEach(([key, text]) => {
+          const dateLabel = document.createElement('label');
+          dateLabel.className = 'text-xs text-gray-300';
+          dateLabel.textContent = text;
+          const input = document.createElement('input');
+          input.type = 'date';
+          input.className = name.className;
+          input.value = company.closure?.[key] || '';
+          input.disabled = !reason.value;
+          input.addEventListener('change', () => { company.closure[key] = input.value; });
+          dateInputs[key] = input;
+          dateLabel.append(input);
+          dates.append(dateLabel);
+        });
+        reason.addEventListener('change', () => {
+          company.closure = reason.value ? { reason: reason.value, start: dateInputs.start.value, end: dateInputs.end.value } : null;
+          dateInputs.start.disabled = !reason.value;
+          dateInputs.end.disabled = !reason.value;
+        });
+        card.append(days, hoursLabel, closureLabel, dates);
         shippingZones.forEach(zone => {
           const row = document.createElement('div');
           row.className = 'rounded-lg border border-white/10 p-3 space-y-2';
@@ -526,6 +621,11 @@
         status.textContent = 'Primero cargá la configuración de envíos.';
         return;
       }
+      if (shippingCompanies.some(company => company.closure
+        && (!company.closure.start || !company.closure.end || company.closure.start > company.closure.end))) {
+        status.textContent = 'Indicá fechas de inicio y fin válidas para cada cierre excepcional.';
+        return;
+      }
       try {
         const response = await fetch('./api/shipping-config', {
           method: 'POST',
@@ -534,7 +634,7 @@
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || 'No se pudo guardar la configuración de envíos.');
-        status.textContent = 'Empresas y tarifas guardadas.';
+        status.textContent = 'Empresas, tarifas y disponibilidad guardadas.';
       } catch (error) {
         status.textContent = error.message || 'No se pudo guardar la configuración de envíos.';
         console.error('Error al guardar empresas de envío:', error);
@@ -613,6 +713,7 @@
         console.error('No se pudo cargar el registro de pedidos:', error);
       }
       renderGeneratedOrders();
+      renderShippingOrders();
       renderAdminClients();
     }
 
@@ -625,6 +726,93 @@
     function formatOrderNumber(number) {
       return `DF-${String(number || 0).padStart(6, '0')}`;
     }
+
+    function renderShippingOrders() {
+      const container = document.getElementById('shipping-orders');
+      const status = document.getElementById('shipping-orders-status');
+      if (!generatedOrdersAvailable) {
+        container.replaceChildren();
+        status.textContent = 'No se pudieron cargar los pedidos. Actualizá para volver a intentar.';
+        return;
+      }
+      const orders = generatedOrders.filter(order => order.delivery || /envío/i.test(order.shippingMethod || ''));
+      status.textContent = `${orders.length} ${orders.length === 1 ? 'pedido' : 'pedidos'} con envío entre los últimos 400 registrados.`;
+      if (!orders.length) {
+        container.innerHTML = '<p class="text-sm text-gray-400">Todavía no hay pedidos con envío.</p>';
+        return;
+      }
+      const labels = {
+        pending: 'Pendiente', paid: 'Pago realizado', rejected: 'Pago rechazado',
+        not_executed: 'Pago no ejecutado', discounted: 'Con descuento', covered: 'Pago asumido por Dulce y Feliz'
+      };
+      const purchaseLabels = {
+        generated: 'Pendiente', completed: 'Compra concretada', confirmed: 'Compra concretada',
+        refunded: 'Compra con devolución', not_completed: 'Compra no concluida', rejected: 'Compra rechazada'
+      };
+      container.innerHTML = orders.map(order => {
+        const delivery = order.delivery;
+        const paymentState = order.shippingPaymentStatus || (delivery?.shippingPayment === 'together'
+          && order.paymentMethod === 'Sistema Nave de Galicia / MODO' && order.paymentStatus === 'APPROVED' ? 'paid' : 'pending');
+        const options = Object.entries(labels).map(([value, text]) =>
+          `<option value="${value}" ${paymentState === value ? 'selected' : ''}>${text}</option>`).join('');
+        const purchaseStatus = order.status === 'confirmed' ? 'completed' : order.status;
+        const purchaseOptions = ['completed', 'refunded', 'not_completed', 'rejected'].map(value =>
+          `<option value="${value}" ${purchaseStatus === value ? 'selected' : ''}>${purchaseLabels[value]}</option>`).join('');
+        const details = delivery ? [
+          ['Empresa', delivery.companyName], ['Zona', delivery.zoneName], ['Localidad', delivery.locality],
+          ['Destinatario', delivery.recipient], ['Documento del comprador', delivery.buyerDocument],
+          ['Calle', delivery.street], ['Altura', delivery.number], ['Piso', delivery.floor],
+          ['Departamento', delivery.apartment], ['Barrio', delivery.neighborhood], ['Provincia', delivery.province],
+          ['Entre calles', delivery.crossStreets], ['Referencia', delivery.landmark], ['Teléfono', delivery.phone],
+          ['Teléfono adicional', delivery.phoneAlt], ['Persona autorizada', delivery.authorized],
+          ['Destino', order.destinationType], ['Horario de recepción', order.businessDeliveryHours]
+        ].filter(([, value]) => value).map(([label, value]) =>
+          `<p>${escapeOrderHTML(label)}: ${escapeOrderHTML(value)}</p>`).join('') : '';
+        const products = (order.items || []).map(item => `${escapeOrderHTML(item.quantity)} × ${escapeOrderHTML(item.name)}`).join(', ');
+        return `<article class="rounded-2xl border border-gold/20 bg-[#161618] p-5 space-y-3">
+          <h3 class="font-serif-luxury text-xl text-goldLight">${escapeOrderHTML(formatOrderNumber(order.orderNumber))} · ${escapeOrderHTML(order.customerName)}</h3>
+          <p class="text-xs text-gray-400">${escapeOrderHTML(order.shippingMethod)} · ${escapeOrderHTML(getOrderDateKey(order.createdAt))}</p>
+          <p class="text-xs text-gray-300">Compra: ${escapeOrderHTML(purchaseLabels[order.status] || 'Pendiente')} · ${escapeOrderHTML(order.paymentMethod)}</p>
+          <label class="block text-xs text-gray-300">Estado de la compra
+            <select data-order-status class="mt-1 w-full rounded-lg border border-gold/30 bg-[#121214] px-3 py-2 text-xs text-white">${purchaseStatus === 'generated' || !purchaseStatus ? '<option value="generated" selected disabled>Pendiente de clasificar</option>' : ''}${purchaseOptions}</select>
+          </label>
+          <button type="button" data-shipping-order-status="${escapeOrderHTML(order.id)}" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight">Guardar estado de compra</button>
+          <p class="text-xs text-gray-300">${products}</p>
+          ${delivery ? `<p class="text-xs text-gray-300">Envío: $${escapeOrderHTML(Number(order.shippingCost || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))} · ${delivery.shippingPayment === 'together' ? 'Incluido en la compra' : 'Transferencia aparte'}</p>
+          <div class="grid gap-1 sm:grid-cols-2 text-xs text-gray-400">${details}</div>
+          <label class="block text-xs text-gray-300">Estado del pago del envío
+            <select data-shipping-payment class="mt-1 w-full rounded-lg border border-gold/30 bg-[#121214] px-3 py-2 text-xs text-white">${options}</select>
+          </label>
+          <p class="text-xs text-gray-400">El pago de envío es independiente del estado de la compra. Confirmá manualmente las transferencias aparte.</p>
+          <button type="button" data-save-shipping-payment="${escapeOrderHTML(order.id)}" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight">Guardar pago del envío</button>` : '<p class="text-xs text-gray-400">Envío coordinado: consultar los datos y el pago con el cliente.</p>'}
+          ${['completed', 'confirmed'].includes(order.status) ? `<button type="button" data-shipping-print="${escapeOrderHTML(order.id)}" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight">Imprimir comprobante interno</button>` : ''}
+        </article>`;
+      }).join('');
+    }
+
+    document.getElementById('shipping-orders').addEventListener('click', async event => {
+      const print = event.target.closest('[data-shipping-print]');
+      if (print) return printOrderReceipt(print.dataset.shippingPrint);
+      const purchase = event.target.closest('[data-shipping-order-status]');
+      if (purchase) return updateGeneratedOrderStatus(purchase.dataset.shippingOrderStatus, purchase);
+      const button = event.target.closest('[data-save-shipping-payment]');
+      if (!button) return;
+      const select = button.parentElement.querySelector('[data-shipping-payment]');
+      button.disabled = true;
+      try {
+        const response = await fetch('./api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminPassword}` },
+          body: JSON.stringify({ action: 'update-shipping-payment', orderId: button.dataset.saveShippingPayment, status: select.value })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'No se pudo guardar el pago del envío.');
+        await loadGeneratedOrders();
+      } catch (error) {
+        button.disabled = false;
+        alert(error.message || 'No se pudo guardar el pago del envío.');
+      }
+    });
 
     async function loadPrintJobs() {
       const status = document.getElementById('print-jobs-status');

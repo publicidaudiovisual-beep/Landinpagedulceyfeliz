@@ -77,6 +77,9 @@ test('el servidor calcula el envío por zona y rechaza tarifas desactualizadas',
   assert.equal(res.statusCode, 409);
   res = await submit({ ...order, delivery: { ...delivery, phone: '' } });
   assert.equal(res.statusCode, 400);
+  company.workDays = [];
+  res = await submit(order);
+  assert.equal(res.statusCode, 409);
 });
 
 test('Nave incluye el envío solo cuando se eligió pagarlo con la compra', () => {
@@ -97,6 +100,63 @@ test('Nave incluye el envío solo cuando se eligió pagarlo con la compra', () =
   assert.equal(separate.total, '100.00');
   assert.equal(separate.products.length, 1);
   assert.throws(() => context.getVerifiedProducts({ ...order, total: 100 }, catalog));
+});
+
+test('el formulario informa por qué una empresa no está disponible', async () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const match = source.match(/    async function openShippingDialog\(\) \{[\s\S]*?\n    \}/);
+  assert.ok(match);
+  const status = { textContent: '' };
+  const select = { value: '', disabled: false, replaceChildren() {}, add() {} };
+  const elements = { 'private-delivery-dialog': { showModal() {} },
+    'private-delivery-status': status, 'delivery-company': select };
+  const context = vm.createContext({
+    shippingMethodSelect: { value: 'Envío por empresa privada' },
+    privateDeliveryConfirmed: true, selectedDelivery: null, deliveryConfig: null,
+    document: { getElementById: id => elements[id] },
+    fetch: async () => ({ ok: true, json: async () => ({
+      zones: [], companies: [], unavailable: [{ name: 'Vima', reason: 'Vacaciones' }]
+    }) }),
+    Option: function(text, value) { this.text = text; this.value = value; },
+    updatePrivateFields() {}, console
+  });
+  vm.runInContext(match[0], context);
+  await context.openShippingDialog();
+  assert.match(status.textContent, /Vima: Vacaciones/);
+  assert.match(status.textContent, /WhatsApp/);
+});
+
+test('el estado del pago de envío exige autenticación y datos válidos', async t => {
+  const previous = { fetch: global.fetch, password: process.env.ADMIN_PASSWORD,
+    url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN };
+  Object.assign(process.env, { ADMIN_PASSWORD: 'clave-de-prueba-larga',
+    UPSTASH_REDIS_REST_URL: 'https://redis.example.test', UPSTASH_REDIS_REST_TOKEN: 'test' });
+  let command;
+  global.fetch = async (url, options) => {
+    command = JSON.parse(options.body);
+    return { ok: true, json: async () => ({ result: JSON.stringify({ id: command[4], shippingPaymentStatus: command[5] }) }) };
+  };
+  t.after(() => {
+    global.fetch = previous.fetch;
+    for (const [key, value] of Object.entries({ ADMIN_PASSWORD: previous.password,
+      UPSTASH_REDIS_REST_URL: previous.url, UPSTASH_REDIS_REST_TOKEN: previous.token })) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
+  });
+  const orderId = '00000000-0000-4000-8000-000000000003';
+  const body = { action: 'update-shipping-payment', orderId, status: 'paid' };
+  let res = response();
+  await orders({ method: 'POST', headers: {}, body }, res);
+  assert.equal(res.statusCode, 401);
+  assert.equal(command, undefined);
+  const headers = { authorization: 'Bearer clave-de-prueba-larga' };
+  res = response();
+  await orders({ method: 'POST', headers, body: { ...body, status: 'incorrecto' } }, res);
+  assert.equal(res.statusCode, 400);
+  res = response();
+  await orders({ method: 'POST', headers, body }, res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.order.shippingPaymentStatus, 'paid');
 });
 
 test('el comprobante manual incluye datos de entrega y escapa texto del cliente', async () => {

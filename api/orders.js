@@ -1,6 +1,6 @@
 const crypto = require('node:crypto');
 const { getRedisKey } = require('../lib/redis-keys');
-const { readShippingConfig } = require('../lib/shipping-config');
+const { readShippingConfig, companyUnavailableReason } = require('../lib/shipping-config');
 const { getPrintJobKeys } = require('../lib/print-jobs');
 
 const ORDERS_KEY = getRedisKey('dulce-feliz-generated-orders');
@@ -182,7 +182,7 @@ async function createOrder(req, res, body) {
       return respond(res, 400, { error: 'Indicá el tipo de destino y el horario de recepción si corresponde.' });
     }
     const config = await readShippingConfig();
-    const company = config.companies.find(item => item.id === delivery.companyId && item.enabled);
+    const company = config.companies.find(item => item.id === delivery.companyId && !companyUnavailableReason(item));
     const zone = config.zones.find(item => item.id === delivery.zoneId);
     const rate = company?.rates.find(item => item.zoneId === delivery.zoneId);
     if (!company || !zone || !rate || !zone.localities.includes(delivery.locality)) {
@@ -233,6 +233,63 @@ async function createOrder(req, res, body) {
     orderId: savedOrder.id,
     orderNumber: savedOrder.orderNumber
   });
+}
+
+async function updateShippingPayment(req, res, body) {
+  if (!hasAdminAccess(req)) return respond(res, 401, { error: 'No tienes autorización para actualizar el pago del envío.' });
+  if (typeof body.orderId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.orderId)
+    || !['pending', 'paid', 'rejected', 'not_executed', 'discounted', 'covered'].includes(body.status)) {
+    return respond(res, 400, { error: 'El pedido o el estado del pago de envío no es válido.' });
+  }
+  const script = `
+    local raw = redis.call('GET', KEYS[1])
+    if not raw then return nil end
+    local orders = cjson.decode(raw)
+    for index, order in ipairs(orders) do
+      if order.id == ARGV[1] then
+        if type(order.delivery) ~= 'table' then return 'not_shipping' end
+        order.shippingPaymentStatus = ARGV[2]
+        order.shippingPaymentUpdatedAt = ARGV[3]
+        order.shippingPaymentSource = 'manual'
+        orders[index] = order
+        redis.call('SET', KEYS[1], cjson.encode(orders))
+        return cjson.encode(order)
+      end
+    end
+    return nil
+  `;
+  const result = await redisCommand(['EVAL', script, '1', ORDERS_KEY, body.orderId, body.status, new Date().toISOString()]);
+  if (!result) return respond(res, 404, { error: 'No se encontró el pedido entre los últimos 400.' });
+  if (result === 'not_shipping') return respond(res, 409, { error: 'Este pedido no tiene un envío privado registrado.' });
+  return respond(res, 200, { updated: true, order: typeof result === 'string' ? JSON.parse(result) : result });
+}
+
+async function markNaveShippingPaid(orderId, paymentId) {
+  const script = `
+    local raw = redis.call('GET', KEYS[1])
+    if not raw then return nil end
+    local orders = cjson.decode(raw)
+    for index, order in ipairs(orders) do
+      if order.id == ARGV[1] then
+        if order.paymentMethod == 'Sistema Nave de Galicia / MODO'
+          and type(order.delivery) == 'table' and order.delivery.shippingPayment == 'together' then
+          order.shippingPaymentVerifiedAt = order.shippingPaymentVerifiedAt or ARGV[3]
+          order.shippingPaymentNaveId = ARGV[2]
+          if not order.shippingPaymentStatus or order.shippingPaymentStatus == 'pending' then
+            order.shippingPaymentStatus = 'paid'
+            order.shippingPaymentSource = 'nave'
+            order.shippingPaymentUpdatedAt = ARGV[3]
+          end
+          orders[index] = order
+          redis.call('SET', KEYS[1], cjson.encode(orders))
+        end
+        return 'ok'
+      end
+    end
+    return nil
+  `;
+  const result = await redisCommand(['EVAL', script, '1', ORDERS_KEY, orderId, paymentId, new Date().toISOString()]);
+  if (result !== 'ok') throw new Error('No se pudo registrar la confirmación del pago de envío.');
 }
 
 async function saveOrderStatus(orderId, status, paymentId = '') {
@@ -498,6 +555,7 @@ module.exports = async function handler(req, res) {
       return respond(res, 400, { error: 'La solicitud no tiene un formato válido.' });
     }
     if (body.action === 'create') return await createOrder(req, res, body);
+    if (body.action === 'update-shipping-payment') return await updateShippingPayment(req, res, body);
     if (body.action === 'confirm' || body.action === 'update-status') return await updateOrderStatus(req, res, body);
     return respond(res, 400, { error: 'La acción solicitada no es válida.' });
   } catch (error) {
@@ -508,3 +566,4 @@ module.exports = async function handler(req, res) {
 
 module.exports.readOrders = readOrders;
 module.exports.confirmOrderForNave = confirmOrderForNave;
+module.exports.markNaveShippingPaid = markNaveShippingPaid;

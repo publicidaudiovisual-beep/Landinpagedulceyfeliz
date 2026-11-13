@@ -137,11 +137,12 @@ test('la cola guarda la fecha en que registró el pago aprobado', async t => {
 
 test('solo un pago aprobado y verificado de Nave genera un trabajo', async t => {
   const saved = { getPayment: nave.getPayment, readOrders: orders.readOrders,
-    confirm: orders.confirmOrderForNave, enqueue: jobs.enqueuePaidOrder };
+    confirm: orders.confirmOrderForNave, markShipping: orders.markNaveShippingPaid, enqueue: jobs.enqueuePaidOrder };
   t.after(() => {
     nave.getPayment = saved.getPayment;
     orders.readOrders = saved.readOrders;
     orders.confirmOrderForNave = saved.confirm;
+    orders.markNaveShippingPaid = saved.markShipping;
     jobs.enqueuePaidOrder = saved.enqueue;
     delete require.cache[require.resolve('../api/nave-notifications')];
   });
@@ -150,6 +151,8 @@ test('solo un pago aprobado y verificado de Nave genera un trabajo', async t => 
   const order = { id, total: 100, paymentMethod: 'Sistema Nave de Galicia / MODO', paymentRequest: { id: 'request' } };
   orders.readOrders = async () => [order];
   orders.confirmOrderForNave = async () => ({ status: 200, body: {} });
+  let marked = 0;
+  orders.markNaveShippingPaid = async () => { marked++; };
   let enqueued = 0;
   jobs.enqueuePaidOrder = async () => { enqueued++; };
   let payment = { id: paymentId, external_payment_id: id, status: { name: 'PENDING' }, amount: { currency: 'ARS', value: '100.00' } };
@@ -170,6 +173,23 @@ test('solo un pago aprobado y verificado de Nave genera un trabajo', async t => 
   await freshHandler(req, res);
   assert.equal(res.statusCode, 200);
   assert.equal(enqueued, 1);
+  assert.equal(marked, 0);
+  order.delivery = { shippingPayment: 'together' };
+  payment = { ...payment, amount: { currency: 'ARS', value: '99.00' } };
+  res = response();
+  await freshHandler(req, res);
+  assert.equal(res.statusCode, 409);
+  assert.equal(marked, 0);
+  payment = { ...payment, amount: { currency: 'ARS', value: '100.00' } };
+  res = response();
+  await freshHandler(req, res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(marked, 1);
+  order.delivery.shippingPayment = 'separate';
+  res = response();
+  await freshHandler(req, res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(marked, 1);
 });
 
 test('la confirmación manual guarda el pedido y prepara la cola en la misma operación', async t => {

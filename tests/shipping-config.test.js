@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const handler = require('../api/shipping-config');
+const { validateShippingConfig, companyUnavailableReason } = require('../lib/shipping-config');
 
 function response() {
   return {
@@ -22,6 +23,7 @@ test('las tarifas se guardan solo desde el panel y las empresas pausadas no son 
     UPSTASH_REDIS_REST_TOKEN: 'test',
     ADMIN_PASSWORD: 'clave-de-prueba-larga'
   });
+
   t.after(() => {
     global.fetch = previous.fetch;
     for (const [name, value] of Object.entries({
@@ -72,7 +74,33 @@ test('las tarifas se guardan solo desde el panel y las empresas pausadas no son 
   await handler({ method: 'GET', headers: {} }, res);
   assert.deepEqual(res.body.companies, [company]);
   assert.deepEqual(res.body.zones, [zone]);
+  assert.deepEqual(res.body.unavailable, [{ name: paused.name, reason: 'Empresa pausada' }]);
   res = response();
   await handler({ method: 'GET', headers }, res);
   assert.deepEqual(res.body.companies, [company, paused]);
+});
+
+test('la disponibilidad respeta días y cierres inclusivos en hora argentina', () => {
+  const company = { enabled: true, workDays: [1, 2, 3, 4, 5], closure: {
+    reason: 'vacation', start: '2026-11-09', end: '2026-11-10'
+  } };
+  assert.equal(companyUnavailableReason(company, new Date('2026-11-09T02:00:00Z')), 'Día no laborable');
+  assert.equal(companyUnavailableReason(company, new Date('2026-11-09T03:00:00Z')), 'Vacaciones');
+  assert.equal(companyUnavailableReason(company, new Date('2026-11-11T02:59:59Z')), 'Vacaciones');
+  assert.equal(companyUnavailableReason(company, new Date('2026-11-11T03:00:00Z')), '');
+  assert.equal(companyUnavailableReason({ enabled: true }, new Date('2026-11-08T15:00:00Z')), '');
+  assert.equal(companyUnavailableReason({ enabled: false }, new Date('2026-11-09T15:00:00Z')), 'Empresa pausada');
+  assert.equal(companyUnavailableReason({ ...company, closure: { ...company.closure, reason: 'holiday' } }, new Date('2026-11-09T15:00:00Z')), 'Feriado');
+});
+
+test('se rechazan días y cierres inválidos sin romper configuraciones anteriores', () => {
+  const zone = { id: '00000000-0000-4000-8000-000000000001', name: 'Zona', localities: ['CABA'] };
+  const company = { id: '00000000-0000-4000-8000-000000000002', name: 'Vima', enabled: true,
+    rates: [{ zoneId: zone.id, priceCents: 100 }] };
+  const valid = candidate => validateShippingConfig({ zones: [zone], companies: [candidate] });
+  assert.equal(valid(company), true);
+  assert.equal(valid({ ...company, workDays: [1, 1] }), false);
+  assert.equal(valid({ ...company, closure: { reason: 'holiday', start: '2026-02-30', end: '2026-03-01' } }), false);
+  assert.equal(valid({ ...company, closure: { reason: 'holiday', start: '2026-11-10', end: '2026-11-09' } }), false);
+  assert.equal(valid({ ...company, closure: { reason: 'unexpected', start: '2026-11-09', end: '2026-11-10' } }), true);
 });

@@ -620,6 +620,7 @@
       <p id="private-delivery-status" class="text-xs text-amber-200" aria-live="polite"></p>
       <label class="block text-xs text-gray-300">Empresa *
         <select id="delivery-company" required class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"><option value="">Seleccioná una empresa</option></select>
+        <p id="delivery-company-hours" class="mt-1 text-xs text-gray-400"></p>
       </label>
       <div id="private-delivery-fields" class="hidden space-y-3">
         <label class="block text-xs text-gray-300">Localidad de entrega *
@@ -1310,6 +1311,8 @@
     function updatePrivateFields() {
       const companySelect = document.getElementById('delivery-company');
       const company = deliveryConfig?.companies.find(item => item.id === companySelect.value);
+      document.getElementById('delivery-company-hours').textContent = company?.workingHours
+        ? `Horario de trabajo de ${company.name}: ${company.workingHours}` : '';
       const fields = document.getElementById('private-delivery-fields');
       fields.classList.toggle('hidden', !company);
       fields.querySelectorAll('input, select').forEach(element => { element.disabled = !company; });
@@ -1379,7 +1382,9 @@
           companySelect.replaceChildren(new Option('Seleccioná una empresa', ''));
           data.companies.forEach(company => companySelect.add(new Option(company.name, company.id)));
           if (data.companies.some(company => company.id === previous)) companySelect.value = previous;
-          status.textContent = data.companies.length ? '' : 'No hay empresas disponibles. Podés coordinar por WhatsApp.';
+          const unavailable = Array.isArray(data.unavailable) ? data.unavailable : [];
+          const reasons = unavailable.map(company => `${company.name}: ${company.reason}`).join(' · ');
+          status.textContent = [reasons, data.companies.length ? '' : 'No hay empresas disponibles. Podés coordinar por WhatsApp.'].filter(Boolean).join(' ');
           companySelect.disabled = false;
           updatePrivateFields();
         } catch (error) {
