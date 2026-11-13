@@ -114,6 +114,12 @@ test('el comprobante del cliente incluye la compra y el pago sin datos de entreg
   assert.doesNotMatch(receipt.codes[0].payload, /María|Vima|1100000000/);
   order.delivery.shippingPayment = 'separate';
   assert.doesNotMatch(createCustomerReceipt(order).blocks.map(block => block.text).join('\n'), /Envío incluido/);
+  order.agreedPaymentMethod = 'Otro';
+  order.agreedPaymentDetail = 'Billetera acordada';
+  assert.match(createCustomerReceipt(order).blocks.map(block => block.text).join('\n'), /Pago: Otro: Billetera acordada/);
+  assert.match(archiveBlocks(order).map(block => block.text).join('\n'), /Medio de pago acordado: Otro/);
+  order.paymentMethod = 'Sistema Nave de Galicia / MODO';
+  assert.match(createCustomerReceipt(order).blocks.map(block => block.text).join('\n'), /Pago: Sistema Nave/);
 });
 
 test('solo un pago Nave aprobado genera el comprobante interno además del cliente', () => {
@@ -303,9 +309,17 @@ test('la confirmación manual guarda el pedido y prepara la cola en la misma ope
     if (command[1].includes("redis.call('DEL'")) return { ok: true, json: async () => ({ result: 1 }) };
     return { ok: true, json: async () => ({ result: JSON.stringify([order]) }) };
   };
-  const res = response();
-  await orders({ method: 'POST', headers: { authorization: `Bearer ${process.env.ADMIN_PASSWORD}` },
-    body: { action: 'update-status', status: 'completed', orderId: id } }, res);
+  const req = { method: 'POST', headers: { authorization: `Bearer ${process.env.ADMIN_PASSWORD}` },
+    body: { action: 'update-status', status: 'completed', orderId: id } };
+  let res = response();
+  await orders(req, res);
+  assert.equal(res.statusCode, 400);
+  assert.match(res.body.error, /medio de pago acordado/);
+  assert.equal(mark, undefined);
+  order.agreedPaymentMethod = 'Efectivo';
+  order.agreedPaymentDetail = '';
+  res = response();
+  await orders(req, res);
   assert.equal(res.statusCode, 200);
   assert.equal(mark[2], '3');
   assert.match(mark[1], /order\.paymentMethod ~= 'Sistema Nave de Galicia \/ MODO'/);

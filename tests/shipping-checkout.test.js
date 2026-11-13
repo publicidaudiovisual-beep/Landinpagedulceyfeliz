@@ -242,6 +242,58 @@ test('el estado del pago de envío exige autenticación y datos válidos', async
   assert.equal(res.body.order.shippingPaymentStatus, 'paid');
 });
 
+test('el medio acordado exige autenticación y protege Nave y trabajos en impresión', async t => {
+  const previous = {
+    fetch: global.fetch, url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN, password: process.env.ADMIN_PASSWORD
+  };
+  t.after(() => {
+    global.fetch = previous.fetch;
+    for (const [key, value] of Object.entries({
+      UPSTASH_REDIS_REST_URL: previous.url, UPSTASH_REDIS_REST_TOKEN: previous.token, ADMIN_PASSWORD: previous.password
+    })) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  process.env.UPSTASH_REDIS_REST_URL = 'https://redis.example.test';
+  process.env.UPSTASH_REDIS_REST_TOKEN = 'test';
+  process.env.ADMIN_PASSWORD = 'admin-password-de-prueba';
+  let command;
+  let result = 'claimed';
+  global.fetch = async (url, options) => {
+    command = JSON.parse(options.body);
+    return { ok: true, json: async () => ({ result }) };
+  };
+  const id = '00000000-0000-4000-8000-000000000001';
+  const body = { action: 'update-agreed-payment', orderId: id, method: 'Otro', detail: 'Billetera' };
+  let res = response();
+  await orders({ method: 'POST', headers: {}, body }, res);
+  assert.equal(res.statusCode, 401);
+  assert.equal(command, undefined);
+  const headers = { authorization: 'Bearer admin-password-de-prueba' };
+  res = response();
+  await orders({ method: 'POST', headers, body: { ...body, detail: ' ' } }, res);
+  assert.equal(res.statusCode, 400);
+  res = response();
+  await orders({ method: 'POST', headers, body }, res);
+  assert.equal(res.statusCode, 409);
+  assert.match(res.body.error, /impresión está en curso/);
+  assert.match(command[1], /redis\.call\('MSET'/);
+  assert.equal(command[6], 'Otro');
+  assert.equal(command[7], 'Billetera');
+  result = 'nave';
+  res = response();
+  await orders({ method: 'POST', headers, body }, res);
+  assert.equal(res.statusCode, 409);
+  assert.match(res.body.error, /Nave/);
+  result = JSON.stringify({ id, agreedPaymentMethod: 'Otro', agreedPaymentDetail: 'Billetera' });
+  res = response();
+  await orders({ method: 'POST', headers, body }, res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.order.agreedPaymentDetail, 'Billetera');
+});
+
 test('el comprobante manual es para el cliente y no muestra datos de entrega', async () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'admin.html'), 'utf8');
   const match = source.match(/    async function printOrderReceipt\(orderId\) \{[\s\S]*?\n    \}/);

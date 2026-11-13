@@ -779,6 +779,29 @@
       return `DF-${String(number || 0).padStart(6, '0')}`;
     }
 
+    function renderAgreedPaymentControl(order) {
+      if (order.paymentMethod === 'Sistema Nave de Galicia / MODO') return '';
+      const methods = ['Efectivo', 'Transferencia bancaria', 'Postnet: QR',
+        'Postnet: tarjeta de débito', 'Postnet: tarjeta de crédito', 'Otro'];
+      const options = methods.map(method =>
+        `<option value="${escapeOrderHTML(method)}" ${order.agreedPaymentMethod === method ? 'selected' : ''}>${escapeOrderHTML(method)}</option>`
+      ).join('');
+      return `<label class="block text-xs text-gray-300">Medio de pago acordado por WhatsApp
+        <select data-agreed-payment class="mt-1 w-full rounded-lg border border-gold/30 bg-[#121214] px-3 py-2 text-xs text-white">
+          <option value="" ${order.agreedPaymentMethod ? '' : 'selected'}>Seleccioná el medio acordado</option>${options}
+        </select></label>
+        <label data-agreed-payment-detail-row class="block text-xs text-gray-300 ${order.agreedPaymentMethod === 'Otro' ? '' : 'hidden'}">Indicá el otro medio de pago
+          <input data-agreed-payment-detail maxlength="120" value="${escapeOrderHTML(order.agreedPaymentDetail || '')}" class="mt-1 w-full rounded-lg border border-gold/30 bg-[#121214] px-3 py-2 text-xs text-white">
+        </label>
+        <p class="text-[10px] text-gray-400">Si ya se imprimió, reimprimí el ticket; los PDF anteriores no se modifican.</p>`;
+    }
+
+    function toggleAgreedPaymentDetail(event) {
+      const select = event.target.closest('[data-agreed-payment]');
+      if (!select) return;
+      select.closest('article').querySelector('[data-agreed-payment-detail-row]').classList.toggle('hidden', select.value !== 'Otro');
+    }
+
     function renderShippingOrders() {
       const container = document.getElementById('shipping-orders');
       const status = document.getElementById('shipping-orders-status');
@@ -838,11 +861,12 @@
         return `<article class="rounded-2xl border border-gold/20 bg-[#161618] p-5 space-y-3">
           <h3 class="font-serif-luxury text-xl text-goldLight">${escapeOrderHTML(formatOrderNumber(order.orderNumber))} · ${escapeOrderHTML(order.customerName)}</h3>
           <p class="text-xs text-gray-400">${escapeOrderHTML(order.shippingMethod)} · ${escapeOrderHTML(getOrderDateKey(order.createdAt))}</p>
-          <p class="text-xs text-gray-300">Compra: ${escapeOrderHTML(purchaseLabels[order.status] || 'Pendiente')} · ${escapeOrderHTML(order.paymentMethod)}</p>
+          <p class="text-xs text-gray-300">Compra: ${escapeOrderHTML(purchaseLabels[order.status] || 'Pendiente')} · Pago inicial: ${escapeOrderHTML(order.paymentMethod)}</p>
+          ${renderAgreedPaymentControl(order)}
           <label class="block text-xs text-gray-300">Estado de la compra
             <select data-order-status class="mt-1 w-full rounded-lg border border-gold/30 bg-[#121214] px-3 py-2 text-xs text-white">${purchaseStatus === 'generated' || !purchaseStatus ? '<option value="generated" selected disabled>Pendiente de clasificar</option>' : ''}${purchaseOptions}</select>
           </label>
-          <button type="button" data-shipping-order-status="${escapeOrderHTML(order.id)}" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight">Guardar estado de compra</button>
+          <button type="button" data-shipping-order-status="${escapeOrderHTML(order.id)}" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight">Guardar estado y pago de compra</button>
           <p class="text-xs text-gray-300">${products}</p>
           ${delivery ? `<p class="text-xs text-gray-300">Envío: $${escapeOrderHTML(Number(order.shippingCost || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))} · ${delivery.shippingPayment === 'together' ? 'Incluido en la compra' : 'Transferencia aparte'}</p>
           <div class="grid gap-1 sm:grid-cols-2 text-xs text-gray-400">${details}</div>
@@ -892,6 +916,7 @@
         alert(error.message || 'No se pudo guardar el pago del envío.');
       }
     });
+    document.getElementById('shipping-orders').addEventListener('change', toggleAgreedPaymentDetail);
 
     async function loadPrintJobs() {
       const status = document.getElementById('print-jobs-status');
@@ -1041,7 +1066,8 @@
         refunded: 'compra con devolucion', not_completed: 'compra no concluida', rejected: 'compra rechazada'
       };
       const fields = [formatOrderNumber(order.orderNumber), order.orderNumber, order.id, order.customerName,
-        order.createdAt, order.status, labels[order.status], order.paymentMethod, order.shippingMethod, order.address,
+        order.createdAt, order.status, labels[order.status], order.paymentMethod, order.agreedPaymentMethod,
+        order.agreedPaymentDetail, order.shippingMethod, order.address,
         ...Object.values(order.delivery || {}), ...(order.items || []).map(item => item.name),
         ...(order.boxes || []).flatMap(box => (box.items || []).map(item => item.name))];
       return normalize(fields.join(' ')).includes(normalize(query.trim()));
@@ -1175,9 +1201,10 @@
             `<p class="mt-1 text-xs text-gray-400">${escapeOrderHTML(label)}: ${escapeOrderHTML(value)}</p>`
           ).join('') : '';
           const statusControl = `<span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-200">${escapeOrderHTML(statusLabels[currentStatus] || statusLabels.generated)}</span>
+            ${renderAgreedPaymentControl(order)}
             <label class="mt-2 text-left text-[10px] uppercase tracking-wider text-gray-500" for="order-status-${escapeOrderHTML(order.id)}">Actualizar estado</label>
             <select id="order-status-${escapeOrderHTML(order.id)}" data-order-status class="rounded-lg border border-gold/30 bg-[#121214] px-3 py-2 text-xs text-white">${pendingOption}${statusOptions}</select>
-            <button type="button" onclick="updateGeneratedOrderStatus('${escapeOrderHTML(order.id)}', this)" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight hover:bg-gold/10">Guardar estado</button>
+            <button type="button" onclick="updateGeneratedOrderStatus('${escapeOrderHTML(order.id)}', this)" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight hover:bg-gold/10">Guardar estado y pago</button>
             ${currentStatus === 'completed' ? `<button type="button" data-print-order="${escapeOrderHTML(order.id)}" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight hover:bg-gold/10">Imprimir comprobante del cliente</button>` : ''}
             ${currentStatus === 'completed' ? '<p class="text-[10px] text-emerald-300">Inventario descontado</p>' : ''}
             ${navePending}`;
@@ -1186,7 +1213,7 @@
               <div class="min-w-0 flex-1 space-y-3">
                 <div>
                   <h4 class="font-medium text-white">${formatOrderNumber(order.orderNumber)} · ${escapeOrderHTML(order.customerName)} <span class="text-xs text-gray-500">${escapeOrderHTML(time)}</span></h4>
-                  <p class="mt-1 text-xs text-gray-400">${escapeOrderHTML(order.shippingMethod)} · ${escapeOrderHTML(order.paymentMethod)}</p>
+                  <p class="mt-1 text-xs text-gray-400">${escapeOrderHTML(order.shippingMethod)} · Pago inicial: ${escapeOrderHTML(order.paymentMethod)}</p>
                   ${order.address ? `<p class="mt-1 text-xs text-gray-500">${escapeOrderHTML(order.address)}</p>` : ''}
                   ${order.destinationType ? `<p class="mt-1 text-xs text-gray-400">Destino: ${order.destinationType === 'empresa' ? 'Empresa' : 'Casa'}</p>` : ''}
                   ${order.businessDeliveryHours ? `<p class="mt-1 text-xs text-gray-400">Horario de recepción: ${escapeOrderHTML(order.businessDeliveryHours)}</p>` : ''}
@@ -1213,6 +1240,7 @@
       const button = event.target.closest('[data-print-order]');
       if (button) printOrderReceipt(button.dataset.printOrder);
     });
+    document.getElementById('admin-generated-orders').addEventListener('change', toggleAgreedPaymentDetail);
 
     async function printOrderReceipt(orderId) {
       const order = generatedOrders.find(item => item.id === orderId);
@@ -1254,10 +1282,29 @@
     }
 
     async function updateGeneratedOrderStatus(orderId, button) {
-      const select = button.parentElement.querySelector('[data-order-status]');
-      if (!select || select.value === 'generated') return;
+      const card = button.closest('article');
+      const select = card.querySelector('[data-order-status]');
+      const payment = card.querySelector('[data-agreed-payment]');
+      if (!select) return;
       button.disabled = true;
       try {
+        if (payment && payment.value) {
+          const detail = payment.value === 'Otro' ? card.querySelector('[data-agreed-payment-detail]').value.trim() : '';
+          if (payment.value === 'Otro' && !detail) throw new Error('Indicá cuál es el otro medio de pago.');
+          const paymentResponse = await fetch('./api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminPassword}` },
+            body: JSON.stringify({ action: 'update-agreed-payment', orderId, method: payment.value, detail })
+          });
+          const paymentResult = await paymentResponse.json();
+          if (!paymentResponse.ok) throw new Error(paymentResult.error || 'No se pudo guardar el medio de pago.');
+        } else if (payment && select.value === 'completed') {
+          throw new Error('Seleccioná el medio de pago acordado antes de concretar la compra.');
+        }
+        if (select.value === 'generated') {
+          await loadGeneratedOrders();
+          return;
+        }
         const response = await fetch('./api/orders', {
           method: 'POST',
           headers: {

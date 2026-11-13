@@ -9,6 +9,16 @@ const MAX_ORDERS = 2000;
 const MAX_ORDERS_PAGE_BYTES = 2 * 1024 * 1024;
 const MAX_SINGLE_ORDER_BYTES = 3 * 1024 * 1024;
 const GITHUB_API = 'https://api.github.com';
+const MANUAL_PAYMENT_METHODS = [
+  'Efectivo', 'Transferencia bancaria', 'Postnet: QR',
+  'Postnet: tarjeta de débito', 'Postnet: tarjeta de crédito', 'Otro'
+];
+const NAVE_PAYMENT_METHOD = 'Sistema Nave de Galicia / MODO';
+
+function isValidAgreedPayment(method, detail) {
+  return MANUAL_PAYMENT_METHODS.includes(method) && typeof detail === 'string'
+    && (method === 'Otro' ? !!detail.trim() && detail.length <= 120 : detail === '');
+}
 
 function respond(res, status, payload) {
   res.setHeader('Cache-Control', 'no-store');
@@ -299,6 +309,50 @@ async function updateShippingPayment(req, res, body) {
   return respond(res, 200, { updated: true, order: typeof result === 'string' ? JSON.parse(result) : result });
 }
 
+async function updateAgreedPayment(req, res, body) {
+  if (!hasAdminAccess(req)) return respond(res, 401, { error: 'No tienes autorización para actualizar el medio de pago.' });
+  if (typeof body.orderId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.orderId)
+    || !isValidAgreedPayment(body.method, body.detail)) {
+    return respond(res, 400, { error: 'Seleccioná un medio de pago válido y, para Otro, indicá cuál.' });
+  }
+  const script = `
+    local raw = redis.call('GET', KEYS[1])
+    if not raw then return nil end
+    local orders = cjson.decode(raw)
+    for index, order in ipairs(orders) do
+      if order.id == ARGV[1] then
+        if order.paymentMethod == ARGV[4] then return 'nave' end
+        if order.agreedPaymentMethod == ARGV[2] and order.agreedPaymentDetail == ARGV[3] then
+          return cjson.encode(order)
+        end
+        local jobRaw = redis.call('GET', KEYS[2])
+        local job = jobRaw and cjson.decode(jobRaw) or nil
+        if job and job.state == 'claimed' then return 'claimed' end
+        order.agreedPaymentMethod = ARGV[2]
+        order.agreedPaymentDetail = ARGV[3]
+        orders[index] = order
+        if job and job.state == 'pending' then
+          job.order.agreedPaymentMethod = ARGV[2]
+          job.order.agreedPaymentDetail = ARGV[3]
+          redis.call('MSET', KEYS[1], cjson.encode(orders), KEYS[2], cjson.encode(job))
+        else
+          redis.call('SET', KEYS[1], cjson.encode(orders))
+        end
+        return cjson.encode(order)
+      end
+    end
+    return nil
+  `;
+  const result = await redisCommand([
+    'EVAL', script, '2', ORDERS_KEY, getPrintJobKeys(body.orderId)[0],
+    body.orderId, body.method, body.detail.trim(), NAVE_PAYMENT_METHOD
+  ]);
+  if (!result) return respond(res, 404, { error: 'No se encontró el pedido.' });
+  if (result === 'nave') return respond(res, 409, { error: 'El medio de pago de Nave no se modifica manualmente.' });
+  if (result === 'claimed') return respond(res, 409, { error: 'La impresión está en curso o en revisión. Detené el servicio y resolvé la cola antes de cambiar el medio de pago.' });
+  return respond(res, 200, { updated: true, order: typeof result === 'string' ? JSON.parse(result) : result });
+}
+
 async function markNaveShippingPaid(orderId, paymentId) {
   const script = `
     local raw = redis.call('GET', KEYS[1])
@@ -375,6 +429,10 @@ async function updateOrderStatus(req, res, body) {
     const order = orders.find(item => item.id === body.orderId);
     if (!order) return respond(res, 404, { error: `El pedido no está en el registro de los últimos ${MAX_ORDERS} pedidos.` });
     const currentStatus = order.status === 'confirmed' ? 'completed' : order.status;
+    if (targetStatus === 'completed' && order.paymentMethod !== NAVE_PAYMENT_METHOD
+      && !isValidAgreedPayment(order.agreedPaymentMethod, order.agreedPaymentDetail)) {
+      return respond(res, 400, { error: 'Seleccioná y guardá el medio de pago acordado antes de concretar la compra.' });
+    }
     const paymentId = body.paymentStatus === 'APPROVED' && typeof body.paymentId === 'string'
       ? body.paymentId
       : '';
@@ -596,6 +654,7 @@ module.exports = async function handler(req, res) {
     }
     if (body.action === 'create') return await createOrder(req, res, body);
     if (body.action === 'update-shipping-payment') return await updateShippingPayment(req, res, body);
+    if (body.action === 'update-agreed-payment') return await updateAgreedPayment(req, res, body);
     if (body.action === 'confirm' || body.action === 'update-status') return await updateOrderStatus(req, res, body);
     return respond(res, 400, { error: 'La acción solicitada no es válida.' });
   } catch (error) {

@@ -5,6 +5,15 @@
     root.DulceReceipt = factory(root.qrcode);
   }
 })(typeof globalThis === 'object' ? globalThis : this, function (qrcode) {
+  function paymentDescription(order) {
+    if (order.paymentMethod === 'Sistema Nave de Galicia / MODO' || !order.agreedPaymentMethod) {
+      return order.paymentMethod;
+    }
+    return order.agreedPaymentMethod === 'Otro'
+      ? `Otro: ${order.agreedPaymentDetail}`
+      : order.agreedPaymentMethod;
+  }
+
   function receiptBlocks(order) {
     const blocks = [];
     const clean = value => String(value).replace(/\s+/g, ' ').trim();
@@ -89,7 +98,7 @@
       { type: 'number', text: `DF-${String(order.orderNumber).padStart(6, '0')}` },
       { type: 'line', text: `Fecha: ${formatReceiptDate(order.createdAt)}` },
       { type: 'line', text: `Cliente: ${clean(order.customerName)}` },
-      { type: 'line', text: `Pago: ${clean(order.paymentMethod)}` },
+      { type: 'line', text: `Pago: ${clean(paymentDescription(order))}` },
       { type: 'section', text: 'PRODUCTOS' }
     ];
     for (const [index, box] of (order.boxes || []).entries()) {
@@ -135,7 +144,8 @@
       id: 'Identificador', orderNumber: 'Número de pedido', createdAt: 'Fecha de creación',
       customerName: 'Cliente', address: 'Dirección', shippingMethod: 'Forma de entrega',
       destinationType: 'Tipo de destino', businessDeliveryHours: 'Horario de recepción',
-      paymentMethod: 'Medio de pago', paymentStatus: 'Estado del pago', paymentId: 'ID del pago',
+      paymentMethod: 'Medio de pago elegido inicialmente', agreedPaymentMethod: 'Medio de pago acordado',
+      agreedPaymentDetail: 'Detalle del medio de pago acordado', paymentStatus: 'Estado del pago', paymentId: 'ID del pago',
       registered: 'Registro VIP', shippingCost: 'Costo de envío', shippingProvider: 'Transportista',
       productTotal: 'Subtotal de productos', total: 'Total de la compra', status: 'Estado del pedido',
       statusUpdatedAt: 'Fecha de actualización', confirmedAt: 'Fecha de confirmación',
@@ -201,5 +211,5 @@
     return { month, blocks };
   }
 
-  return { receiptLines: order => receiptBlocks(order).map(block => block.text), createReceipt, createCustomerReceipt, createPrintReceipts, flattenOrder, archiveBlocks, billingData };
+  return { receiptLines: order => receiptBlocks(order).map(block => block.text), createReceipt, createCustomerReceipt, createPrintReceipts, paymentDescription, flattenOrder, archiveBlocks, billingData };
 });
