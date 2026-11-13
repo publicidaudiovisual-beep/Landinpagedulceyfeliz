@@ -512,9 +512,9 @@
           const dayLabel = document.createElement('label');
           const checkbox = document.createElement('input');
           checkbox.type = 'checkbox';
-          checkbox.checked = !company.workDays || company.workDays.includes(day);
+          checkbox.checked = (company.workDays || [1, 2, 3, 4, 5, 6]).includes(day);
           checkbox.addEventListener('change', () => {
-            if (!company.workDays) company.workDays = [0, 1, 2, 3, 4, 5, 6];
+            if (!company.workDays) company.workDays = [1, 2, 3, 4, 5, 6];
             company.workDays = company.workDays.filter(value => value !== day);
             if (checkbox.checked) company.workDays.push(day);
           });
@@ -615,7 +615,7 @@
     });
     document.getElementById('add-shipping-company').addEventListener('click', () => {
       if (!shippingConfigLoaded) return;
-      shippingCompanies.push({ id: crypto.randomUUID(), name: '', enabled: false, rates: [] });
+      shippingCompanies.push({ id: crypto.randomUUID(), name: '', enabled: false, rates: [], workDays: [1, 2, 3, 4, 5, 6] });
       renderShippingCompanies();
     });
     document.getElementById('save-shipping-companies').addEventListener('click', async () => {

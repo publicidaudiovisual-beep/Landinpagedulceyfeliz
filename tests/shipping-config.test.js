@@ -53,6 +53,7 @@ test('las tarifas se guardan solo desde el panel y las empresas pausadas no son 
   assert.equal(res.body.companies.length, 1);
   assert.equal(res.body.companies[0].name, 'Vima');
   assert.equal(res.body.companies[0].enabled, true);
+  assert.deepEqual(res.body.companies[0].workDays, [1, 2, 3, 4, 5, 6]);
   res = response();
   await handler({ method: 'POST', headers: {}, body: { zones: [zone], companies: [company] } }, res);
   assert.equal(res.statusCode, 401);
@@ -73,12 +74,22 @@ test('las tarifas se guardan solo desde el panel y las empresas pausadas no son 
   res = response();
   await handler({ method: 'GET', headers: {} }, res);
   assert.equal(res.body.companies[0].name, company.name);
+  assert.deepEqual(res.body.companies[0].workDays, [1, 2, 3, 4, 5, 6]);
   assert.equal(res.body.companies[0].collectionDate, collectionSchedule(company).collectionDate);
   assert.deepEqual(res.body.zones, [zone]);
   assert.deepEqual(res.body.unavailable, [{ name: paused.name, reason: 'Empresa pausada' }]);
   res = response();
   await handler({ method: 'GET', headers }, res);
-  assert.deepEqual(res.body.companies, [company, paused]);
+  assert.deepEqual(res.body.companies, [
+    { ...company, workDays: [1, 2, 3, 4, 5, 6] },
+    { ...paused, workDays: [1, 2, 3, 4, 5, 6] }
+  ]);
+  res = response();
+  await handler({ method: 'POST', headers, body: { zones: [zone], companies: [{ ...company, workDays: [2, 4] }] } }, res);
+  assert.equal(res.statusCode, 200);
+  res = response();
+  await handler({ method: 'GET', headers }, res);
+  assert.deepEqual(res.body.companies[0].workDays, [2, 4]);
   const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires',
     year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   company.closure = { reason: 'holiday', start: today, end: today };
@@ -100,7 +111,7 @@ test('la disponibilidad respeta días y cierres inclusivos en hora argentina', (
   assert.equal(companyAvailability(company, new Date('2026-11-09T03:00:00Z')).reason, 'Vacaciones');
   assert.equal(companyAvailability(company, new Date('2026-11-11T02:59:59Z')).reason, 'Vacaciones');
   assert.equal(companyAvailability(company, new Date('2026-11-11T03:00:00Z')).reason, '');
-  assert.equal(companyAvailability({ enabled: true }, new Date('2026-11-08T15:00:00Z')).reason, '');
+  assert.equal(companyAvailability({ enabled: true }, new Date('2026-11-08T15:00:00Z')).reason, 'Día no laborable');
   assert.equal(companyAvailability({ enabled: false }, new Date('2026-11-09T15:00:00Z')).reason, 'Empresa pausada');
   const holiday = { ...company, closure: { reason: 'holiday', start: '2026-11-13', end: '2026-11-13' } };
   assert.deepEqual(companyAvailability(holiday, new Date('2026-11-13T15:00:00Z')),
@@ -124,6 +135,14 @@ test('el contador cambia a las 12 en Argentina y salta cierres y días no labora
     collectionDate: '2026-11-18', collectionCutoff: '2026-11-18T15:00:00.000Z', holiday: true
   });
   assert.equal(collectionSchedule({ ...company, workDays: [] }, new Date('2026-11-13T15:00:00Z')), null);
+});
+
+test('sin días guardados trabaja de lunes a sábado y después del sábado pasa al lunes', () => {
+  const company = { enabled: true };
+  assert.equal(companyAvailability(company, new Date('2026-11-14T14:00:00Z')).reason, '');
+  assert.equal(companyAvailability(company, new Date('2026-11-15T14:00:00Z')).reason, 'Día no laborable');
+  assert.equal(collectionSchedule(company, new Date('2026-11-14T15:00:00Z')).collectionDate, '2026-11-16');
+  assert.equal(companyAvailability({ ...company, workDays: [0] }, new Date('2026-11-15T14:00:00Z')).reason, '');
 });
 
 test('se rechazan días y cierres inválidos sin romper configuraciones anteriores', () => {
