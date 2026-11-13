@@ -1,5 +1,6 @@
 const { getPayment } = require('../lib/nave');
 const ordersApi = require('./orders');
+const { enqueuePaidOrder } = require('../lib/print-jobs');
 
 function respond(res, status, payload) {
   res.setHeader('Cache-Control', 'no-store');
@@ -68,6 +69,7 @@ module.exports = async function handler(req, res) {
       return respond(res, 409, { error: 'El monto aprobado por Nave no coincide con el pedido.' });
     }
 
+    await enqueuePaidOrder(order, notification.payment_id);
     const confirmation = await ordersApi.confirmOrderForNave(order.id, notification.payment_id);
     if (confirmation.status < 200 || confirmation.status >= 300) {
       console.error('Could not confirm inventory after approved Nave payment', {

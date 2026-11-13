@@ -1,5 +1,7 @@
 const crypto = require('node:crypto');
 const { getRedisKey } = require('../lib/redis-keys');
+const { readShippingConfig } = require('../lib/shipping-config');
+const { getPrintJobKeys } = require('../lib/print-jobs');
 
 const ORDERS_KEY = getRedisKey('dulce-feliz-generated-orders');
 const ORDER_SEQUENCE_KEY = getRedisKey('dulce-feliz-order-sequence');
@@ -88,6 +90,11 @@ function getOrderSubmission(body) {
   if (typeof order.shippingMethod !== 'string' || !order.shippingMethod.trim() || order.shippingMethod.length > 180) return null;
   if (typeof order.paymentMethod !== 'string' || !order.paymentMethod.trim() || order.paymentMethod.length > 200) return null;
   if (typeof order.address !== 'string' || order.address.length > 500) return null;
+  const destinationType = order.destinationType === undefined ? '' : order.destinationType;
+  const businessDeliveryHours = order.businessDeliveryHours === undefined ? '' : order.businessDeliveryHours;
+  if (typeof destinationType !== 'string' || !['', 'casa', 'empresa'].includes(destinationType)) return null;
+  if (typeof businessDeliveryHours !== 'string' || businessDeliveryHours.length > 200) return null;
+  if (destinationType === 'empresa' ? !businessDeliveryHours.trim() : !!businessDeliveryHours.trim()) return null;
   if (typeof order.registered !== 'boolean') return null;
   if (!Array.isArray(order.boxes) || order.boxes.length < 1 || order.boxes.length > 100) return null;
 
@@ -124,6 +131,10 @@ function getOrderSubmission(body) {
 
   const shippingCost = Number(order.shippingCost ?? 0);
   if (!Number.isFinite(shippingCost) || shippingCost < 0) return null;
+  const individualBoxes = boxes.filter(box => box.size === 1).length;
+  const hasLargeBox = boxes.some(box => box.size > 1);
+  if (!hasLargeBox && individualBoxes >= 1 && individualBoxes <= 3
+    && ['Envío por Vima', 'Envío por Pedidos Ya Envíos', 'Envío por empresa privada', 'Coordinar envío por WhatsApp'].includes(order.shippingMethod.trim())) return null;
   if (!Number.isSafeInteger(Math.round(total)) || total > Number.MAX_SAFE_INTEGER) return null;
   return {
     id: body.requestId,
@@ -131,6 +142,8 @@ function getOrderSubmission(body) {
     customerName: order.customerName.trim(),
     address: order.address.trim(),
     shippingMethod: order.shippingMethod.trim(),
+    destinationType,
+    businessDeliveryHours: businessDeliveryHours.trim(),
     paymentMethod: order.paymentMethod.trim(),
     registered: order.registered,
     shippingCost: Number(shippingCost.toFixed(2)),
@@ -145,6 +158,56 @@ function getOrderSubmission(body) {
 async function createOrder(req, res, body) {
   const order = getOrderSubmission(body);
   if (!order) return respond(res, 400, { error: 'El pedido enviado no tiene un formato válido.' });
+  if (order.shippingMethod === 'Envío por empresa privada') {
+    const delivery = body.order.delivery;
+    if (!delivery || typeof delivery !== 'object' || Array.isArray(delivery)
+      || typeof delivery.companyId !== 'string' || typeof delivery.zoneId !== 'string'
+      || typeof delivery.locality !== 'string' || !delivery.locality.trim()
+      || !['together', 'separate'].includes(delivery.shippingPayment)
+      || !Number.isSafeInteger(delivery.quotedCents) || delivery.quotedCents <= 0) {
+      return respond(res, 400, { error: 'Faltan datos válidos de la empresa o del precio de envío.' });
+    }
+    const requiredFields = ['recipient', 'buyerDocument', 'street', 'number', 'province', 'phone'];
+    const optionalFields = ['floor', 'apartment', 'neighborhood', 'crossStreets', 'landmark', 'phoneAlt', 'authorized'];
+    const details = {};
+    for (const field of [...requiredFields, ...optionalFields]) {
+      const value = delivery[field] === undefined ? '' : delivery[field];
+      if (typeof value !== 'string' || value.length > 200 || (requiredFields.includes(field) && !value.trim())) {
+        return respond(res, 400, { error: 'Revisá los datos de entrega antes de continuar.' });
+      }
+      details[field] = value.trim();
+    }
+    if (!['casa', 'empresa'].includes(order.destinationType)
+      || (order.destinationType === 'empresa' && !order.businessDeliveryHours)) {
+      return respond(res, 400, { error: 'Indicá el tipo de destino y el horario de recepción si corresponde.' });
+    }
+    const config = await readShippingConfig();
+    const company = config.companies.find(item => item.id === delivery.companyId && item.enabled);
+    const zone = config.zones.find(item => item.id === delivery.zoneId);
+    const rate = company?.rates.find(item => item.zoneId === delivery.zoneId);
+    if (!company || !zone || !rate || !zone.localities.includes(delivery.locality)) {
+      return respond(res, 409, { error: 'La empresa o la zona ya no están disponibles. Actualizá las opciones de envío.' });
+    }
+    const priceCents = Math.round(rate.priceCents * 107 / 100);
+    if (priceCents !== delivery.quotedCents) {
+      return respond(res, 409, { error: 'La tarifa de envío cambió. Actualizá las opciones antes de continuar.' });
+    }
+    order.shippingCost = priceCents / 100;
+    order.shippingProvider = company.name;
+    order.delivery = {
+      ...details,
+      companyId: company.id,
+      companyName: company.name,
+      zoneId: zone.id,
+      zoneName: zone.name,
+      locality: delivery.locality,
+      shippingPayment: delivery.shippingPayment
+    };
+    order.productTotal = order.total;
+    if (delivery.shippingPayment === 'together') {
+      order.total = (Math.round(order.productTotal * 100) + priceCents) / 100;
+    }
+  }
   await readOrders();
 
   const script = `
@@ -342,14 +405,19 @@ async function updateOrderStatus(req, res, body) {
           end
           orders[index] = order
           redis.call('SET', KEYS[1], cjson.encode(orders))
+          if order.paymentMethod ~= 'Sistema Nave de Galicia / MODO'
+            and redis.call('EXISTS', KEYS[2]) == 0 then
+            redis.call('SET', KEYS[2], cjson.encode({ id = order.id, state = 'pending', order = order }))
+            redis.call('ZADD', KEYS[3], ARGV[5], order.id)
+          end
           return cjson.encode(order)
         end
       end
       return nil
     `;
     const result = await redisCommand([
-      'EVAL', markScript, '1', ORDERS_KEY, order.id,
-      new Date().toISOString(), paymentId ? 'APPROVED' : '', paymentId
+      'EVAL', markScript, '3', ORDERS_KEY, ...getPrintJobKeys(order.id), order.id,
+      new Date().toISOString(), paymentId ? 'APPROVED' : '', paymentId, String(Date.now())
     ]);
     if (!result) {
       console.error('Inventory was updated, but the order status could not be saved in Redis', { orderId: order.id });

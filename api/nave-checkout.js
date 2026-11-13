@@ -91,8 +91,24 @@ function getVerifiedProducts(order, catalog) {
     };
   });
 
-  if (totalCents !== Math.round(Number(order.total) * 100)) {
+  const productTotal = order.productTotal === undefined ? order.total : order.productTotal;
+  if (totalCents !== Math.round(Number(productTotal) * 100)) {
     throw new CheckoutValidationError('El total del pedido cambió. Vuelve a armarlo antes de pagar.');
+  }
+  if (order.delivery?.shippingPayment === 'together') {
+    const shippingCents = Math.round(Number(order.shippingCost) * 100);
+    if (!Number.isSafeInteger(shippingCents) || shippingCents <= 0) {
+      throw new CheckoutValidationError('El costo de envío guardado no es válido.');
+    }
+    totalCents += shippingCents;
+    products.push({
+      name: 'Envío',
+      quantity: 1,
+      unit_price: { currency: 'ARS', value: (shippingCents / 100).toFixed(2) }
+    });
+  }
+  if (totalCents !== Math.round(Number(order.total) * 100)) {
+    throw new CheckoutValidationError('El total del pedido no coincide con los productos y el envío.');
   }
   return {
     products,

@@ -10,6 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="print-agent/vendor/qrcode.js"></script>
+  <script src="print-agent/receipt.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -95,7 +97,7 @@
     <!-- KPIs -->
     <section class="glass-card p-6 sm:p-8">
       <h2 class="font-serif-luxury text-3xl text-white">Indicadores de Gestión y Rendimiento</h2>
-      <p class="text-xs text-gray-400 mt-1">Métricas basadas en visitas y los últimos 200 pedidos. Las ventas se cuentan al confirmar el cierre y descontar el inventario.</p>
+      <p class="text-xs text-gray-400 mt-1">Métricas basadas en visitas y los últimos 400 pedidos. Las ventas se cuentan al confirmar el cierre y descontar el inventario.</p>
       
       <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
         <div class="rounded-2xl border border-gold/20 bg-[#161618] p-5">
@@ -104,7 +106,7 @@
           <p id="kpi-visits-status" class="mt-1 text-[10px] text-gray-500" aria-live="polite">Cargando contador...</p>
         </div>
         <div class="rounded-2xl border border-gold/20 bg-[#161618] p-5">
-          <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Pedidos en registro (máx. 200)</p>
+          <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Pedidos en registro (máx. 400)</p>
           <p id="kpi-orders" class="mt-2 font-serif-luxury text-3xl text-emerald-400">0</p>
         </div>
         <div class="rounded-2xl border border-gold/20 bg-[#161618] p-5">
@@ -126,14 +128,40 @@
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-4">
         <div>
           <h2 class="font-serif-luxury text-3xl text-white">Pedidos generados</h2>
-          <p class="mt-1 text-xs text-gray-400">Pedidos registrados al iniciar el envío por WhatsApp o el pago en Nave. Se conservan los últimos 200; al superar el límite se reemplaza el más antiguo.</p>
+          <p class="mt-1 text-xs text-gray-400">Pedidos registrados al iniciar el envío por WhatsApp o el pago en Nave. Se conservan los últimos 400; al superar el límite se reemplaza el más antiguo.</p>
         </div>
-        <button type="button" onclick="loadGeneratedOrders()" class="rounded-xl border border-gold/40 px-4 py-2 text-xs uppercase tracking-wider text-goldLight hover:bg-gold/10">
-          <i class="fa-solid fa-rotate mr-1"></i> Actualizar pedidos
-        </button>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" onclick="loadGeneratedOrders()" class="rounded-xl border border-gold/40 px-4 py-2 text-xs uppercase tracking-wider text-goldLight hover:bg-gold/10">
+            <i class="fa-solid fa-rotate mr-1"></i> Actualizar pedidos
+          </button>
+          <button type="button" onclick="exportOrdersCSV()" class="rounded-xl border border-gold/40 px-4 py-2 text-xs uppercase tracking-wider text-goldLight hover:bg-gold/10">Descargar compras (CSV)</button>
+        </div>
       </div>
       <p id="admin-orders-status" class="text-xs text-gray-400" aria-live="polite">Cargando pedidos...</p>
       <div id="admin-generated-orders" class="space-y-5"></div>
+    </section>
+
+    <section class="glass-card p-6 sm:p-8 space-y-3">
+      <h2 class="font-serif-luxury text-2xl text-white">Impresión automática de compras</h2>
+      <p class="text-xs text-gray-400">Los trabajos pendientes esperan al servicio local. Los trabajos en revisión podrían haberse impreso: detené el servicio y comprobá el papel antes de resolverlos.</p>
+      <button type="button" id="refresh-print-jobs" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Actualizar cola</button>
+      <p id="print-jobs-status" class="text-xs text-gray-400" aria-live="polite">Ingresá al panel para consultar la cola.</p>
+      <div id="print-jobs-list" class="space-y-2"></div>
+    </section>
+
+    <section class="glass-card p-6 sm:p-8 space-y-4">
+      <h2 class="font-serif-luxury text-2xl text-white">Empresas y tarifas de envío</h2>
+      <p class="text-xs text-gray-400">Todas las empresas usan las mismas zonas. Cargá los importes con IVA incluido; el precio al cliente agrega el 7 %. Vima inicia pausada para revisar las tarifas y el posible recargo de recolección.</p>
+      <p id="shipping-config-status" class="text-xs text-gray-400" aria-live="polite">Ingresá al panel para cargar la configuración.</p>
+      <h3 class="font-serif-luxury text-xl text-goldLight">Zonas compartidas</h3>
+      <div id="shipping-zones" class="space-y-3"></div>
+      <button type="button" id="add-shipping-zone" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Agregar zona</button>
+      <h3 class="font-serif-luxury text-xl text-goldLight">Empresas</h3>
+      <div id="shipping-companies" class="space-y-4"></div>
+      <div class="flex flex-wrap gap-3">
+        <button type="button" id="add-shipping-company" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Agregar empresa</button>
+        <button type="button" id="save-shipping-companies" class="gold-button rounded-xl px-4 py-2 text-xs">Guardar empresas y tarifas</button>
+      </div>
     </section>
 
     <!-- Configuración del Hero, Novedades, Ofertas, Packaging e Instagram -->
@@ -348,6 +376,170 @@
     let visitCounterStatus = 'No se pudo cargar el contador de visitas.';
     let generatedOrders = [];
     let generatedOrdersAvailable = false;
+    let shippingZones = [];
+    let shippingCompanies = [];
+    let shippingConfigLoaded = false;
+
+    async function loadShippingCompanies() {
+      const status = document.getElementById('shipping-config-status');
+      try {
+        const response = await fetch('./api/shipping-config', {
+          headers: { Authorization: `Bearer ${adminPassword}` }, cache: 'no-store'
+        });
+        const result = await response.json();
+        if (!response.ok || !Array.isArray(result.companies) || !Array.isArray(result.zones)) {
+          throw new Error(result.error || 'No se pudo cargar la configuración de envíos.');
+        }
+        shippingZones = result.zones;
+        shippingCompanies = result.companies;
+        shippingConfigLoaded = true;
+        renderShippingCompanies();
+        status.textContent = 'Configuración cargada. Guardá los cambios cuando termines de editar.';
+      } catch (error) {
+        shippingConfigLoaded = false;
+        status.textContent = error.message || 'No se pudo cargar la configuración de envíos.';
+        console.error('Error al cargar empresas de envío:', error);
+      }
+    }
+
+    function renderShippingCompanies() {
+      const zoneContainer = document.getElementById('shipping-zones');
+      zoneContainer.replaceChildren();
+      shippingZones.forEach((zone, zoneIndex) => {
+        const row = document.createElement('div');
+        row.className = 'rounded-lg border border-white/10 p-3 space-y-2';
+        const zoneName = document.createElement('input');
+        zoneName.value = zone.name;
+        zoneName.maxLength = 80;
+        zoneName.placeholder = 'Nombre de zona';
+        zoneName.setAttribute('aria-label', 'Nombre de zona');
+        zoneName.className = 'w-full rounded-lg border border-gold/30 bg-[#121214] px-3 py-2 text-sm text-white';
+        zoneName.addEventListener('change', () => { zone.name = zoneName.value; renderShippingCompanies(); });
+        const localities = document.createElement('textarea');
+        localities.maxLength = 10000;
+        localities.value = zone.localities.join('\n');
+        localities.rows = 3;
+        localities.placeholder = 'Localidades, una por línea';
+        localities.setAttribute('aria-label', 'Localidades de la zona, una por línea');
+        localities.className = zoneName.className;
+        localities.addEventListener('input', () => {
+          zone.localities = localities.value.split('\n').map(value => value.trim()).filter(Boolean);
+        });
+        const removeZone = document.createElement('button');
+        removeZone.type = 'button';
+        removeZone.className = 'text-xs text-amber-200 underline';
+        removeZone.textContent = 'Quitar zona para todas las empresas';
+        removeZone.addEventListener('click', () => {
+          if (!confirm('¿Quitar esta zona y sus tarifas de todas las empresas?')) return;
+          shippingZones.splice(zoneIndex, 1);
+          shippingCompanies.forEach(company => { company.rates = company.rates.filter(rate => rate.zoneId !== zone.id); });
+          renderShippingCompanies();
+        });
+        row.append(zoneName, localities, removeZone);
+        zoneContainer.append(row);
+      });
+      const container = document.getElementById('shipping-companies');
+      container.replaceChildren();
+      shippingCompanies.forEach((company, companyIndex) => {
+        const card = document.createElement('div');
+        card.className = 'rounded-xl border border-gold/20 p-4 space-y-3';
+        const name = document.createElement('input');
+        name.type = 'text';
+        name.maxLength = 80;
+        name.value = company.name;
+        name.placeholder = 'Nombre de la empresa';
+        name.setAttribute('aria-label', 'Nombre de la empresa');
+        name.className = 'w-full rounded-lg border border-gold/30 bg-[#121214] px-3 py-2 text-sm text-white';
+        name.addEventListener('input', () => { company.name = name.value; });
+        const label = document.createElement('label');
+        label.className = 'flex items-center gap-2 text-xs text-gray-300';
+        const enabled = document.createElement('input');
+        enabled.type = 'checkbox';
+        enabled.checked = company.enabled;
+        enabled.addEventListener('change', () => { company.enabled = enabled.checked; });
+        label.append(enabled, document.createTextNode('Empresa disponible'));
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'text-xs text-amber-200 underline';
+        remove.textContent = 'Quitar empresa';
+        remove.addEventListener('click', () => {
+          if (!confirm('¿Quitar esta empresa y sus zonas?')) return;
+          shippingCompanies.splice(companyIndex, 1);
+          renderShippingCompanies();
+        });
+        card.append(name, label, remove);
+        shippingZones.forEach(zone => {
+          const row = document.createElement('div');
+          row.className = 'rounded-lg border border-white/10 p-3 space-y-2';
+          const zoneLabel = document.createElement('label');
+          zoneLabel.className = 'block text-xs text-gray-300';
+          zoneLabel.textContent = `${zone.name || 'Zona sin nombre'} · tarifa con IVA ($)`;
+          const rate = company.rates.find(item => item.zoneId === zone.id);
+          const price = document.createElement('input');
+          price.type = 'number';
+          price.min = '0.01';
+          price.max = '10000000';
+          price.step = '0.01';
+          price.value = rate ? (rate.priceCents / 100).toFixed(2) : '';
+          price.setAttribute('aria-label', `Tarifa con IVA en pesos: ${zone.name}`);
+          price.placeholder = 'Tarifa con IVA en pesos';
+          price.className = name.className;
+          const amount = document.createElement('p');
+          amount.className = 'text-xs text-goldLight';
+          function updatePrice() {
+            const value = price.valueAsNumber;
+            const cents = Number.isFinite(value) ? Math.round(value * 100) : 0;
+            const existing = company.rates.find(item => item.zoneId === zone.id);
+            if (price.value === '') {
+              company.rates = company.rates.filter(item => item.zoneId !== zone.id);
+            } else if (existing) {
+              existing.priceCents = cents;
+            } else {
+              company.rates.push({ zoneId: zone.id, priceCents: cents });
+            }
+            amount.textContent = cents > 0
+              ? `Precio al cliente con 7 %: $${(Math.round(cents * 107 / 100) / 100).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : 'Sin tarifa para esta zona.';
+          }
+          price.addEventListener('input', updatePrice);
+          updatePrice();
+          row.append(zoneLabel, price, amount);
+          card.append(row);
+        });
+        container.append(card);
+      });
+    }
+
+    document.getElementById('add-shipping-zone').addEventListener('click', () => {
+      if (!shippingConfigLoaded) return;
+      shippingZones.push({ id: crypto.randomUUID(), name: '', localities: [] });
+      renderShippingCompanies();
+    });
+    document.getElementById('add-shipping-company').addEventListener('click', () => {
+      if (!shippingConfigLoaded) return;
+      shippingCompanies.push({ id: crypto.randomUUID(), name: '', enabled: false, rates: [] });
+      renderShippingCompanies();
+    });
+    document.getElementById('save-shipping-companies').addEventListener('click', async () => {
+      const status = document.getElementById('shipping-config-status');
+      if (!shippingConfigLoaded) {
+        status.textContent = 'Primero cargá la configuración de envíos.';
+        return;
+      }
+      try {
+        const response = await fetch('./api/shipping-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminPassword}` },
+          body: JSON.stringify({ zones: shippingZones, companies: shippingCompanies })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'No se pudo guardar la configuración de envíos.');
+        status.textContent = 'Empresas y tarifas guardadas.';
+      } catch (error) {
+        status.textContent = error.message || 'No se pudo guardar la configuración de envíos.';
+        console.error('Error al guardar empresas de envío:', error);
+      }
+    });
 
     async function verifyAdminCode() {
       const val = document.getElementById('auth-code-input').value;
@@ -394,6 +586,8 @@
         console.error('No se pudo cargar el KPI de visitas:', error);
       }
       await loadGeneratedOrders();
+      await loadShippingCompanies();
+      await loadPrintJobs();
       renderAdminDashboard();
       renderAdminClients();
     }
@@ -431,6 +625,52 @@
     function formatOrderNumber(number) {
       return `DF-${String(number || 0).padStart(6, '0')}`;
     }
+
+    async function loadPrintJobs() {
+      const status = document.getElementById('print-jobs-status');
+      const list = document.getElementById('print-jobs-list');
+      try {
+        const response = await fetch('./api/print-jobs', {
+          cache: 'no-store', headers: { Authorization: `Bearer ${adminPassword}` }
+        });
+        const result = await response.json();
+        if (!response.ok || !Array.isArray(result.jobs)) throw new Error(result.error || 'No se pudo cargar la cola.');
+        status.textContent = result.jobs.length ? 'Pendientes o en revisión (hasta 100 de cada estado):' : 'No hay trabajos pendientes ni en revisión.';
+        list.innerHTML = result.jobs.map(job => `<div class="rounded-xl border border-white/10 p-3 text-xs">
+          <p>${escapeOrderHTML(formatOrderNumber(job.orderNumber))} · ${job.state === 'pending' ? 'Pendiente' : 'En revisión: verificar si se imprimió'}</p>
+          ${job.state === 'claimed' ? `<div class="mt-2 flex flex-wrap gap-2"><button type="button" data-print-action="retry" data-print-id="${escapeOrderHTML(job.id)}" class="rounded border border-gold/40 px-3 py-2 text-goldLight">Reintentar</button><button type="button" data-print-action="resolve" data-print-id="${escapeOrderHTML(job.id)}" class="rounded border border-gold/40 px-3 py-2 text-goldLight">Ya está impreso</button></div>` : ''}
+        </div>`).join('');
+      } catch (error) {
+        list.replaceChildren();
+        status.textContent = error.message || 'No se pudo cargar la cola.';
+        console.error('No se pudo cargar la cola de impresión:', error);
+      }
+    }
+
+    document.getElementById('refresh-print-jobs').addEventListener('click', loadPrintJobs);
+    document.getElementById('print-jobs-list').addEventListener('click', async event => {
+      const button = event.target.closest('[data-print-action]');
+      if (!button) return;
+      const retry = button.dataset.printAction === 'retry';
+      const message = retry
+        ? 'Detené primero el servicio local y revisá el papel. Si ya se imprimió, reintentar generará otra copia. ¿Querés reintentar?'
+        : 'Detené primero el servicio local y confirmá que el comprobante ya se imprimió. ¿Marcarlo como resuelto?';
+      if (!confirm(message)) return;
+      button.disabled = true;
+      try {
+        const response = await fetch('./api/print-jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminPassword}` },
+          body: JSON.stringify({ action: button.dataset.printAction, id: button.dataset.printId })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'No se pudo actualizar el trabajo.');
+        await loadPrintJobs();
+      } catch (error) {
+        button.disabled = false;
+        alert(error.message || 'No se pudo actualizar el trabajo.');
+      }
+    });
 
     function getOrderDateKey(dateValue) {
       const date = new Date(dateValue);
@@ -517,10 +757,33 @@
           const navePending = isNavePayment && currentStatus === 'generated'
             ? '<p class="text-[10px] text-amber-200">Esperando confirmación de Nave</p>'
             : '';
+          const deliveryDetails = order.delivery ? [
+            ['Empresa', order.delivery.companyName],
+            ['Zona', order.delivery.zoneName],
+            ['Destinatario', order.delivery.recipient],
+            ['Documento del comprador', order.delivery.buyerDocument],
+            ['Calle', order.delivery.street],
+            ['Altura', order.delivery.number],
+            ['Piso', order.delivery.floor],
+            ['Departamento', order.delivery.apartment],
+            ['Barrio', order.delivery.neighborhood],
+            ['Localidad', order.delivery.locality],
+            ['Provincia', order.delivery.province],
+            ['Entre calles', order.delivery.crossStreets],
+            ['Referencia', order.delivery.landmark],
+            ['Teléfono', order.delivery.phone],
+            ['Teléfono adicional', order.delivery.phoneAlt],
+            ['Persona autorizada', order.delivery.authorized],
+            ['Pago de envío', order.delivery.shippingPayment === 'together' ? 'Incluido en la compra' : 'A pagar aparte por transferencia'],
+            ['Costo de envío', `$${Number(order.shippingCost).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]
+          ].filter(([, value]) => value).map(([label, value]) =>
+            `<p class="mt-1 text-xs text-gray-400">${escapeOrderHTML(label)}: ${escapeOrderHTML(value)}</p>`
+          ).join('') : '';
           const statusControl = `<span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-200">${escapeOrderHTML(statusLabels[currentStatus] || statusLabels.generated)}</span>
             <label class="mt-2 text-left text-[10px] uppercase tracking-wider text-gray-500" for="order-status-${escapeOrderHTML(order.id)}">Actualizar estado</label>
             <select id="order-status-${escapeOrderHTML(order.id)}" data-order-status class="rounded-lg border border-gold/30 bg-[#121214] px-3 py-2 text-xs text-white">${pendingOption}${statusOptions}</select>
             <button type="button" onclick="updateGeneratedOrderStatus('${escapeOrderHTML(order.id)}', this)" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight hover:bg-gold/10">Guardar estado</button>
+            ${currentStatus === 'completed' ? `<button type="button" data-print-order="${escapeOrderHTML(order.id)}" class="rounded-lg border border-gold/40 px-3 py-2 text-xs text-goldLight hover:bg-gold/10">Imprimir comprobante</button>` : ''}
             ${currentStatus === 'completed' ? '<p class="text-[10px] text-emerald-300">Inventario descontado</p>' : ''}
             ${navePending}`;
           return `<article class="rounded-2xl border border-white/10 bg-[#161618] p-4 sm:p-5">
@@ -530,6 +793,9 @@
                   <h4 class="font-medium text-white">${formatOrderNumber(order.orderNumber)} · ${escapeOrderHTML(order.customerName)} <span class="text-xs text-gray-500">${escapeOrderHTML(time)}</span></h4>
                   <p class="mt-1 text-xs text-gray-400">${escapeOrderHTML(order.shippingMethod)} · ${escapeOrderHTML(order.paymentMethod)}</p>
                   ${order.address ? `<p class="mt-1 text-xs text-gray-500">${escapeOrderHTML(order.address)}</p>` : ''}
+                  ${order.destinationType ? `<p class="mt-1 text-xs text-gray-400">Destino: ${order.destinationType === 'empresa' ? 'Empresa' : 'Casa'}</p>` : ''}
+                  ${order.businessDeliveryHours ? `<p class="mt-1 text-xs text-gray-400">Horario de recepción: ${escapeOrderHTML(order.businessDeliveryHours)}</p>` : ''}
+                  ${deliveryDetails}
                 </div>
                 <ul class="space-y-2 text-xs">${orderLines}</ul>
                 <p class="text-xs text-gray-400">Registro VIP: ${registered} · ${escapeOrderHTML(order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0)} galletas</p>
@@ -546,6 +812,50 @@
           <div class="space-y-3">${orderCards}</div>
         </section>`;
       }).join('');
+    }
+
+    document.getElementById('admin-generated-orders').addEventListener('click', event => {
+      const button = event.target.closest('[data-print-order]');
+      if (button) printOrderReceipt(button.dataset.printOrder);
+    });
+
+    async function printOrderReceipt(orderId) {
+      const order = generatedOrders.find(item => item.id === orderId);
+      if (!order || !['completed', 'confirmed'].includes(order.status)) {
+        alert('El comprobante está disponible para pedidos concretados.');
+        return;
+      }
+      const receipt = window.open('', '_blank');
+      if (!receipt) {
+        alert('Permití las ventanas emergentes para imprimir el comprobante.');
+        return;
+      }
+      try {
+        const data = DulceReceipt.createReceipt(order);
+        const logoUrl = new URL('Isotipo Sin fondo.png', location.href).href;
+        const content = data.blocks.map(block =>
+          `<div class="${escapeOrderHTML(block.type)}">${escapeOrderHTML(block.text)}</div>`
+        ).join('');
+        const codes = data.codes.map(code =>
+          `<div class="qr"><strong>${escapeOrderHTML(code.label)}</strong>${code.svg}</div>`
+        ).join('');
+        receipt.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Comprobante ${escapeOrderHTML(formatOrderNumber(order.orderNumber))}</title><style>
+          @page{size:58mm auto;margin:3mm}body{font:9pt Arial,sans-serif;width:52mm;margin:0;overflow-wrap:anywhere}
+          .logo{display:block;width:15mm;height:auto;margin:0 auto 2mm}.title,.subtitle,.number{text-align:center}.title,.number{font-size:11pt;font-weight:bold}.subtitle{font-size:7pt}
+          .section{border-top:1px solid #000;margin-top:2mm;padding-top:1mm;font-weight:bold}.box,.total{font-weight:bold}.line{margin:0.6mm 0}
+          .qr{text-align:center;break-inside:avoid;margin:3mm auto}.qr svg{display:block;width:28mm;height:28mm;margin:1mm auto;image-rendering:pixelated}
+          @media screen{body{margin:12px}button{margin-top:12px}}@media print{button{display:none}}
+          </style></head><body><img class="logo" src="${escapeOrderHTML(logoUrl)}" alt="Logo Dulce y Feliz">
+          ${content}${codes}<button type="button" onclick="window.print()">Imprimir</button></body></html>`);
+        receipt.document.close();
+        await receipt.document.querySelector('.logo').decode();
+        receipt.focus();
+        receipt.print();
+      } catch (error) {
+        receipt.close();
+        console.error('No se pudo preparar el comprobante:', error);
+        alert('No se pudo preparar el comprobante con su logo y QR. Revisá la consola y volvé a intentarlo.');
+      }
     }
 
     async function updateGeneratedOrderStatus(orderId, button) {
@@ -802,6 +1112,33 @@
       a.href = url;
       a.download = `clientes_vip_${month}.csv`;
       a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function exportOrdersCSV() {
+      await loadGeneratedOrders();
+      if (!generatedOrdersAvailable) {
+        alert('No se pudieron cargar las compras para exportar.');
+        return;
+      }
+      if (!generatedOrders.length) {
+        alert('No hay compras guardadas para exportar.');
+        return;
+      }
+      const rows = generatedOrders.map(order => DulceReceipt.flattenOrder(order));
+      const columns = [...new Set(rows.flatMap(row => Object.keys(row)))];
+      const cell = value => {
+        let text = value === undefined || value === null ? '' : String(value);
+        if (/^[\s]*[=+\-@\t\r]/.test(text)) text = `'${text}`;
+        return `"${text.replace(/"/g, '""')}"`;
+      };
+      const csv = [columns.map(cell).join(';'),
+        ...rows.map(row => columns.map(column => cell(row[column])).join(';'))].join('\r\n');
+      const url = URL.createObjectURL(new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8;' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'compras_dulce_y_feliz.csv';
+      link.click();
       URL.revokeObjectURL(url);
     }
 

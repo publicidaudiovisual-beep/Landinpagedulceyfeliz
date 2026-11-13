@@ -35,13 +35,48 @@ En el pie de página, los celulares muestran el logo optimizado para móvil; en 
 
 ### Registro de pedidos y descuento de inventario
 
-El sitio guarda un pedido en Upstash antes de abrir WhatsApp. Esto registra que se inició el pedido, pero no confirma que el cliente haya enviado el mensaje. Se conservan como máximo 200 pedidos; el más antiguo se elimina al superar el límite. El panel los agrupa por día (hora de Argentina).
+El sitio guarda un pedido en Upstash antes de abrir WhatsApp. Esto registra que se inició el pedido, pero no confirma que el cliente haya enviado el mensaje. Se conservan como máximo 400 pedidos; el más antiguo se elimina al superar el límite. El panel los agrupa por día (hora de Argentina).
 
 Cada pedido recibe un número correlativo `DF-000001`, compartido por los pedidos iniciados por WhatsApp y por Nave. Los pedidos anteriores reciben números estables automáticamente al consultar o registrar pedidos.
+
+Para envíos, el formulario solicita si el destino es una casa o una empresa. Si es una empresa, también solicita el horario de recepción; estos datos aparecen en el pedido del panel y en el mensaje de WhatsApp. El horario se coordina con el conductor y no garantiza disponibilidad.
+
+Los pedidos compuestos únicamente por hasta tres cajitas individuales son solo para retiro en Villa Dominico. A partir de cuatro cajitas individuales se permite seleccionar envío; la restricción no se aplica si el pedido incluye una caja grande.
 
 En **Pedidos generados**, selecciona y guarda el estado correspondiente: **Compra concretada**, **Compra con devolución**, **Compra no concluida** o **Compra rechazada**. Solo **Compra concretada** descuenta las cantidades del catálogo en GitHub; los demás estados no modifican el stock. El descuento es idempotente y no se repite al actualizar un pedido. Los pagos aprobados por Nave se registran automáticamente como compra concretada.
 
 Esta función requiere `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `ADMIN_PASSWORD`, `GITHUB_TOKEN`, `GITHUB_REPOSITORY` y `GITHUB_BRANCH` en Vercel. El token de GitHub debe tener permiso **Contents: Read and write**. Si falta alguna configuración o GitHub no puede actualizar el catálogo, el pedido queda pendiente y el panel muestra el error para poder reintentar.
+
+En los despliegues que no sean de Producción, el sistema agrega el sufijo `:sandbox` a las claves de pedidos, secuencia y visitas en Redis. Así se puede reutilizar la misma base de Upstash sin mezclar esos datos con los de Producción. Configura las credenciales de esa base también para **Preview**; no copies sus valores en el código ni los compartas.
+
+### Envíos por empresas privadas
+
+El cliente puede elegir retiro, envío por una empresa privada o coordinación por WhatsApp. Para una empresa privada se recopilan los datos de entrega, la localidad y el tipo de destino; para empresas destinatarias se solicita además el horario de recepción. El cliente puede sumar el envío al pago de la compra o pagarlo aparte por transferencia. El pedido debe cargarse y gestionarse en el panel de la empresa logística; la tienda no crea envíos ni obtiene seguimiento automáticamente.
+
+En el panel, **Empresas y tarifas de envío** permite administrar zonas compartidas y cargar, para cada empresa, el precio por zona con IVA incluido. El panel calcula el precio orientativo con el 7 % adicional. La configuración se guarda en Upstash con las mismas credenciales del registro de pedidos; los datos de pruebas y producción están separados. Si no existe configuración guardada, Vima inicia activa con los importes de la vista previa; la configuración ya guardada conserva su estado. Revisa tarifas, localidades y el eventual recargo por recolección.
+
+Las empresas activas y sus tarifas aparecen en el formulario. El servidor comprueba la zona y el precio antes de guardar el pedido, y Nave incluye el envío únicamente si se eligió pagarlo junto con la compra. Si cambia la tarifa, el cliente debe volver a abrir los detalles para actualizarla.
+
+Para pedidos marcados como **Compra concretada**, el panel ofrece **Imprimir comprobante**, con un formato para papel de 58 mm; se debe seleccionar la impresora en el diálogo del navegador. El botón **Descargar compras (CSV)** exporta todos los campos de los pedidos actualmente almacenados, incluidos los datos de entrega y de las cajas, para abrirlos en una planilla editable. El registro conserva hasta 400 pedidos; el CSV no recupera pedidos antiguos ya eliminados. La ventana de retiro muestra la dirección confirmada, un mapa de Google y el horario de lunes a viernes de 9:00 a 18:00.
+
+El ticket usa el isotipo de la tienda e incluye un único QR con número de pedido, fecha e importe. Es un **comprobante interno no fiscal**: no es factura autorizada por ARCA ni una etiqueta del transportista. Las facturas fiscales deben emitirse por separado. El PDF completo de respaldo contiene datos personales y debe mantenerse bajo resguardo.
+
+### Impresión y respaldo automático de compras
+
+El código incluye una cola persistente y un servicio local Windows, pero aún debe desplegarse, configurarse y probarse en sandbox. La notificación de Nave solo encola el comprobante después de consultar y verificar el pago y su importe. La impresión se encola aunque el descuento de inventario falle, ya que el pago ya fue aprobado; revisa el estado del pedido si esto ocurre. Los pedidos de otros medios se encolan cuando se guarda el estado **Compra concretada**, no al iniciar la coordinación por WhatsApp.
+
+1. Configura en Vercel una variable `PRINT_AGENT_TOKEN` exclusiva para el servicio, de al menos 32 caracteres aleatorios. Usa credenciales diferentes en Preview y Production; no la compartas por chat ni la guardes en el repositorio. Genera, por ejemplo, 32 bytes aleatorios con Node.js mediante `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+2. Despliega primero el entorno de pruebas con sus variables de Upstash y Nave. La cola de Preview está separada de producción. No habilites producción antes de verificar el flujo de punta a punta.
+3. En la computadora Windows conectada a la impresora, instala Node.js 18 o posterior si falta y habilita **Microsoft Print to PDF**. Desde PowerShell ejecuta `.\print-agent\setup.ps1`, indica la URL HTTPS completa del Preview terminada en `/api/print-jobs`, el nombre exacto de la cola de impresión, la carpeta de respaldo y el mismo token. Por defecto la carpeta está en Documentos, `Dulce y Feliz\Comprobantes`. El instalador comprueba las impresoras, protege el token con DPAPI para el usuario actual y crea una tarea programada que se inicia al iniciar sesión. No ejecutes el instalador en más de un equipo sin un procedimiento de operación coordinado.
+4. Comprueba en el Programador de tareas que **Dulce y Feliz - Impresion Nave** esté ejecutándose y revisa `%LOCALAPPDATA%\DulceYFeliz\print-agent.log`. Con una compra simulada, confirma que el ticket sale en la impresora correcta y contiene todos los datos. El servicio puede funcionar con el panel cerrado, pero la computadora y la sesión de Windows deben estar encendidas.
+
+La cola conserva los trabajos pendientes mientras la computadora está apagada. Si el servicio se interrumpe después de reservar un trabajo, queda **en revisión** y no se reimprime solo: en el panel, detén primero la tarea programada y comprueba el papel; luego elige **Ya está impreso** o **Reintentar**. Un envío aceptado por la cola de Windows no garantiza que haya salido papel. El panel muestra hasta 100 trabajos pendientes y 100 en revisión. Tras marcarse como enviado, se eliminan los datos personales del trabajo y se conserva un identificador para evitar duplicados de notificaciones. El registro de pedidos mantiene su propia política de conservación.
+
+El servicio crea primero un PDF A4 con todos los campos registrados, y después imprime el ticket térmico simplificado. Si la impresora térmica no está disponible, el servicio conserva el trabajo y espera; si el servicio se interrumpe, revisa el trabajo en el panel. El respaldo es local: organiza copias de seguridad de esa carpeta. No se generan automáticamente PDF para compras anteriores a la activación del servicio.
+
+Para cada pago aprobado de Nave, el servicio también guarda un PDF separado en `Datos para facturar - no fiscal\AAAA-MM` dentro de la carpeta de respaldo. El mes corresponde a la fecha en que el sistema registró el pago aprobado, en hora argentina; si un trabajo anterior no tiene esa fecha, se usa y se indica la fecha del pedido. El PDF reúne los datos disponibles para revisar al facturar, pero **no es una factura**, no tiene CAE y no se envía automáticamente a Facturitas ni a ARCA. El DNI solo aparece si se recopiló en los datos de entrega; si falta, verifica si corresponde incorporarlo antes de emitir. El importe es el pago de Nave y no incluye un envío acordado para pago separado. Revisa las ventas ya facturadas para evitar duplicados y consulta con tu contador el tratamiento del envío y de las fechas.
+
+Facturitas documenta la carga de [imágenes de comprobantes](https://help.facturitas.app/es/articles/15879029-como-creo-una-factura-mandando-una-imagen-por-whatsapp) y de [Excel con su modelo](https://help.facturitas.app/es/articles/11439169-como-puedo-facturar-de-forma-masiva); no se ha verificado que acepte PDF como entrada. El PDF puede servir para consultar sus datos o sacar una captura legible. No se genera un archivo de importación masiva hasta conocer y verificar el modelo requerido.
 
 ### Checkout Nave
 
@@ -61,9 +96,7 @@ Lo más seguro es probar primero en un despliegue **Preview**. En **Vercel → P
 | `NAVE_AUDIENCE` | `audience` de las credenciales sandbox de Nave |
 | `NAVE_POS_ID` | ID del punto de venta online obtenido en Nave |
 
-Configura en Nave la URL de notificaciones sandbox con la URL estable del despliegue Preview: `https://TU-URL-PREVIEW/api/nave-notifications`. El endpoint consulta el pago directamente a Nave antes de marcarlo como aprobado y descontar stock; no confía solamente en el contenido de la notificación. Para que las notificaciones lleguen, el sitio debe estar desplegado y accesible públicamente. La opción de pago de Nave queda desactivada automáticamente si falta alguna variable requerida.
-
-El envío por Envia.com también permanece marcado como **Próximamente** y no se puede seleccionar hasta terminar su integración.
+Configura `GITHUB_REPOSITORY` con el repositorio y `GITHUB_BRANCH` con `sandbox-nave` en Preview. El token `GITHUB_TOKEN` debe tener permiso **Contents: Read and write**, porque un pago sandbox aprobado actualiza el stock de esa rama. No uses `main` para las pruebas. Configura en Nave la URL de notificaciones sandbox con la URL estable del despliegue Preview: `https://TU-URL-PREVIEW/api/nave-notifications`. El endpoint consulta el pago directamente a Nave antes de marcarlo como aprobado y descontar stock; no confía solamente en el contenido de la notificación. Para que las notificaciones lleguen, el sitio debe estar desplegado y accesible públicamente. La opción de pago de Nave queda desactivada automáticamente si falta alguna variable requerida.
 
 Para probar en sandbox usa una rama de pruebas que habilite expresamente el checkout en ese entorno. En producción, configura las credenciales productivas solo en **Production**, establece `NAVE_ENVIRONMENT` en `production` y registra en Nave la URL productiva de notificaciones. Nunca reutilices credenciales sandbox en producción. Realiza una compra controlada y verifica que el pedido aparezca en el panel y pase a **Compra concretada** después de aprobarse el pago, y que se descuente el stock. Si el pago se aprueba pero el pedido no se actualiza, conserva el comprobante y revisa la notificación antes de volver a pagar.
 

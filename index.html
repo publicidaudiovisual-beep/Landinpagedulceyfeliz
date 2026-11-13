@@ -533,28 +533,17 @@
           <label class="block text-xs text-gray-300 mb-1">Nombre y Apellido para coordinar el pedido *</label>
           <input type="text" id="box-custom-name" class="w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white" placeholder="Ej. Dionisio Millan Zabala" required />
         </div>
-        <div>
-          <label class="block text-xs text-gray-300 mb-1">Detalle de entrega (si aplica)</label>
-          <input type="text" id="box-shipping-address" class="w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white" placeholder="Dirección, localidad o referencia" />
-        </div>
-
         <section class="space-y-3 rounded-xl border border-gold/30 bg-[#0B0B0C] p-4" aria-labelledby="shipping-options-title">
           <h3 id="shipping-options-title" class="font-serif-luxury text-2xl text-goldLight">Opciones para despachar el pedido</h3>
           <label for="box-shipping-method" class="block text-xs text-gray-300">Elegí cómo recibirlo *</label>
           <select id="box-shipping-method" class="w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white" required>
             <option value="" disabled selected>Seleccioná una opción de entrega</option>
-            <option value="Retiro Take Away en Villa Dominico">Retiro Take Away en Villa Dominico</option>
-            <option value="Envío por Envia.com" disabled>Envío por Envia.com — Próximamente</option>
-            <option value="Envío por Pedidos Ya Envíos">Envío por Pedidos Ya Envíos (solo zonas cercanas a Villa Dominico)</option>
+            <option value="Retiro Take Away en Villa Dominico">Retiro en tienda</option>
+            <option value="Envío por empresa privada">Envío por empresa privada</option>
+            <option value="Coordinar envío por WhatsApp">Coordinar envío por WhatsApp</option>
           </select>
-          <div id="takeaway-details" class="hidden rounded-lg border border-gold/20 bg-[#17171A] p-3 text-xs text-gray-300" aria-live="polite">
-            <p class="font-semibold text-goldLight">Punto y horario de retiro</p>
-            <p>El Salvador 679, número 2, entre Mansilla y Villegas, Villa Dominico, Avellaneda, Provincia de Buenos Aires (CP 1874).</p>
-            <p class="mt-1">Lunes a viernes, de 10 a 18 h.</p>
-            <a href="https://wa.me/541127401426?text=Hola%20Dulce%20%26%20Feliz%2C%20quiero%20coordinar%20un%20retiro%20Take%20Away." target="_blank" rel="noopener" class="mt-2 inline-flex text-goldLight underline">Te sugerimos coordinar el retiro por WhatsApp</a>
-          </div>
-          <p id="pedidos-ya-details" class="hidden text-[11px] text-amber-200" aria-live="polite">Disponible únicamente en zonas cercanas a Villa Dominico. La cobertura se confirma por WhatsApp.</p>
-          <p class="text-[11px] text-gray-400">Envia.com: Próximamente.</p>
+          <p id="shipping-selection-summary" class="text-xs text-gray-300" aria-live="polite"></p>
+          <button type="button" id="edit-shipping-selection" class="hidden text-xs text-goldLight underline">Ver o editar detalles</button>
         </section>
 
         <section class="space-y-3 rounded-xl border border-gold/30 bg-[#0B0B0C] p-4" aria-labelledby="payment-options-title">
@@ -592,6 +581,86 @@
     </form>
   </dialog>
 
+  <dialog id="pickup-dialog" class="order-dialog">
+    <div class="p-6 sm:p-8 space-y-4">
+      <h2 class="font-serif-luxury text-3xl text-goldLight">Retiro en tienda</h2>
+      <div class="space-y-2 text-sm text-gray-200">
+        <p><strong class="text-goldLight">Dirección:</strong> El Salvador 679, n.º 2, entre Mansilla y Villegas, Villa Domínico, Avellaneda, Buenos Aires (CP 1874).</p>
+        <p><strong class="text-goldLight">Horario:</strong> lunes a viernes de 9:00 a 18:00.</p>
+      </div>
+      <iframe
+        title="Mapa de Dulce y Feliz en Villa Domínico"
+        src="https://maps.google.com/maps?q=-34.6505558%2C-58.3274964&amp;z=16&amp;output=embed"
+        class="h-52 w-full rounded-xl border border-gold/30"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <a href="https://maps.app.goo.gl/mCMxMr5VwW2UTjaj8" target="_blank" rel="noopener noreferrer" class="block text-sm text-goldLight underline">Abrir en Google Maps y ver cómo llegar</a>
+      <p class="text-sm text-gray-200">Te esperamos con mucha alegría y te atenderemos con todo el esmero que merecés.</p>
+      <button type="button" onclick="document.getElementById('pickup-dialog').close()" class="gold-button rounded-xl px-5 py-2 text-sm">Continuar</button>
+    </div>
+  </dialog>
+
+  <dialog id="coordination-dialog" class="order-dialog">
+    <div class="p-6 sm:p-8 space-y-4">
+      <h2 class="font-serif-luxury text-3xl text-goldLight">Coordinemos tu envío</h2>
+      <p class="text-sm text-gray-200">¿Querés consultar con el dueño por WhatsApp?</p>
+      <p id="coordination-message" class="text-sm text-gray-200" aria-live="polite"></p>
+      <a id="coordination-link" href="https://wa.me/541127401426?text=Hola%2C%20quiero%20consultar%20sobre%20el%20env%C3%ADo%20de%20mi%20pedido." target="_blank" rel="noopener noreferrer" class="hidden text-sm text-goldLight underline">Consultar por WhatsApp</a>
+      <div class="flex flex-wrap gap-3">
+        <button type="button" id="coordination-yes" class="gold-button rounded-xl px-5 py-2 text-sm">Sí</button>
+        <button type="button" id="coordination-no" class="rounded-xl border border-gold/40 px-5 py-2 text-sm text-goldLight">No</button>
+        <button type="button" id="coordination-continue" class="hidden rounded-xl border border-gold/40 px-5 py-2 text-sm text-goldLight">Continuar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="private-delivery-dialog" class="order-dialog">
+    <form id="private-delivery-form" class="p-6 sm:p-8 space-y-4">
+      <h2 class="font-serif-luxury text-3xl text-goldLight">Envío por empresa privada</h2>
+      <p id="private-delivery-status" class="text-xs text-amber-200" aria-live="polite"></p>
+      <label class="block text-xs text-gray-300">Empresa *
+        <select id="delivery-company" required class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"><option value="">Seleccioná una empresa</option></select>
+      </label>
+      <div id="private-delivery-fields" class="hidden space-y-3">
+        <label class="block text-xs text-gray-300">Localidad de entrega *
+          <select id="delivery-locality" required class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"><option value="">Seleccioná tu localidad</option></select>
+        </label>
+        <p class="text-xs text-gray-400">Si tu localidad no aparece, <a href="https://wa.me/541127401426" target="_blank" rel="noopener noreferrer" class="text-goldLight underline">consultanos por WhatsApp</a>.</p>
+        <p id="delivery-quote" class="text-xs text-goldLight" aria-live="polite"></p>
+        <p class="text-xs text-gray-400">Podrían existir recargos de recolección no incluidos en esta tarifa; consultanos antes de pagar.</p>
+        <label class="block text-xs text-gray-300">¿Cómo querés pagar el envío? *
+          <select id="delivery-payment" required class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"><option value="together">Sumarlo al pago de la compra</option><option value="separate">Pagarlo aparte por transferencia</option></select>
+        </label>
+        <label class="block text-xs text-gray-300">Nombre y apellido del destinatario *<input name="recipient" required maxlength="200" class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"></label>
+        <label class="block text-xs text-gray-300">Documento de identidad del comprador *<input name="buyerDocument" required maxlength="200" inputmode="numeric" class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"></label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block text-xs text-gray-300">Calle *<input name="street" required maxlength="200" class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"></label>
+          <label class="block text-xs text-gray-300">Altura / número *<input name="number" required maxlength="200" class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"></label>
+          <label class="block text-xs text-gray-300">Piso<input name="floor" maxlength="200" class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"></label>
+          <label class="block text-xs text-gray-300">Departamento<input name="apartment" maxlength="200" class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"></label>
+        </div>
+        <label class="block text-xs text-gray-300">Barrio<input name="neighborhood" maxlength="200" class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"></label>
+        <label class="block text-xs text-gray-300">Provincia *<input name="province" required maxlength="200" class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"></label>
+        <label class="block text-xs text-gray-300">Entre calles<input name="crossStreets" maxlength="200" class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"></label>
+        <label class="block text-xs text-gray-300">Referencia visible<input name="landmark" maxlength="200" class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"></label>
+        <label class="block text-xs text-gray-300">Teléfono de contacto *<input name="phone" type="tel" required maxlength="200" class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"></label>
+        <label class="block text-xs text-gray-300">Teléfono adicional<input name="phoneAlt" type="tel" maxlength="200" class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"></label>
+        <label class="block text-xs text-gray-300">Persona autorizada a recibir<input name="authorized" maxlength="200" class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"></label>
+        <label class="block text-xs text-gray-300">¿La dirección corresponde a una casa o a una empresa? *
+          <select id="box-destination-type" required class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"><option value="">Seleccioná el tipo de destino</option><option value="casa">Casa</option><option value="empresa">Empresa</option></select>
+        </label>
+        <div id="business-delivery-hours-details" class="hidden">
+          <label class="block text-xs text-gray-300">Horarios disponibles para recibir en la empresa *<input id="box-business-delivery-hours" maxlength="200" pattern=".*\S.*" class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"></label>
+          <p class="mt-1 text-xs text-gray-400">Indicá si pueden recibir por la mañana. El horario se coordina y está sujeto a disponibilidad.</p>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button type="button" id="cancel-private-delivery" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Volver</button>
+        <button type="submit" class="gold-button rounded-xl px-4 py-2 text-xs">Confirmar datos</button>
+      </div>
+    </form>
+  </dialog>
+
   <script>
     let appData = { stats: { visits: 0, whatsappOrders: 0 }, products: [] };
     let currentSize = 4;
@@ -603,7 +672,9 @@
     let mobileCarouselWrapTimer = null;
     let pendingOrderRequestId = null;
     let pendingOrderPayload = '';
-
+    let deliveryConfig = null;
+    let selectedDelivery = null;
+    let privateDeliveryConfirmed = false;
     async function loadPublicData() {
       try {
         const res = await fetch('./catalog-data.json', { cache: 'no-store' });
@@ -871,6 +942,13 @@
       }
     }
 
+    function requiresTakeawayForIndividualBoxes() {
+      const individualBoxCount = activeBoxes.reduce((count, box, index) =>
+        count + (boxSizes[index] === 1 && box.length > 0 ? 1 : 0), 0);
+      const hasLargeBox = activeBoxes.some((box, index) => boxSizes[index] > 1 && box.length > 0);
+      return !hasLargeBox && individualBoxCount >= 1 && individualBoxCount <= 3;
+    }
+
     function renderBuilder() {
       const selectorContainer = document.getElementById('builder-selector-container');
       const selectorTitle = document.getElementById('builder-selector-title');
@@ -1062,17 +1140,6 @@
       renderBuilder();
     }
 
-    function requiresTakeawayForIndividualBoxes() {
-      const individualBoxCount = activeBoxes.reduce((count, box, index) => {
-        return count + (boxSizes[index] === 1 && box.length > 0 ? 1 : 0);
-      }, 0);
-      const hasLargeBox = boxSizes.some((size, index) => {
-        return size === 4 && activeBoxes[index].length > 0;
-      });
-
-      return !hasLargeBox && individualBoxCount >= 1 && individualBoxCount <= 3;
-    }
-
     document.getElementById('builder-boxes-wrapper').addEventListener('input', (event) => {
       const input = event.target.closest('[data-box-name]');
       if(input) boxNames[Number(input.dataset.boxName)] = input.value;
@@ -1140,14 +1207,28 @@
           + box.map(p => ` - ${p.name} ($${p.price})`).join('\n');
       }).join('\n\n');
       document.getElementById('order-preview-flavors').textContent = previewText;
-      const totalCookieCount = validBoxes.reduce((total, entry) => total + entry.box.length, 0);
-      document.getElementById('order-preview-total').textContent = `Total de galletas: ${totalCookieCount} · Total a pagar: $${computedTotalAmount.toLocaleString('es-AR')}`;
+      openOrderPreviewTotal();
     }
 
     const shippingMethodSelect = document.getElementById('box-shipping-method');
     const paymentMethodSelect = document.getElementById('box-payment-method');
-    shippingMethodSelect.addEventListener('change', updateCheckoutOptions);
-    paymentMethodSelect.addEventListener('change', updateCheckoutOptions);
+    const destinationTypeSelect = document.getElementById('box-destination-type');
+    const businessDeliveryHours = document.getElementById('box-business-delivery-hours');
+    shippingMethodSelect.addEventListener('change', event => {
+      selectedDelivery = null;
+      updateCheckoutOptions(event);
+      openShippingDialog();
+    });
+    paymentMethodSelect.addEventListener('change', event => {
+      const previousShippingMethod = shippingMethodSelect.value;
+      updateCheckoutOptions(event);
+      if (previousShippingMethod !== shippingMethodSelect.value) {
+        selectedDelivery = null;
+        updateCheckoutOptions();
+        openShippingDialog();
+      }
+    });
+    destinationTypeSelect.addEventListener('change', updateBusinessHours);
 
     async function updateNaveCheckoutAvailability() {
       const option = document.getElementById('nave-payment-option');
@@ -1174,6 +1255,15 @@
 
     function updateCheckoutOptions(event) {
       let isTakeaway = shippingMethodSelect.value === 'Retiro Take Away en Villa Dominico';
+      const takeawayOnlyOrder = requiresTakeawayForIndividualBoxes();
+      Array.from(shippingMethodSelect.options).forEach(option => {
+        if(option.value === 'Envío por empresa privada' || option.value === 'Coordinar envío por WhatsApp') {
+          option.disabled = takeawayOnlyOrder;
+        }
+      });
+      if(takeawayOnlyOrder && !isTakeaway && shippingMethodSelect.value) {
+        shippingMethodSelect.value = '';
+      }
       const selectedPayment = paymentMethodSelect.selectedOptions[0];
       if(selectedPayment?.dataset.takeawayOnly && !isTakeaway) {
         if(event?.target === shippingMethodSelect) {
@@ -1184,22 +1274,167 @@
         }
       }
 
-      const isPedidosYa = shippingMethodSelect.value === 'Envío por Pedidos Ya Envíos';
       const isNavePayment = paymentMethodSelect.value === 'Sistema Nave de Galicia / MODO';
-      document.getElementById('takeaway-details').classList.toggle('hidden', !isTakeaway);
-      document.getElementById('pedidos-ya-details').classList.toggle('hidden', !isPedidosYa);
       document.getElementById('takeaway-payment-details').classList.toggle('hidden', isTakeaway);
       document.getElementById('nave-payment-details').classList.toggle('hidden', !isNavePayment);
-
-      document.getElementById('box-shipping-address').required =
-        shippingMethodSelect.value === 'Envío por Pedidos Ya Envíos'
-        || shippingMethodSelect.value === 'Envío por Envia.com';
+      document.getElementById('edit-shipping-selection').classList.toggle('hidden', !shippingMethodSelect.value);
+      const summary = document.getElementById('shipping-selection-summary');
+      summary.textContent = selectedDelivery && shippingMethodSelect.value === 'Envío por empresa privada'
+        ? `${selectedDelivery.companyName} · ${selectedDelivery.locality} · $${(selectedDelivery.quotedCents / 100).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : '';
 
       Array.from(paymentMethodSelect.options).forEach(option => {
         if(!option.dataset.takeawayOnly) return;
         option.disabled = false;
       });
+
+      openOrderPreviewTotal();
     }
+
+    function openOrderPreviewTotal() {
+      const count = activeBoxes.reduce((total, box) => total + box.length, 0);
+      const delivery = shippingMethodSelect.value === 'Envío por empresa privada' ? selectedDelivery : null;
+      const cost = delivery ? delivery.quotedCents / 100 : 0;
+      const total = computedTotalAmount + (delivery?.shippingPayment === 'together' ? cost : 0);
+      const shippingText = delivery ? ` · Envío: $${cost.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${delivery.shippingPayment === 'separate' ? ' (se paga aparte)' : ''}` : '';
+      document.getElementById('order-preview-total').textContent = `Total de galletas: ${count} · Productos: $${computedTotalAmount.toLocaleString('es-AR')}${shippingText} · Total a pagar: $${total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function updateBusinessHours() {
+      const isBusiness = destinationTypeSelect.value === 'empresa';
+      document.getElementById('business-delivery-hours-details').classList.toggle('hidden', !isBusiness);
+      businessDeliveryHours.required = isBusiness;
+      businessDeliveryHours.disabled = !isBusiness;
+    }
+
+    function updatePrivateFields() {
+      const companySelect = document.getElementById('delivery-company');
+      const company = deliveryConfig?.companies.find(item => item.id === companySelect.value);
+      const fields = document.getElementById('private-delivery-fields');
+      fields.classList.toggle('hidden', !company);
+      fields.querySelectorAll('input, select').forEach(element => { element.disabled = !company; });
+      if (company) updateBusinessHours();
+      const locality = document.getElementById('delivery-locality');
+      const previous = locality.value;
+      locality.replaceChildren(new Option('Seleccioná tu localidad', ''));
+      if (company) {
+        deliveryConfig.zones.forEach(zone => {
+          if (!company.rates.some(rate => rate.zoneId === zone.id)) return;
+          const group = document.createElement('optgroup');
+          group.label = zone.name;
+          zone.localities.forEach(name => {
+            const option = new Option(name, name);
+            option.dataset.zoneId = zone.id;
+            group.append(option);
+          });
+          locality.append(group);
+        });
+      }
+      if ([...locality.options].some(option => option.value === previous)) locality.value = previous;
+      updatePrivateQuote();
+    }
+
+    function getPrivateQuote() {
+      const company = deliveryConfig?.companies.find(item => item.id === document.getElementById('delivery-company').value);
+      const locality = document.getElementById('delivery-locality');
+      const zoneId = locality.selectedOptions[0]?.dataset.zoneId;
+      const zone = deliveryConfig?.zones.find(item => item.id === zoneId);
+      const rate = company?.rates.find(item => item.zoneId === zoneId);
+      if (!company || !zone || !rate || !locality.value) return null;
+      return { companyId: company.id, companyName: company.name, zoneId: zone.id, zoneName: zone.name,
+        locality: locality.value, quotedCents: Math.round(rate.priceCents * 107 / 100) };
+    }
+
+    function updatePrivateQuote() {
+      const quote = getPrivateQuote();
+      document.getElementById('delivery-quote').textContent = quote
+        ? `Envío ${quote.zoneName}: $${(quote.quotedCents / 100).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : 'Seleccioná una localidad para ver el costo.';
+    }
+
+    async function openShippingDialog() {
+      if (shippingMethodSelect.value === 'Retiro Take Away en Villa Dominico') {
+        document.getElementById('pickup-dialog').showModal();
+      } else if (shippingMethodSelect.value === 'Coordinar envío por WhatsApp') {
+        document.getElementById('coordination-message').textContent = '';
+        document.getElementById('coordination-continue').classList.add('hidden');
+        document.getElementById('coordination-link').classList.add('hidden');
+        document.getElementById('coordination-dialog').showModal();
+      } else if (shippingMethodSelect.value === 'Envío por empresa privada') {
+        const dialog = document.getElementById('private-delivery-dialog');
+        const status = document.getElementById('private-delivery-status');
+        const companySelect = document.getElementById('delivery-company');
+        privateDeliveryConfirmed = false;
+        dialog.showModal();
+        status.textContent = 'Cargando empresas y tarifas...';
+        companySelect.disabled = true;
+        try {
+          const response = await fetch('./api/shipping-config', { cache: 'no-store' });
+          const data = await response.json();
+          if (!response.ok || !Array.isArray(data.companies) || !Array.isArray(data.zones)) {
+            throw new Error(data.error || 'No se pudieron cargar las empresas de envío.');
+          }
+          deliveryConfig = data;
+          const previous = selectedDelivery?.companyId || companySelect.value;
+          companySelect.replaceChildren(new Option('Seleccioná una empresa', ''));
+          data.companies.forEach(company => companySelect.add(new Option(company.name, company.id)));
+          if (data.companies.some(company => company.id === previous)) companySelect.value = previous;
+          status.textContent = data.companies.length ? '' : 'No hay empresas disponibles. Podés coordinar por WhatsApp.';
+          companySelect.disabled = false;
+          updatePrivateFields();
+        } catch (error) {
+          status.textContent = error.message || 'No se pudieron cargar las empresas de envío.';
+          console.error('Error al cargar empresas de envío:', error);
+        }
+      }
+    }
+
+    document.getElementById('edit-shipping-selection').addEventListener('click', openShippingDialog);
+    document.getElementById('delivery-company').addEventListener('change', updatePrivateFields);
+    document.getElementById('delivery-locality').addEventListener('change', updatePrivateQuote);
+    document.getElementById('private-delivery-form').addEventListener('submit', event => {
+      event.preventDefault();
+      const quote = getPrivateQuote();
+      if (!quote) {
+        document.getElementById('private-delivery-status').textContent = 'Seleccioná una localidad con tarifa disponible.';
+        return;
+      }
+      const fields = new FormData(event.currentTarget);
+      const details = {};
+      for (const field of ['recipient', 'buyerDocument', 'street', 'number', 'floor', 'apartment', 'neighborhood', 'province', 'crossStreets', 'landmark', 'phone', 'phoneAlt', 'authorized']) {
+        details[field] = String(fields.get(field) || '').trim();
+      }
+      if (['recipient', 'buyerDocument', 'street', 'number', 'province', 'phone'].some(field => !details[field])) {
+        document.getElementById('private-delivery-status').textContent = 'Completá los datos obligatorios de entrega.';
+        return;
+      }
+      selectedDelivery = { ...quote, ...details, destinationType: destinationTypeSelect.value,
+        businessDeliveryHours: destinationTypeSelect.value === 'empresa' ? businessDeliveryHours.value.trim() : '',
+        shippingPayment: document.getElementById('delivery-payment').value };
+      privateDeliveryConfirmed = true;
+      document.getElementById('private-delivery-dialog').close();
+      updateCheckoutOptions();
+      openOrderPreviewTotal();
+    });
+    document.getElementById('cancel-private-delivery').addEventListener('click', () => document.getElementById('private-delivery-dialog').close());
+    document.getElementById('private-delivery-dialog').addEventListener('close', () => {
+      if (!privateDeliveryConfirmed && !selectedDelivery && shippingMethodSelect.value === 'Envío por empresa privada') {
+        shippingMethodSelect.value = '';
+        updateCheckoutOptions();
+        openOrderPreviewTotal();
+      }
+    });
+    for (const [id, message] of [
+      ['coordination-yes', 'Podés consultarnos ahora o continuar con tu pedido y coordinar el envío personalmente por WhatsApp. Si pagás por Nave, usá este enlace para contactarnos.'],
+      ['coordination-no', 'Podés continuar con tu pedido, revisar con calma y elegir lo que te resulte más conveniente. Estamos para ayudarte.']
+    ]) {
+      document.getElementById(id).addEventListener('click', () => {
+        document.getElementById('coordination-message').textContent = message;
+        document.getElementById('coordination-continue').classList.remove('hidden');
+        document.getElementById('coordination-link').classList.toggle('hidden', id !== 'coordination-yes');
+      });
+    }
+    document.getElementById('coordination-continue').addEventListener('click', () => document.getElementById('coordination-dialog').close());
 
     updateCheckoutOptions();
     updateNaveCheckoutAvailability();
@@ -1214,6 +1449,11 @@
       const isNavePayment = paymentMethod === 'Sistema Nave de Galicia / MODO';
       status.classList.add('hidden');
 
+      if (shippingMethodSelect.value === 'Envío por empresa privada' && !selectedDelivery) {
+        status.textContent = 'Completá y confirmá los datos del envío antes de continuar.';
+        status.classList.remove('hidden');
+        return;
+      }
       let checkoutWindow = null;
       if(!isNavePayment) {
         checkoutWindow = window.open('about:blank', '_blank');
@@ -1229,8 +1469,11 @@
 
       submitButton.disabled = true;
       const customName = document.getElementById('box-custom-name').value;
-      const shippingAddress = document.getElementById('box-shipping-address').value;
       const shippingMethod = document.getElementById('box-shipping-method').value;
+      const delivery = shippingMethod === 'Envío por empresa privada' ? selectedDelivery : null;
+      const shippingAddress = delivery ? [delivery.street, delivery.number, delivery.locality, delivery.province].join(', ') : '';
+      const destinationType = delivery?.destinationType || '';
+      const deliveryHours = delivery?.businessDeliveryHours || '';
       const wantRegister = document.getElementById('client-register-check').checked;
       const totalCookieCount = activeBoxes.reduce((total, box) => total + box.length, 0);
 
@@ -1269,8 +1512,13 @@
         customerName: customName,
         address: shippingAddress,
         shippingMethod,
+        destinationType,
+        businessDeliveryHours: deliveryHours,
         paymentMethod,
         registered: wantRegister,
+        shippingCost: 0,
+        shippingProvider: '',
+        ...(delivery ? { delivery } : {}),
         boxes: orderBoxes
       };
       const orderPayload = JSON.stringify(order);
@@ -1297,6 +1545,8 @@
               date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
               name: customName,
               address: shippingAddress,
+              destinationType,
+              businessDeliveryHours: deliveryHours,
               payment: paymentMethod,
               shipping: shippingMethod,
               cookieCount: totalCookieCount,
@@ -1331,7 +1581,25 @@
         text += `*N.º de pedido:* DF-${String(result.orderNumber).padStart(6, '0')}\n`;
         text += `*Cliente:* ${customName}\n`;
         text += `*Opción de envío:* ${shippingMethod}\n`;
+        if (shippingMethod === 'Coordinar envío por WhatsApp') {
+          text += '*Envío:* deseo coordinarlo personalmente por WhatsApp.\n';
+        }
+        if (delivery) {
+          text += `*Empresa:* ${delivery.companyName} · ${delivery.zoneName}\n`;
+          text += `*Costo de envío:* $${(delivery.quotedCents / 100).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · ${delivery.shippingPayment === 'together' ? 'incluido en la compra' : 'a pagar aparte por transferencia'}\n`;
+          text += `*Destinatario:* ${delivery.recipient}\n*Documento del comprador:* ${delivery.buyerDocument}\n`;
+          if(delivery.floor) text += `*Piso:* ${delivery.floor}\n`;
+          if(delivery.apartment) text += `*Departamento:* ${delivery.apartment}\n`;
+          if(delivery.neighborhood) text += `*Barrio:* ${delivery.neighborhood}\n`;
+          if(delivery.crossStreets) text += `*Entre calles:* ${delivery.crossStreets}\n`;
+          if(delivery.landmark) text += `*Referencia:* ${delivery.landmark}\n`;
+          text += `*Teléfono:* ${delivery.phone}\n`;
+          if(delivery.phoneAlt) text += `*Teléfono adicional:* ${delivery.phoneAlt}\n`;
+          if(delivery.authorized) text += `*Persona autorizada:* ${delivery.authorized}\n`;
+        }
         text += `*Dirección o detalle para coordinar:* ${shippingAddress}\n`;
+        if(destinationType) text += `*Tipo de destino:* ${destinationType === 'empresa' ? 'Empresa' : 'Casa'}\n`;
+        if(deliveryHours) text += `*Horario de recepción de la empresa:* ${deliveryHours}\n`;
         text += `*Opción de abono:* ${paymentMethod}\n`;
         if(wantRegister) text += `*Registro VIP:* Sí, deseo registrarme.\n\n`;
         text += `*Detalle del pedido:*\n`;
@@ -1345,7 +1613,10 @@
         });
 
         text += `\n*Total de galletas: ${totalCookieCount}*\n`;
-        text += `*Total a pagar: $${computedTotalAmount.toLocaleString('es-AR')}*\n\nQuedo atento/a para coordinar. ¡Muchas gracias!`;
+        text += `*Subtotal de productos: $${computedTotalAmount.toLocaleString('es-AR')}*\n`;
+        const total = computedTotalAmount + (delivery?.shippingPayment === 'together' ? delivery.quotedCents / 100 : 0);
+        const totalLabel = delivery?.shippingPayment === 'separate' ? 'Total de productos (envío aparte)' : 'Total final estimado';
+        text += `*${totalLabel}: $${total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*\n\nQuedo atento/a para coordinar. ¡Muchas gracias!`;
 
         const encoded = encodeURIComponent(text);
         checkoutWindow.location.href = `https://wa.me/541127401426?text=${encoded}`;

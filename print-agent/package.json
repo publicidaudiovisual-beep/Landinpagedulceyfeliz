@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "name": "dulce-y-feliz-print-agent",
+  "version": "1.0.0",
+  "devDependencies": {
+    "qrcode-generator": "1.4.4"
+  }
+}
