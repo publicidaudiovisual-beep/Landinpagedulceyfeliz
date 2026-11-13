@@ -81,6 +81,12 @@ test('el servidor calcula el envío por zona y rechaza tarifas desactualizadas',
   assert.equal(res.statusCode, 409);
   res = await submit({ ...order, delivery: { ...delivery, locality: 'Otra' } });
   assert.equal(res.statusCode, 409);
+  company.rates[0].localities = ['San Fernando'];
+  res = await submit(order);
+  assert.equal(res.statusCode, 409);
+  res = await submit({ ...order, delivery: { ...delivery, locality: 'San Fernando' } });
+  assert.equal(res.statusCode, 201);
+  delete company.rates[0].localities;
   res = await submit({ ...order, delivery: { ...delivery, phone: '' } });
   assert.equal(res.statusCode, 400);
   const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires',

@@ -216,7 +216,7 @@ async function createOrder(req, res, body) {
     const availability = company && companyAvailability(company, now);
     const zone = config.zones.find(item => item.id === delivery.zoneId);
     const rate = company?.rates.find(item => item.zoneId === delivery.zoneId);
-    if (!company || availability.reason || !zone || !rate || !zone.localities.includes(delivery.locality)) {
+    if (!company || availability.reason || !zone || !rate || !(rate.localities ?? zone.localities).includes(delivery.locality)) {
       return respond(res, 409, { error: 'La empresa o la zona ya no están disponibles. Actualizá las opciones de envío.' });
     }
     const schedule = collectionSchedule(company, now);

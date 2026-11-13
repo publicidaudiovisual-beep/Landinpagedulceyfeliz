@@ -36,10 +36,16 @@ test('las tarifas se guardan solo desde el panel y las empresas pausadas no son 
     }
   });
   let stored = null;
+  let migrated = false;
   global.fetch = async (url, options) => {
     const command = JSON.parse(options.body);
     if (command[0] === 'SET') { stored = command[2]; return { ok: true, json: async () => ({ result: 'OK' }) }; }
-    return { ok: true, json: async () => ({ result: stored }) };
+    if (command[0] === 'EVAL') {
+      if (migrated || (stored || '') !== command[5]) return { ok: true, json: async () => ({ result: 0 }) };
+      stored = command[6]; migrated = true;
+      return { ok: true, json: async () => ({ result: 1 }) };
+    }
+    return { ok: true, json: async () => ({ result: command[1].includes('cabify-solo-moto-v1') ? (migrated ? '1' : null) : stored }) };
   };
   const zone = { id: '00000000-0000-4000-8000-000000000002', name: 'Zona 1', localities: ['Avellaneda'] };
   const company = {
@@ -50,14 +56,14 @@ test('las tarifas se guardan solo desde el panel y las empresas pausadas no son 
   let res = response();
   await handler({ method: 'GET', headers: {} }, res);
   assert.equal(res.body.zones.length, 4);
-  assert.equal(res.body.companies.length, 1);
+  assert.equal(res.body.companies.length, 3);
   assert.equal(res.body.companies[0].name, 'Vima');
   assert.equal(res.body.companies[0].enabled, true);
   assert.deepEqual(res.body.companies[0].workDays, [1, 2, 3, 4, 5, 6]);
   res = response();
   await handler({ method: 'POST', headers: {}, body: { zones: [zone], companies: [company] } }, res);
   assert.equal(res.statusCode, 401);
-  assert.equal(stored, null);
+  assert.equal(JSON.parse(stored).companies.length, 3);
   const headers = { authorization: 'Bearer clave-de-prueba-larga' };
   res = response();
   await handler({ method: 'POST', headers, body: { zones: [zone], companies: [{ ...company, rates: [{ zoneId: zone.id, priceCents: -1 }] }] } }, res);
@@ -101,6 +107,65 @@ test('las tarifas se guardan solo desde el panel y las empresas pausadas no son 
   assert.equal(res.body.companies.length, 1);
   assert.equal(res.body.companies[0].holidayReopeningDate, companyAvailability(company).holidayReopeningDate);
   assert.deepEqual(res.body.unavailable, []);
+});
+
+test('la migración conserva Vima, incorpora tarifas y cobertura por empresa solo una vez', async t => {
+  const savedFetch = global.fetch;
+  const previousUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const previousToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  process.env.UPSTASH_REDIS_REST_URL = 'https://redis.example.test';
+  process.env.UPSTASH_REDIS_REST_TOKEN = 'test';
+  t.after(() => {
+    global.fetch = savedFetch;
+    if (previousUrl === undefined) delete process.env.UPSTASH_REDIS_REST_URL;
+    else process.env.UPSTASH_REDIS_REST_URL = previousUrl;
+    if (previousToken === undefined) delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    else process.env.UPSTASH_REDIS_REST_TOKEN = previousToken;
+  });
+  const zones = ['CABA', 'Primer cordón', 'Segundo cordón', 'Tercer cordón'].map((name, index) => ({
+    id: `00000000-0000-4000-8000-00000000000${index + 1}`, name, localities: [name]
+  }));
+  const vimaOriginal = { id: '00000000-0000-4000-8000-000000000005', name: 'Vima', enabled: false,
+    workDays: [1, 3], rates: [{ zoneId: zones[0].id, priceCents: 12345 }] };
+  let raw = JSON.stringify({ zones, companies: [vimaOriginal] });
+  let marker = null;
+  let concurrentChange = true;
+  global.fetch = async (url, options) => {
+    const command = JSON.parse(options.body);
+    if (command[0] === 'GET') return { ok: true, json: async () => ({ result: command[1].includes('cabify-solo-moto-v1') ? marker : raw }) };
+    assert.equal(command[0], 'EVAL');
+    assert.equal(command[5], raw || '');
+    if (concurrentChange) {
+      concurrentChange = false;
+      const current = JSON.parse(raw);
+      current.companies[0].rates[0].priceCents = 54321;
+      raw = JSON.stringify(current);
+      return { ok: true, json: async () => ({ result: 0 }) };
+    }
+    raw = command[6]; marker = '1';
+    return { ok: true, json: async () => ({ result: 1 }) };
+  };
+  const { readShippingConfig } = require('../lib/shipping-config');
+  const config = await readShippingConfig();
+  const [vima, cabify, moto] = config.companies;
+  assert.equal(vima.name, 'Vima');
+  assert.equal(vima.enabled, false);
+  assert.equal(vima.rates[0].priceCents, 54321);
+  assert.deepEqual(cabify.workDays, [1, 3]);
+  assert.deepEqual(moto.workDays, [1, 3]);
+  assert.deepEqual(cabify.rates.map(rate => Math.round(rate.priceCents * 107 / 100)), [437479, 583262, 804009, 1082369]);
+  assert.deepEqual(moto.rates.map(rate => Math.round(rate.priceCents * 107 / 100)), [460100, 695500, 802500, 1016500]);
+  assert.ok(cabify.rates[1].localities.includes('San Fernando'));
+  assert.ok(!cabify.rates[2].localities.includes('San Fernando'));
+  assert.ok(cabify.rates[3].localities.includes('Luján'));
+  assert.ok(!cabify.rates.flatMap(rate => rate.localities).includes('Marcos Paz'));
+  assert.equal(moto.rates[1].localities, undefined);
+  config.companies.splice(1, 1);
+  raw = JSON.stringify(config);
+  assert.equal((await readShippingConfig()).companies.length, 2);
+  assert.equal(validateShippingConfig({ ...config, companies: [{ ...moto, rates: [
+    { ...moto.rates[0], localities: ['CABA'] }, { ...moto.rates[1], localities: ['caba'] }
+  ] }] }), false);
 });
 
 test('la disponibilidad respeta días y cierres inclusivos en hora argentina', () => {

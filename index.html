@@ -248,6 +248,7 @@
       <div class="hero-background-overlay" aria-hidden="true"></div>
       <div class="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="max-w-4xl space-y-6">
+          <p class="inline-block rounded-full border border-gold/40 bg-black/70 px-4 py-2 text-xs font-semibold tracking-wide text-goldLight">Próxima apertura de la tienda: 1/12/2026</p>
           <h1 class="pt-2 pb-2 text-white">
             <span class="gold-script">Cookies estilo New York</span>
             <span class="hero-title-main">Galletas de Autor</span>
@@ -411,7 +412,7 @@
 
             <div class="mt-6 flex flex-col gap-3 sm:flex-row">
               <button id="add-box-button" type="button" onclick="toggleNewBoxOptions()" aria-expanded="false" aria-controls="new-box-options" class="gold-button flex-1 rounded-xl px-4 py-3 text-[10px] uppercase tracking-[0.2em] disabled:cursor-not-allowed disabled:opacity-40" disabled>Agregar otra caja</button>
-              <button type="button" onclick="openOrderCheckout()" class="gold-button flex-1 rounded-xl px-4 py-3 text-[10px] uppercase tracking-[0.2em]">Continuar con la compra</button>
+              <button type="button" onclick="openOrderCheckout()" class="flex-1 rounded-xl bg-[#F3E5AB] px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-[#28200d] shadow-lg transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F3E5AB]">Continuar con la compra</button>
             </div>
             <div id="new-box-options" class="mt-3 hidden rounded-xl border border-gold/30 bg-[#0f0f10] p-4" aria-label="Elegí el formato de la nueva caja">
               <p class="mb-3 text-xs text-gray-300">¿Qué formato querés agregar?</p>
@@ -542,7 +543,7 @@
             <option value="Envío por empresa privada">Envío por empresa privada</option>
             <option value="Coordinar envío por WhatsApp">Coordinar envío por WhatsApp</option>
           </select>
-          <p id="shipping-selection-summary" class="text-xs text-gray-300" aria-live="polite"></p>
+          <p id="shipping-selection-summary" class="text-sm font-semibold text-goldLight" aria-live="polite"></p>
           <button type="button" id="edit-shipping-selection" class="hidden text-xs text-goldLight underline">Ver o editar detalles</button>
         </section>
 
@@ -637,8 +638,8 @@
           <select id="delivery-locality" required class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"><option value="">Seleccioná tu localidad</option></select>
         </label>
         <p class="text-xs text-gray-400">Si tu localidad no aparece, <a href="https://wa.me/541127401426" target="_blank" rel="noopener noreferrer" class="text-goldLight underline">consultanos por WhatsApp</a>.</p>
-        <p id="delivery-quote" class="text-xs text-goldLight" aria-live="polite"></p>
-        <p class="text-xs text-gray-400">Podrían existir recargos de recolección no incluidos en esta tarifa; consultanos antes de pagar.</p>
+        <p id="cabify-coverage-notice" class="hidden text-xs text-gray-300">Cabify informa que próximamente tendrá cobertura en Marcos Paz, Cañuelas, Guernica y San Vicente. La tarifa publicada corresponde a envíos de hasta 5 kg; si tu pedido supera ese peso, consultanos antes de pagar.</p>
+        <p id="delivery-quote" class="rounded-xl border border-gold/50 bg-[#302711] px-4 py-3 text-base font-bold text-[#fff1bd]" aria-live="polite"></p>
         <label class="block text-xs text-gray-300">¿Cómo querés pagar el envío? *
           <select id="delivery-payment" required class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"><option value="together">Sumarlo al pago de la compra</option><option value="separate">Pagarlo aparte por transferencia</option></select>
         </label>
@@ -1346,10 +1347,11 @@
       locality.replaceChildren(new Option('Seleccioná tu localidad', ''));
       if (company) {
         deliveryConfig.zones.forEach(zone => {
-          if (!company.rates.some(rate => rate.zoneId === zone.id)) return;
+          const rate = company.rates.find(item => item.zoneId === zone.id);
+          if (!rate) return;
           const group = document.createElement('optgroup');
           group.label = zone.name;
-          zone.localities.forEach(name => {
+          (rate.localities ?? zone.localities).forEach(name => {
             const option = new Option(name, name);
             option.dataset.zoneId = zone.id;
             group.append(option);
@@ -1357,6 +1359,7 @@
           locality.append(group);
         });
       }
+      document.getElementById('cabify-coverage-notice').classList.toggle('hidden', company?.id !== '00000000-0000-4000-8000-000000000006');
       if ([...locality.options].some(option => option.value === previous)) locality.value = previous;
       updatePrivateQuote();
     }

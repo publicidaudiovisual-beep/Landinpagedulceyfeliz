@@ -619,6 +619,22 @@
           price.className = name.className;
           const amount = document.createElement('p');
           amount.className = 'text-xs text-goldLight';
+          const coverageLabel = document.createElement('label');
+          coverageLabel.className = 'block text-xs text-gray-300';
+          coverageLabel.textContent = 'Localidades específicas de esta empresa (una por línea; vacío usa la zona compartida)';
+          const coverage = document.createElement('textarea');
+          coverage.className = name.className;
+          coverage.rows = 3;
+          coverage.maxLength = 10000;
+          coverage.value = rate?.localities?.join('\n') || '';
+          coverage.setAttribute('aria-label', `Localidades específicas: ${company.name}, ${zone.name}`);
+          coverage.addEventListener('input', () => {
+            const existing = company.rates.find(item => item.zoneId === zone.id);
+            if (!existing) return;
+            const localities = coverage.value.split('\n').map(value => value.trim()).filter(Boolean);
+            if (localities.length) existing.localities = localities;
+            else delete existing.localities;
+          });
           function updatePrice() {
             const value = price.valueAsNumber;
             const cents = Number.isFinite(value) ? Math.round(value * 100) : 0;
@@ -633,10 +649,12 @@
             amount.textContent = cents > 0
               ? `Precio al cliente con 7 %: $${(Math.round(cents * 107 / 100) / 100).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
               : 'Sin tarifa para esta zona.';
+            coverage.disabled = !company.rates.some(item => item.zoneId === zone.id);
           }
           price.addEventListener('input', updatePrice);
           updatePrice();
-          row.append(zoneLabel, price, amount);
+          coverageLabel.append(coverage);
+          row.append(zoneLabel, price, amount, coverageLabel);
           card.append(row);
         });
         container.append(card);
