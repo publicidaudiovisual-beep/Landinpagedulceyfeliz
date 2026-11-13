@@ -5,7 +5,9 @@ const { getPrintJobKeys } = require('../lib/print-jobs');
 
 const ORDERS_KEY = getRedisKey('dulce-feliz-generated-orders');
 const ORDER_SEQUENCE_KEY = getRedisKey('dulce-feliz-order-sequence');
-const MAX_ORDERS = 400;
+const MAX_ORDERS = 2000;
+const MAX_ORDERS_PAGE_BYTES = 2 * 1024 * 1024;
+const MAX_SINGLE_ORDER_BYTES = 3 * 1024 * 1024;
 const GITHUB_API = 'https://api.github.com';
 
 function respond(res, status, payload) {
@@ -50,7 +52,7 @@ async function redisCommand(command) {
   return result.result;
 }
 
-async function readOrders() {
+async function readOrders(migrateOnly = false) {
   const migrationScript = `
     local raw = redis.call('GET', KEYS[1])
     if not raw then return cjson.encode({}) end
@@ -73,13 +75,30 @@ async function readOrders() {
     end
     if maxNumber > sequence then redis.call('SET', KEYS[2], maxNumber) end
     if changed then redis.call('SET', KEYS[1], cjson.encode(orders)) end
+    if ARGV[1] == 'migrate' then return '[]' end
     return cjson.encode(orders)
   `;
-  const result = await redisCommand(['EVAL', migrationScript, '2', ORDERS_KEY, ORDER_SEQUENCE_KEY]);
+  const result = await redisCommand(['EVAL', migrationScript, '2', ORDERS_KEY, ORDER_SEQUENCE_KEY, migrateOnly ? 'migrate' : 'read']);
   const orders = typeof result === 'string' ? JSON.parse(result) : result;
   if (orders && !Array.isArray(orders) && Object.keys(orders).length === 0) return [];
   if (!Array.isArray(orders)) throw new Error('El registro de pedidos tiene un formato inválido.');
   return orders;
+}
+
+function getOrdersPage(orders, before) {
+  const page = [];
+  let bytes = 0;
+  for (const order of orders) {
+    if (before !== null && order.orderNumber >= before) continue;
+    const size = Buffer.byteLength(JSON.stringify(order), 'utf8') + 1;
+    if (size > MAX_SINGLE_ORDER_BYTES) throw new Error('Un pedido supera el tamaño permitido para cargar el panel.');
+    if (page.length && bytes + size > MAX_ORDERS_PAGE_BYTES) {
+      return { orders: page, nextBefore: page[page.length - 1].orderNumber };
+    }
+    page.push(order);
+    bytes += size;
+  }
+  return { orders: page, nextBefore: null };
 }
 
 function getOrderSubmission(body) {
@@ -224,7 +243,7 @@ async function createOrder(req, res, body) {
       order.total = (Math.round(order.productTotal * 100) + priceCents) / 100;
     }
   }
-  await readOrders();
+  await readOrders(true);
 
   const script = `
     local raw = redis.call('GET', KEYS[1])
@@ -275,7 +294,7 @@ async function updateShippingPayment(req, res, body) {
     return nil
   `;
   const result = await redisCommand(['EVAL', script, '1', ORDERS_KEY, body.orderId, body.status, new Date().toISOString()]);
-  if (!result) return respond(res, 404, { error: 'No se encontró el pedido entre los últimos 400.' });
+  if (!result) return respond(res, 404, { error: `No se encontró el pedido entre los últimos ${MAX_ORDERS}.` });
   if (result === 'not_shipping') return respond(res, 409, { error: 'Este pedido no tiene un envío privado registrado.' });
   return respond(res, 200, { updated: true, order: typeof result === 'string' ? JSON.parse(result) : result });
 }
@@ -354,7 +373,7 @@ async function updateOrderStatus(req, res, body) {
   try {
     const orders = await readOrders();
     const order = orders.find(item => item.id === body.orderId);
-    if (!order) return respond(res, 404, { error: 'El pedido no está en el registro de los últimos 400 pedidos.' });
+    if (!order) return respond(res, 404, { error: `El pedido no está en el registro de los últimos ${MAX_ORDERS} pedidos.` });
     const currentStatus = order.status === 'confirmed' ? 'completed' : order.status;
     const paymentId = body.paymentStatus === 'APPROVED' && typeof body.paymentId === 'string'
       ? body.paymentId
@@ -553,8 +572,13 @@ module.exports = async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       if (!hasAdminAccess(req)) return respond(res, 401, { error: 'No tienes autorización para consultar los pedidos.' });
+      const beforeValue = req.query?.before;
+      if (beforeValue !== undefined && (typeof beforeValue !== 'string' || !/^[1-9]\d*$/.test(beforeValue)
+        || !Number.isSafeInteger(Number(beforeValue)))) {
+        return respond(res, 400, { error: 'El cursor de pedidos no es válido.' });
+      }
       const orders = await readOrders();
-      return respond(res, 200, { orders, limit: MAX_ORDERS });
+      return respond(res, 200, { ...getOrdersPage(orders, beforeValue === undefined ? null : Number(beforeValue)), limit: MAX_ORDERS });
     }
     if (req.method !== 'POST') {
       res.setHeader('Allow', 'GET, POST');

@@ -37,10 +37,12 @@ test('el servidor calcula el envío por zona y rechaza tarifas desactualizadas',
     const command = JSON.parse(options.body);
     if (command[0] === 'GET') return { ok: true, json: async () => ({ result: JSON.stringify({ zones: [zone], companies: [company] }) }) };
     if (command.length > 6) {
+      assert.equal(command[7], '2000');
       saved = JSON.parse(command[6]);
       saved.orderNumber = 1;
       return { ok: true, json: async () => ({ result: JSON.stringify(saved) }) };
     }
+    assert.equal(command[5], 'migrate');
     return { ok: true, json: async () => ({ result: '[]' }) };
   };
   const delivery = {
@@ -108,6 +110,57 @@ test('el servidor calcula el envío por zona y rechaza tarifas desactualizadas',
   company.workDays = [];
   res = await submit(order);
   assert.equal(res.statusCode, 409);
+});
+
+test('el panel recupera 2.000 pedidos en respuestas acotadas sin perder resultados', async t => {
+  const previous = {
+    fetch: global.fetch,
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    password: process.env.ADMIN_PASSWORD
+  };
+  t.after(() => {
+    global.fetch = previous.fetch;
+    for (const [key, value] of Object.entries({
+      UPSTASH_REDIS_REST_URL: previous.url, UPSTASH_REDIS_REST_TOKEN: previous.token, ADMIN_PASSWORD: previous.password
+    })) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  process.env.UPSTASH_REDIS_REST_URL = 'https://redis.example.test';
+  process.env.UPSTASH_REDIS_REST_TOKEN = 'test';
+  process.env.ADMIN_PASSWORD = 'admin-password-de-prueba';
+  const saved = Array.from({ length: 2000 }, (_, index) => ({
+    orderNumber: 2000 - index, customerName: 'Cliente ficticio', address: 'texto'.repeat(250)
+  }));
+  global.fetch = async () => ({ ok: true, json: async () => ({ result: JSON.stringify(saved) }) });
+  const headers = { authorization: 'Bearer admin-password-de-prueba' };
+  let before;
+  const received = [];
+  let pages = 0;
+  do {
+    const res = response();
+    await orders({ method: 'GET', headers, query: before === undefined ? {} : { before: String(before) } }, res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.limit, 2000);
+    assert.ok(Buffer.byteLength(JSON.stringify(res.body)) < 3 * 1024 * 1024);
+    received.push(...res.body.orders.map(order => order.orderNumber));
+    before = res.body.nextBefore;
+    pages++;
+  } while (before !== null);
+  assert.ok(pages > 1);
+  assert.deepEqual(received, saved.map(order => order.orderNumber));
+  const invalid = response();
+  await orders({ method: 'GET', headers, query: { before: '-1' } }, invalid);
+  assert.equal(invalid.statusCode, 400);
+  const largeOrder = { orderNumber: 1, address: 'x'.repeat(2 * 1024 * 1024) };
+  global.fetch = async () => ({ ok: true, json: async () => ({ result: JSON.stringify([largeOrder]) }) });
+  const large = response();
+  await orders({ method: 'GET', headers, query: {} }, large);
+  assert.equal(large.statusCode, 200);
+  assert.equal(large.body.orders.length, 1);
+  assert.equal(large.body.nextBefore, null);
 });
 
 test('Nave incluye el envío solo cuando se eligió pagarlo con la compra', () => {

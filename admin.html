@@ -40,6 +40,7 @@
     .gold-button:hover { transform: translateY(-1px); box-shadow: 0 10px 25px rgba(212, 175, 55, 0.2); }
     .admin-dialog { width: min(40rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto; background: #121214; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 1rem; color: #F2F2F2; padding: 2rem; }
     .admin-dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); }
+    #orders-pagination[hidden], #shipping-orders-pagination[hidden] { display: none; }
   </style>
 </head>
 <body class="min-h-screen pb-16">
@@ -86,7 +87,7 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-4">
           <div>
             <h2 class="font-serif-luxury text-3xl text-white">Pedidos generados</h2>
-            <p class="mt-1 text-xs text-gray-400">Pedidos registrados al iniciar el envío por WhatsApp o el pago en Nave. Se conservan los últimos 400; al superar el límite se reemplaza el más antiguo.</p>
+            <p class="mt-1 text-xs text-gray-400">Pedidos registrados al iniciar el envío por WhatsApp o el pago en Nave. Se conservan los últimos 2.000; al superar el límite se reemplaza el más antiguo.</p>
           </div>
           <div class="flex flex-wrap gap-2">
             <button type="button" onclick="loadGeneratedOrders()" class="rounded-xl border border-gold/40 px-4 py-2 text-xs uppercase tracking-wider text-goldLight hover:bg-gold/10">
@@ -117,8 +118,15 @@
             <button type="button" onclick="exportOrdersCSV()" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Descargar compras (CSV)</button>
           </div>
         </div>
+        <label for="shipping-orders-search" class="block text-xs text-gray-300">Buscar pedidos con envío</label>
+        <input id="shipping-orders-search" type="search" autocomplete="off" placeholder="Número, cliente, teléfono o destino" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-3 text-sm text-white">
         <p id="shipping-orders-status" class="text-xs text-gray-400" aria-live="polite"></p>
         <div id="shipping-orders" class="space-y-4"></div>
+        <div id="shipping-orders-pagination" class="flex flex-wrap items-center gap-3" hidden>
+          <button type="button" id="shipping-orders-previous" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight disabled:opacity-40">Anterior</button>
+          <span id="shipping-orders-page" class="text-xs text-gray-300"></span>
+          <button type="button" id="shipping-orders-next" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight disabled:opacity-40">Siguiente</button>
+        </div>
       </section>
       <section class="glass-card p-6 sm:p-8 space-y-4">
         <h2 class="font-serif-luxury text-2xl text-white">Empresas, tarifas y disponibilidad</h2>
@@ -158,7 +166,7 @@
     <!-- KPIs -->
     <section class="glass-card p-6 sm:p-8">
       <h2 class="font-serif-luxury text-3xl text-white">Indicadores de Gestión y Rendimiento</h2>
-      <p class="text-xs text-gray-400 mt-1">Métricas basadas en visitas y los últimos 400 pedidos. Las ventas se cuentan al confirmar el cierre y descontar el inventario.</p>
+      <p class="text-xs text-gray-400 mt-1">Métricas basadas en visitas y los últimos 2.000 pedidos. Las ventas se cuentan al confirmar el cierre y descontar el inventario.</p>
       
       <div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
         <div class="rounded-2xl border border-gold/20 bg-[#161618] p-5">
@@ -167,7 +175,7 @@
           <p id="kpi-visits-status" class="mt-1 text-[10px] text-gray-500" aria-live="polite">Cargando contador...</p>
         </div>
         <div class="rounded-2xl border border-gold/20 bg-[#161618] p-5">
-          <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Pedidos en registro (máx. 400)</p>
+          <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400">Pedidos en registro (máx. 2.000)</p>
           <p id="kpi-orders" class="mt-2 font-serif-luxury text-3xl text-emerald-400">0</p>
         </div>
         <div class="rounded-2xl border border-gold/20 bg-[#161618] p-5">
@@ -187,7 +195,7 @@
 
     <section class="glass-card p-6 sm:p-8 space-y-4">
       <h2 class="font-serif-luxury text-3xl text-white">Historial de compras</h2>
-      <p class="text-xs text-gray-400">Compras concretadas de los últimos 400 pedidos conservados, según la fecha de confirmación. Las barras muestran cantidad de compras; los importes incluyen el envío si se pagó junto con la compra.</p>
+      <p class="text-xs text-gray-400">Compras concretadas de los últimos 2.000 pedidos conservados, según la fecha de confirmación. Las barras muestran cantidad de compras; los importes incluyen el envío si se pagó junto con la compra.</p>
       <div id="sales-periods" class="flex flex-wrap gap-2" aria-label="Período del historial">
         <button type="button" data-sales-period="week" aria-pressed="false" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Una semana</button>
         <button type="button" data-sales-period="month" aria-pressed="true" class="rounded-xl border border-gold/40 px-4 py-2 text-xs text-goldLight">Un mes</button>
@@ -423,6 +431,7 @@
     let shippingCompanies = [];
     let shippingConfigLoaded = false;
     let ordersPage = 0;
+    let shippingOrdersPage = 0;
     let salesPeriod = 'month';
 
     function showAdminView(view) {
@@ -725,16 +734,29 @@
       const status = document.getElementById('admin-orders-status');
       status.textContent = 'Cargando pedidos...';
       try {
-        const response = await fetch('./api/orders', {
-          cache: 'no-store',
-          headers: { Authorization: `Bearer ${adminPassword}` }
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'No se pudieron cargar los pedidos.');
-        if (!Array.isArray(result.orders)) throw new Error('El registro de pedidos tiene un formato inválido.');
-        generatedOrders = result.orders;
+        const orders = [];
+        let before = null;
+        let limit;
+        do {
+          const response = await fetch(`./api/orders${before === null ? '' : `?before=${before}`}`, {
+            cache: 'no-store',
+            headers: { Authorization: `Bearer ${adminPassword}` }
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'No se pudieron cargar los pedidos.');
+          if (!Array.isArray(result.orders) || !Number.isSafeInteger(result.limit) || result.limit < 1
+            || (result.nextBefore !== null && (!Number.isSafeInteger(result.nextBefore)
+              || result.nextBefore < 1 || (before !== null && result.nextBefore >= before)))) {
+            throw new Error('El registro de pedidos tiene un formato inválido.');
+          }
+          orders.push(...result.orders);
+          if (orders.length > result.limit) throw new Error('El registro de pedidos supera el límite esperado.');
+          before = result.nextBefore;
+          limit = result.limit;
+        } while (before !== null);
+        generatedOrders = orders;
         generatedOrdersAvailable = true;
-        status.textContent = `Mostrando ${generatedOrders.length} de hasta ${result.limit || 400} pedidos guardados.`;
+        status.textContent = `Mostrando ${generatedOrders.length} de hasta ${limit.toLocaleString('es-AR')} pedidos guardados.`;
       } catch (error) {
         generatedOrders = [];
         generatedOrdersAvailable = false;
@@ -760,15 +782,28 @@
     function renderShippingOrders() {
       const container = document.getElementById('shipping-orders');
       const status = document.getElementById('shipping-orders-status');
+      const pagination = document.getElementById('shipping-orders-pagination');
       if (!generatedOrdersAvailable) {
         container.replaceChildren();
+        pagination.hidden = true;
         status.textContent = 'No se pudieron cargar los pedidos. Actualizá para volver a intentar.';
         return;
       }
-      const orders = generatedOrders.filter(order => order.delivery || /envío/i.test(order.shippingMethod || ''));
-      status.textContent = `${orders.length} ${orders.length === 1 ? 'pedido' : 'pedidos'} con envío entre los últimos 400 registrados.`;
+      const query = document.getElementById('shipping-orders-search').value;
+      const orders = generatedOrders.filter(order =>
+        (order.delivery || /envío/i.test(order.shippingMethod || '')) && orderMatchesSearch(order, query));
+      const pageCount = Math.ceil(orders.length / 20);
+      shippingOrdersPage = Math.min(shippingOrdersPage, Math.max(0, pageCount - 1));
+      const pageOrders = orders.slice(shippingOrdersPage * 20, (shippingOrdersPage + 1) * 20);
+      pagination.hidden = pageCount <= 1;
+      document.getElementById('shipping-orders-previous').disabled = shippingOrdersPage === 0;
+      document.getElementById('shipping-orders-next').disabled = shippingOrdersPage >= pageCount - 1;
+      document.getElementById('shipping-orders-page').textContent = `Página ${shippingOrdersPage + 1} de ${pageCount}`;
+      status.textContent = orders.length
+        ? `Mostrando ${shippingOrdersPage * 20 + 1}–${shippingOrdersPage * 20 + pageOrders.length} de ${orders.length} pedidos con envío.`
+        : 'No hay pedidos con envío que coincidan con la búsqueda.';
       if (!orders.length) {
-        container.innerHTML = '<p class="text-sm text-gray-400">Todavía no hay pedidos con envío.</p>';
+        container.innerHTML = '<p class="text-sm text-gray-400">Revisá la búsqueda o actualizá los pedidos.</p>';
         return;
       }
       const labels = {
@@ -779,7 +814,7 @@
         generated: 'Pendiente', completed: 'Compra concretada', confirmed: 'Compra concretada',
         refunded: 'Compra con devolución', not_completed: 'Compra no concluida', rejected: 'Compra rechazada'
       };
-      container.innerHTML = orders.map(order => {
+      container.innerHTML = pageOrders.map(order => {
         const delivery = order.delivery;
         const paymentState = order.shippingPaymentStatus || (delivery?.shippingPayment === 'together'
           && order.paymentMethod === 'Sistema Nave de Galicia / MODO' && order.paymentStatus === 'APPROVED' ? 'paid' : 'pending');
@@ -820,6 +855,19 @@
         </article>`;
       }).join('');
     }
+
+    document.getElementById('shipping-orders-search').addEventListener('input', () => {
+      shippingOrdersPage = 0;
+      renderShippingOrders();
+    });
+    document.getElementById('shipping-orders-previous').addEventListener('click', () => {
+      shippingOrdersPage = Math.max(0, shippingOrdersPage - 1);
+      renderShippingOrders();
+    });
+    document.getElementById('shipping-orders-next').addEventListener('click', () => {
+      shippingOrdersPage++;
+      renderShippingOrders();
+    });
 
     document.getElementById('shipping-orders').addEventListener('click', async event => {
       const print = event.target.closest('[data-shipping-print]');
