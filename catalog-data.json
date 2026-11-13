@@ -40,7 +40,12 @@
       "ingredients": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate oscuro, avellanas, cacao en polvo, manteca, azúcar, harina, vainilla y relleno de Nutella.",
       "desc": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate oscuro, avellanas, cacao en polvo, manteca, azúcar, harina, vainilla y relleno de Nutella.",
       "img": "Briga Nut.jpg",
-      "imgCenital": "Nocciolla Supreme cenital sin fondo.png"
+      "imgCenital": "Nocciolla Supreme cenital sin fondo.png",
+      "size": "Diámetro 9 0 10 cm. Peso 120gr.",
+      "taste": "Intenso avellanado, aromático y tonos fuertes achocolatados",
+      "texture": "Cremosa por dentro, crocante por fuera",
+      "ideal": "Ideal para clientes que buscan un perfil premium y sofisticado o sorprender con un regalo, muy especial. Amantes de la Nutella.",
+      "presentation": "Caja elegante negra VIP, Personalizada."
     },
     {
       "id": "redvelvetcheese",
@@ -239,7 +244,12 @@
       "ingredients": "Lentejas de chocolate de colores, pepitas de colores, gotas de chocolate oscuro, manteca, azúcar, harina y vainilla",
       "desc": "Lentejas de chocolate de colores, pepitas de colores, gotas de chocolate oscuro, manteca, azúcar, harina y vainilla",
       "img": "Happy Cookie.png",
-      "imgCenital": "Happy Cookie cenital sin fondo.png"
+      "imgCenital": "Happy Cookie cenital sin fondo.png",
+      "size": "Diámetro 9 0 10 cm. Peso 120gr.",
+      "taste": "Sabor a chocolate y caramelo. Dulce y avainallado en la masa. ",
+      "texture": "Muy crocante, por las lentejas y los granitos de colores. Dulce achocolatado, Dulce del caramelo, la masa mas suave para hacerla agradable en constraste de texturas. ",
+      "ideal": "Infantil, 100%. Alegria, dinamismo y una visual muy alegre y dinámica",
+      "presentation": "Caja elegante negra VIP, Personalizada."
     },
     {
       "id": "granola",
