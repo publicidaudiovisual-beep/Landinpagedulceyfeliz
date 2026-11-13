@@ -153,7 +153,7 @@
       "id": "lemonpieluxury",
       "name": "Lemon Pie Luxury",
       "line": "vip",
-      "condition": "",
+      "condition": "fijo",
       "price": 6000,
       "stockQuantity": 15,
       "ingredients": "Trozos de chocolate blanco de primera calidad, gotas de chocolate blanco, manteca, azúcar, harina, vainilla y relleno de crema de limón",
