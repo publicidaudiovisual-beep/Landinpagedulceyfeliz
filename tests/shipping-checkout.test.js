@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const orders = require('../api/orders');
+const { collectionSchedule } = require('../lib/shipping-config');
 
 function response() {
   return {
@@ -46,7 +47,7 @@ test('el servidor calcula el envío por zona y rechaza tarifas desactualizadas',
     companyId: company.id, zoneId: zone.id, locality: 'Avellaneda',
     quotedCents: 932184, shippingPayment: 'together',
     recipient: 'Cliente', buyerDocument: '12345678', street: 'Calle', number: '123',
-    province: 'Buenos Aires', phone: '1100000000'
+    province: 'Buenos Aires', phone: '1100000000', collectionDate: collectionSchedule(company).collectionDate
   };
   const order = {
     customerName: 'Cliente', shippingMethod: 'Envío por empresa privada',
@@ -67,6 +68,9 @@ test('el servidor calcula el envío por zona y rechaza tarifas desactualizadas',
   assert.equal(saved.shippingCost, 9321.84);
   assert.equal(saved.productTotal, 100);
   assert.equal(saved.total, 9421.84);
+  assert.equal(saved.delivery.collectionDate, delivery.collectionDate);
+  res = await submit({ ...order, delivery: { ...delivery, collectionDate: '2000-01-01' } });
+  assert.equal(res.statusCode, 409);
   res = await submit({ ...order, delivery: { ...delivery, shippingPayment: 'separate' } });
   assert.equal(res.statusCode, 201);
   assert.equal(saved.total, 100);
@@ -77,6 +81,30 @@ test('el servidor calcula el envío por zona y rechaza tarifas desactualizadas',
   assert.equal(res.statusCode, 409);
   res = await submit({ ...order, delivery: { ...delivery, phone: '' } });
   assert.equal(res.statusCode, 400);
+  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  company.closure = { reason: 'holiday', start: today, end: today };
+  company.workDays = [1, 2, 3, 4, 5];
+  const reopeningDate = collectionSchedule(company).collectionDate;
+  const holidayDelivery = { ...delivery, collectionDate: reopeningDate };
+  res = await submit({ ...order, delivery: holidayDelivery });
+  assert.equal(res.statusCode, 409);
+  res = await submit({ ...order, delivery: { ...holidayDelivery, holidayAccepted: true, holidayReopeningDate: '2000-01-01' } });
+  assert.equal(res.statusCode, 409);
+  res = await submit({ ...order, delivery: { ...holidayDelivery, holidayAccepted: true, holidayReopeningDate: reopeningDate } });
+  assert.equal(res.statusCode, 201);
+  assert.equal(saved.delivery.holidayReopeningDate, reopeningDate);
+  assert.ok(Number.isFinite(Date.parse(saved.delivery.holidayAcceptedAt)));
+  company.workDays = [(new Date(`${reopeningDate}T00:00:00Z`).getUTCDay() + 1) % 7];
+  res = await submit({ ...order, delivery: { ...holidayDelivery, holidayAccepted: true, holidayReopeningDate: reopeningDate } });
+  assert.equal(res.statusCode, 409);
+  company.closure.reason = 'vacation';
+  res = await submit({ ...order, delivery: { ...holidayDelivery, holidayAccepted: true, holidayReopeningDate: reopeningDate } });
+  assert.equal(res.statusCode, 409);
+  delete company.closure;
+  company.workDays = [0, 1, 2, 3, 4, 5, 6];
+  res = await submit({ ...order, delivery: { ...holidayDelivery, holidayAccepted: true, holidayReopeningDate: reopeningDate } });
+  assert.equal(res.statusCode, 409);
   company.workDays = [];
   res = await submit(order);
   assert.equal(res.statusCode, 409);
@@ -104,24 +132,26 @@ test('Nave incluye el envío solo cuando se eligió pagarlo con la compra', () =
 
 test('el formulario informa por qué una empresa no está disponible', async () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  const match = source.match(/    async function openShippingDialog\(\) \{[\s\S]*?\n    \}/);
+  const match = source.match(/    async function loadPrivateShippingOptions\(\) \{[\s\S]*?\n    \}/);
   assert.ok(match);
   const status = { textContent: '' };
   const select = { value: '', disabled: false, replaceChildren() {}, add() {} };
-  const elements = { 'private-delivery-dialog': { showModal() {} },
+  const elements = { 'private-delivery-dialog': { open: true },
     'private-delivery-status': status, 'delivery-company': select };
   const context = vm.createContext({
-    shippingMethodSelect: { value: 'Envío por empresa privada' },
     privateDeliveryConfirmed: true, selectedDelivery: null, deliveryConfig: null,
+    deliveryServerTime: 0, deliveryClockStart: 0, deliveryCountdownTimer: null, deliveryLoadVersion: 0,
+    performance: { now: () => 0 }, clearInterval() {}, setInterval() {}, updateCollectionCountdown() {},
     document: { getElementById: id => elements[id] },
     fetch: async () => ({ ok: true, json: async () => ({
-      zones: [], companies: [], unavailable: [{ name: 'Vima', reason: 'Vacaciones' }]
+      zones: [], companies: [], unavailable: [{ name: 'Vima', reason: 'Vacaciones' }],
+      serverTime: '2026-11-13T15:00:00Z', nextDayAt: '2026-11-14T03:00:00Z'
     }) }),
     Option: function(text, value) { this.text = text; this.value = value; },
     updatePrivateFields() {}, console
   });
   vm.runInContext(match[0], context);
-  await context.openShippingDialog();
+  await context.loadPrivateShippingOptions();
   assert.match(status.textContent, /Vima: Vacaciones/);
   assert.match(status.textContent, /WhatsApp/);
 });

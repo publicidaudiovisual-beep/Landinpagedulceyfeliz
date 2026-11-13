@@ -1,5 +1,5 @@
 const crypto = require('node:crypto');
-const { readShippingConfig, saveShippingConfig, validateShippingConfig, companyUnavailableReason } = require('../lib/shipping-config');
+const { readShippingConfig, saveShippingConfig, validateShippingConfig, companyAvailability, collectionSchedule, argentinaDate } = require('../lib/shipping-config');
 
 function respond(res, status, payload) {
   res.setHeader('Cache-Control', 'no-store');
@@ -21,12 +21,22 @@ module.exports = async function handler(req, res) {
       const config = await readShippingConfig();
       const admin = isAdmin(req);
       const now = new Date();
-      const availability = config.companies.map(company => ({ company, reason: companyUnavailableReason(company, now) }));
+      const availability = config.companies.map(company => {
+        const availability = companyAvailability(company, now);
+        const schedule = availability.reason ? null : collectionSchedule(company, now);
+        return { company, ...availability, schedule, reason: availability.reason || (schedule ? '' : 'No hay próximo día laborable configurado') };
+      });
       return respond(res, 200, {
         zones: config.zones,
-        companies: admin ? config.companies : availability.filter(item => !item.reason).map(item => item.company),
+        companies: admin ? config.companies : availability.filter(item => !item.reason).map(item => {
+          const { holidayReopeningDate, collectionDate, collectionCutoff, ...company } = item.company;
+          return { ...company, collectionDate: item.schedule.collectionDate, collectionCutoff: item.schedule.collectionCutoff,
+            ...(item.schedule.holiday ? { holidayReopeningDate: item.schedule.collectionDate } : {}) };
+        }),
         unavailable: admin ? [] : availability.filter(item => item.reason)
-          .map(item => ({ name: item.company.name, reason: item.reason }))
+          .map(item => ({ name: item.company.name, reason: item.reason })),
+        serverTime: now.toISOString(),
+        nextDayAt: new Date(Date.parse(`${argentinaDate(now)}T03:00:00Z`) + 86400000).toISOString()
       });
     }
     if (req.method !== 'POST') {

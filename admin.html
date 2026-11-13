@@ -492,7 +492,7 @@
         enabled.type = 'checkbox';
         enabled.checked = company.enabled;
         enabled.addEventListener('change', () => { company.enabled = enabled.checked; });
-        label.append(enabled, document.createTextNode('Empresa disponible'));
+        label.append(enabled, document.createTextNode('Empresa habilitada (para un cierre temporal dejala habilitada)'));
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'text-xs text-amber-200 underline';
@@ -506,7 +506,7 @@
         const days = document.createElement('fieldset');
         days.className = 'flex flex-wrap gap-3 text-xs text-gray-300';
         const legend = document.createElement('legend');
-        legend.textContent = 'Días laborables (fuera de estos días no se puede elegir la empresa)';
+        legend.textContent = 'Días laborables (fuera de estos días no se puede elegir, salvo feriado con aceptación)';
         days.append(legend);
         [['Lunes', 1], ['Martes', 2], ['Miércoles', 3], ['Jueves', 4], ['Viernes', 5], ['Sábado', 6], ['Domingo', 0]].forEach(([dayName, day]) => {
           const dayLabel = document.createElement('label');
@@ -540,6 +540,9 @@
         [['', 'Sin cierre'], ['vacation', 'Vacaciones'], ['holiday', 'Feriado'], ['unexpected', 'Causas mayores o imprevistos']].forEach(([value, text]) => reason.add(new Option(text, value)));
         reason.value = company.closure?.reason || '';
         closureLabel.append(reason);
+        const closureHelp = document.createElement('p');
+        closureHelp.className = 'text-xs text-gray-400';
+        closureHelp.textContent = 'Cargá manualmente el motivo y las fechas. Por feriado, el cliente podrá aceptar que el pedido se gestione desde el próximo día laborable configurado. Por vacaciones o causas mayores no podrá seleccionar la empresa.';
         const dates = document.createElement('div');
         dates.className = 'flex flex-wrap gap-3';
         const dateInputs = {};
@@ -562,7 +565,7 @@
           dateInputs.start.disabled = !reason.value;
           dateInputs.end.disabled = !reason.value;
         });
-        card.append(days, hoursLabel, closureLabel, dates);
+        card.append(days, hoursLabel, closureLabel, dates, closureHelp);
         shippingZones.forEach(zone => {
           const row = document.createElement('div');
           row.className = 'rounded-lg border border-white/10 p-3 space-y-2';
@@ -765,7 +768,8 @@
           ['Departamento', delivery.apartment], ['Barrio', delivery.neighborhood], ['Provincia', delivery.province],
           ['Entre calles', delivery.crossStreets], ['Referencia', delivery.landmark], ['Teléfono', delivery.phone],
           ['Teléfono adicional', delivery.phoneAlt], ['Persona autorizada', delivery.authorized],
-          ['Destino', order.destinationType], ['Horario de recepción', order.businessDeliveryHours]
+          ['Destino', order.destinationType], ['Horario de recepción', order.businessDeliveryHours],
+          ['Recolección prevista', delivery.collectionDate], ['Feriado: gestión desde', delivery.holidayReopeningDate]
         ].filter(([, value]) => value).map(([label, value]) =>
           `<p>${escapeOrderHTML(label)}: ${escapeOrderHTML(value)}</p>`).join('') : '';
         const products = (order.items || []).map(item => `${escapeOrderHTML(item.quantity)} × ${escapeOrderHTML(item.name)}`).join(', ');
@@ -963,6 +967,8 @@
             ['Teléfono adicional', order.delivery.phoneAlt],
             ['Persona autorizada', order.delivery.authorized],
             ['Pago de envío', order.delivery.shippingPayment === 'together' ? 'Incluido en la compra' : 'A pagar aparte por transferencia'],
+            ['Recolección prevista', order.delivery.collectionDate],
+            ['Feriado: gestión desde', order.delivery.holidayReopeningDate],
             ['Costo de envío', `$${Number(order.shippingCost).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`]
           ].filter(([, value]) => value).map(([label, value]) =>
             `<p class="mt-1 text-xs text-gray-400">${escapeOrderHTML(label)}: ${escapeOrderHTML(value)}</p>`

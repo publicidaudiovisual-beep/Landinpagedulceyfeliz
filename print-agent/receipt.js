@@ -33,6 +33,8 @@
         ['Localidad', delivery.locality], ['Provincia', delivery.province], ['Entre calles', delivery.crossStreets],
         ['Referencia', delivery.landmark], ['Teléfono', delivery.phone], ['Teléfono adicional', delivery.phoneAlt],
         ['Persona autorizada', delivery.authorized],
+        ['Recolección prevista', delivery.collectionDate],
+        ['Feriado: gestión desde', delivery.holidayReopeningDate],
         ['Pago de envío', delivery.shippingPayment === 'together' ? 'Incluido en la compra' : 'A pagar aparte por transferencia'],
         ['Costo de envío', money(order.shippingCost)]
       ]) row(label, value);
@@ -96,7 +98,8 @@
       number: 'Altura', floor: 'Piso', apartment: 'Departamento', neighborhood: 'Barrio',
       locality: 'Localidad', province: 'Provincia', crossStreets: 'Entre calles', landmark: 'Referencia',
       phone: 'Teléfono', phoneAlt: 'Teléfono adicional', authorized: 'Persona autorizada',
-      shippingPayment: 'Pago de envío', size: 'Tamaño', customName: 'Personalización',
+      shippingPayment: 'Pago de envío', collectionDate: 'Recolección prevista', holidayReopeningDate: 'Feriado: gestión desde',
+      holidayAcceptedAt: 'Fecha de aceptación del aviso', size: 'Tamaño', customName: 'Personalización',
       productId: 'ID de producto', name: 'Producto', quantity: 'Cantidad', unitPrice: 'Precio unitario'
     };
     const label = key => key.split('.').map(part => {

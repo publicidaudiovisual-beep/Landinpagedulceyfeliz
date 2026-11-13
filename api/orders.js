@@ -1,6 +1,6 @@
 const crypto = require('node:crypto');
 const { getRedisKey } = require('../lib/redis-keys');
-const { readShippingConfig, companyUnavailableReason } = require('../lib/shipping-config');
+const { readShippingConfig, companyAvailability, collectionSchedule } = require('../lib/shipping-config');
 const { getPrintJobKeys } = require('../lib/print-jobs');
 
 const ORDERS_KEY = getRedisKey('dulce-feliz-generated-orders');
@@ -182,11 +182,22 @@ async function createOrder(req, res, body) {
       return respond(res, 400, { error: 'Indicá el tipo de destino y el horario de recepción si corresponde.' });
     }
     const config = await readShippingConfig();
-    const company = config.companies.find(item => item.id === delivery.companyId && !companyUnavailableReason(item));
+    const company = config.companies.find(item => item.id === delivery.companyId);
+    const now = new Date();
+    const availability = company && companyAvailability(company, now);
     const zone = config.zones.find(item => item.id === delivery.zoneId);
     const rate = company?.rates.find(item => item.zoneId === delivery.zoneId);
-    if (!company || !zone || !rate || !zone.localities.includes(delivery.locality)) {
+    if (!company || availability.reason || !zone || !rate || !zone.localities.includes(delivery.locality)) {
       return respond(res, 409, { error: 'La empresa o la zona ya no están disponibles. Actualizá las opciones de envío.' });
+    }
+    const schedule = collectionSchedule(company, now);
+    if (!schedule || delivery.collectionDate !== schedule.collectionDate) {
+      return respond(res, 409, { error: 'Cambió el día de recolección. Actualizá la página, volvé a abrir los datos de envío y revisá la fecha.' });
+    }
+    if (schedule.holiday
+      ? delivery.holidayReopeningDate !== schedule.collectionDate || delivery.holidayAccepted !== true
+      : delivery.holidayReopeningDate || delivery.holidayAccepted) {
+      return respond(res, 409, { error: 'La disponibilidad por feriado cambió o falta aceptar el aviso. Volvé a abrir los datos de envío.' });
     }
     const priceCents = Math.round(rate.priceCents * 107 / 100);
     if (priceCents !== delivery.quotedCents) {
@@ -201,7 +212,12 @@ async function createOrder(req, res, body) {
       zoneId: zone.id,
       zoneName: zone.name,
       locality: delivery.locality,
-      shippingPayment: delivery.shippingPayment
+      shippingPayment: delivery.shippingPayment,
+      collectionDate: schedule.collectionDate,
+      ...(schedule.holiday ? {
+        holidayReopeningDate: schedule.collectionDate,
+        holidayAcceptedAt: new Date().toISOString()
+      } : {})
     };
     order.productTotal = order.total;
     if (delivery.shippingPayment === 'together') {

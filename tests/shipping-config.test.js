@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const handler = require('../api/shipping-config');
-const { validateShippingConfig, companyUnavailableReason } = require('../lib/shipping-config');
+const { validateShippingConfig, companyAvailability, collectionSchedule } = require('../lib/shipping-config');
 
 function response() {
   return {
@@ -72,25 +72,58 @@ test('las tarifas se guardan solo desde el panel y las empresas pausadas no son 
   assert.equal(res.statusCode, 200);
   res = response();
   await handler({ method: 'GET', headers: {} }, res);
-  assert.deepEqual(res.body.companies, [company]);
+  assert.equal(res.body.companies[0].name, company.name);
+  assert.equal(res.body.companies[0].collectionDate, collectionSchedule(company).collectionDate);
   assert.deepEqual(res.body.zones, [zone]);
   assert.deepEqual(res.body.unavailable, [{ name: paused.name, reason: 'Empresa pausada' }]);
   res = response();
   await handler({ method: 'GET', headers }, res);
   assert.deepEqual(res.body.companies, [company, paused]);
+  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  company.closure = { reason: 'holiday', start: today, end: today };
+  res = response();
+  await handler({ method: 'POST', headers, body: { zones: [zone], companies: [company] } }, res);
+  assert.equal(res.statusCode, 200);
+  res = response();
+  await handler({ method: 'GET', headers: {} }, res);
+  assert.equal(res.body.companies.length, 1);
+  assert.equal(res.body.companies[0].holidayReopeningDate, companyAvailability(company).holidayReopeningDate);
+  assert.deepEqual(res.body.unavailable, []);
 });
 
 test('la disponibilidad respeta días y cierres inclusivos en hora argentina', () => {
   const company = { enabled: true, workDays: [1, 2, 3, 4, 5], closure: {
     reason: 'vacation', start: '2026-11-09', end: '2026-11-10'
   } };
-  assert.equal(companyUnavailableReason(company, new Date('2026-11-09T02:00:00Z')), 'Día no laborable');
-  assert.equal(companyUnavailableReason(company, new Date('2026-11-09T03:00:00Z')), 'Vacaciones');
-  assert.equal(companyUnavailableReason(company, new Date('2026-11-11T02:59:59Z')), 'Vacaciones');
-  assert.equal(companyUnavailableReason(company, new Date('2026-11-11T03:00:00Z')), '');
-  assert.equal(companyUnavailableReason({ enabled: true }, new Date('2026-11-08T15:00:00Z')), '');
-  assert.equal(companyUnavailableReason({ enabled: false }, new Date('2026-11-09T15:00:00Z')), 'Empresa pausada');
-  assert.equal(companyUnavailableReason({ ...company, closure: { ...company.closure, reason: 'holiday' } }, new Date('2026-11-09T15:00:00Z')), 'Feriado');
+  assert.equal(companyAvailability(company, new Date('2026-11-09T02:00:00Z')).reason, 'Día no laborable');
+  assert.equal(companyAvailability(company, new Date('2026-11-09T03:00:00Z')).reason, 'Vacaciones');
+  assert.equal(companyAvailability(company, new Date('2026-11-11T02:59:59Z')).reason, 'Vacaciones');
+  assert.equal(companyAvailability(company, new Date('2026-11-11T03:00:00Z')).reason, '');
+  assert.equal(companyAvailability({ enabled: true }, new Date('2026-11-08T15:00:00Z')).reason, '');
+  assert.equal(companyAvailability({ enabled: false }, new Date('2026-11-09T15:00:00Z')).reason, 'Empresa pausada');
+  const holiday = { ...company, closure: { reason: 'holiday', start: '2026-11-13', end: '2026-11-13' } };
+  assert.deepEqual(companyAvailability(holiday, new Date('2026-11-13T15:00:00Z')),
+    { reason: '', holidayReopeningDate: '2026-11-16' });
+  assert.match(companyAvailability({ ...holiday, workDays: [] }, new Date('2026-11-13T15:00:00Z')).reason, /no hay próximo/);
+  assert.equal(companyAvailability({ ...holiday, enabled: false }, new Date('2026-11-13T15:00:00Z')).reason, 'Empresa pausada');
+  assert.equal(companyAvailability({ ...holiday, closure: { ...holiday.closure, end: '2026-11-16' } },
+    new Date('2026-11-13T15:00:00Z')).holidayReopeningDate, '2026-11-17');
+});
+
+test('el contador cambia a las 12 en Argentina y salta cierres y días no laborables', () => {
+  const company = { enabled: true, workDays: [1, 2, 3, 4, 5] };
+  assert.deepEqual(collectionSchedule(company, new Date('2026-11-13T14:59:59Z')), {
+    collectionDate: '2026-11-13', collectionCutoff: '2026-11-13T15:00:00.000Z', holiday: false
+  });
+  assert.deepEqual(collectionSchedule(company, new Date('2026-11-13T15:00:00Z')), {
+    collectionDate: '2026-11-16', collectionCutoff: '2026-11-16T15:00:00.000Z', holiday: false
+  });
+  const holiday = { ...company, closure: { reason: 'holiday', start: '2026-11-16', end: '2026-11-17' } };
+  assert.deepEqual(collectionSchedule(holiday, new Date('2026-11-13T15:00:00Z')), {
+    collectionDate: '2026-11-18', collectionCutoff: '2026-11-18T15:00:00.000Z', holiday: true
+  });
+  assert.equal(collectionSchedule({ ...company, workDays: [] }, new Date('2026-11-13T15:00:00Z')), null);
 });
 
 test('se rechazan días y cierres inválidos sin romper configuraciones anteriores', () => {

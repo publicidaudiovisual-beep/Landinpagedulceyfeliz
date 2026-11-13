@@ -56,7 +56,8 @@ test('el ticket simplificado omite los campos elegidos y el respaldo los conserv
     orderNumber: 1, total: 100, productTotal: 100, shippingCost: 200,
     destinationType: 'empresa', businessDeliveryHours: '9 a 12', registered: true,
     delivery: { companyName: 'Vima', zoneName: 'Zona', recipient: 'Ana', buyerDocument: '12345678',
-      street: 'Calle de prueba', phone: '1100000000', shippingPayment: 'separate' },
+      street: 'Calle de prueba', phone: '1100000000', shippingPayment: 'separate',
+      holidayReopeningDate: '2026-11-16' },
     boxes: [{ size: 4, items: [{ name: 'Galleta', quantity: 1, unitPrice: 100 }] }]
   };
   const lines = receiptLines(order).join('\n');
@@ -64,6 +65,7 @@ test('el ticket simplificado omite los campos elegidos y el respaldo los conserv
   assert.match(lines, /Calle de prueba/);
   assert.match(lines, /Teléfono: 1100000000/);
   assert.match(lines, /A pagar aparte por transferencia/);
+  assert.match(lines, /Feriado: gestión desde: 2026-11-16/);
   assert.match(lines, /Galleta: 1 x/);
   const archive = archiveBlocks(order).map(block => block.text).join('\n');
   assert.match(archive, /Entrega \/ Destinatario: Ana/);

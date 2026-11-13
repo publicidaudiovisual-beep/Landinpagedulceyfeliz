@@ -622,6 +622,16 @@
         <select id="delivery-company" required class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"><option value="">Seleccioná una empresa</option></select>
         <p id="delivery-company-hours" class="mt-1 text-xs text-gray-400"></p>
       </label>
+      <div id="collection-countdown" class="hidden rounded-xl border border-gold/30 bg-[#1C1C1E] p-4 text-sm text-goldLight">
+        <p id="collection-countdown-label"></p>
+        <progress id="collection-countdown-bar" max="86400" value="0" class="mt-2 w-full accent-[#D4AF37]" aria-label="Tiempo restante para solicitar la recolección"></progress>
+        <p id="collection-countdown-time" class="mt-1 font-semibold"></p>
+        <p class="mt-1 text-xs text-gray-400">Cierre de recolección: 12:00, hora de Buenos Aires. La entrega se coordina y está sujeta a disponibilidad.</p>
+      </div>
+      <div id="holiday-warning" class="hidden rounded-xl border border-amber-500/40 bg-amber-950/30 p-4 text-sm text-amber-100">
+        <p id="holiday-warning-text"></p>
+        <label class="mt-3 flex items-start gap-2"><input id="holiday-accept" type="checkbox" disabled> <span>Acepto que mi pedido se gestione a partir de esa fecha.</span></label>
+      </div>
       <div id="private-delivery-fields" class="hidden space-y-3">
         <label class="block text-xs text-gray-300">Localidad de entrega *
           <select id="delivery-locality" required class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"><option value="">Seleccioná tu localidad</option></select>
@@ -676,6 +686,10 @@
     let deliveryConfig = null;
     let selectedDelivery = null;
     let privateDeliveryConfirmed = false;
+    let deliveryClockStart = 0;
+    let deliveryServerTime = 0;
+    let deliveryCountdownTimer = null;
+    let deliveryLoadVersion = 0;
     async function loadPublicData() {
       try {
         const res = await fetch('./catalog-data.json', { cache: 'no-store' });
@@ -1281,7 +1295,7 @@
       document.getElementById('edit-shipping-selection').classList.toggle('hidden', !shippingMethodSelect.value);
       const summary = document.getElementById('shipping-selection-summary');
       summary.textContent = selectedDelivery && shippingMethodSelect.value === 'Envío por empresa privada'
-        ? `${selectedDelivery.companyName} · ${selectedDelivery.locality} · $${(selectedDelivery.quotedCents / 100).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        ? `${selectedDelivery.companyName} · ${selectedDelivery.locality} · $${(selectedDelivery.quotedCents / 100).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · Recolección prevista: ${selectedDelivery.collectionDate.split('-').reverse().join('/')}`
         : '';
 
       Array.from(paymentMethodSelect.options).forEach(option => {
@@ -1311,6 +1325,16 @@
     function updatePrivateFields() {
       const companySelect = document.getElementById('delivery-company');
       const company = deliveryConfig?.companies.find(item => item.id === companySelect.value);
+      const holidayWarning = document.getElementById('holiday-warning');
+      const holidayAccept = document.getElementById('holiday-accept');
+      const reopeningDate = company?.holidayReopeningDate;
+      holidayWarning.classList.toggle('hidden', !reopeningDate);
+      holidayAccept.checked = false;
+      holidayAccept.disabled = !reopeningDate;
+      holidayAccept.required = !!reopeningDate;
+      document.getElementById('holiday-warning-text').textContent = reopeningDate
+        ? `Por el feriado de ${company.name}, tu pedido será gestionado a partir del ${reopeningDate.split('-').reverse().join('/')}, su próximo día de apertura.` : '';
+      updateCollectionCountdown();
       document.getElementById('delivery-company-hours').textContent = company?.workingHours
         ? `Horario de trabajo de ${company.name}: ${company.workingHours}` : '';
       const fields = document.getElementById('private-delivery-fields');
@@ -1355,6 +1379,79 @@
         : 'Seleccioná una localidad para ver el costo.';
     }
 
+    function updateCollectionCountdown() {
+      const company = deliveryConfig?.companies.find(item => item.id === document.getElementById('delivery-company').value);
+      const container = document.getElementById('collection-countdown');
+      container.classList.toggle('hidden', !company);
+      if (!deliveryConfig) return;
+      const now = deliveryServerTime + performance.now() - deliveryClockStart;
+      const cutoff = company ? Date.parse(company.collectionCutoff) : Infinity;
+      if (now >= Date.parse(deliveryConfig.nextDayAt) || now >= cutoff) {
+        clearInterval(deliveryCountdownTimer);
+        deliveryCountdownTimer = null;
+        loadPrivateShippingOptions();
+        return;
+      }
+      if (!company) return;
+      const remaining = Math.max(0, Math.ceil((cutoff - now) / 1000));
+      const days = Math.floor(remaining / 86400);
+      const hours = Math.floor(remaining % 86400 / 3600);
+      const minutes = Math.floor(remaining % 3600 / 60);
+      const seconds = remaining % 60;
+      const bar = document.getElementById('collection-countdown-bar');
+      if (bar.dataset.cutoff !== company.collectionCutoff) {
+        bar.dataset.cutoff = company.collectionCutoff;
+        bar.max = Math.max(86400, remaining);
+      }
+      bar.value = remaining;
+      document.getElementById('collection-countdown-label').textContent =
+        `Tiempo para solicitar la recolección del ${company.collectionDate.split('-').reverse().join('/')}:`;
+      document.getElementById('collection-countdown-time').textContent =
+        `${days ? `${days} d ` : ''}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    async function loadPrivateShippingOptions() {
+      const loadVersion = ++deliveryLoadVersion;
+      const dialog = document.getElementById('private-delivery-dialog');
+      const status = document.getElementById('private-delivery-status');
+      const companySelect = document.getElementById('delivery-company');
+      const previous = companySelect.value || selectedDelivery?.companyId;
+      status.textContent = 'Cargando empresas y tarifas...';
+      companySelect.disabled = true;
+      deliveryConfig = null;
+      updatePrivateFields();
+      try {
+        const response = await fetch('./api/shipping-config', { cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok || !Array.isArray(data.companies) || !Array.isArray(data.zones)
+          || !Number.isFinite(Date.parse(data.serverTime)) || !Number.isFinite(Date.parse(data.nextDayAt))
+          || Date.parse(data.nextDayAt) <= Date.parse(data.serverTime)
+          || data.companies.some(company => !/^\d{4}-\d{2}-\d{2}$/.test(company.collectionDate)
+            || !Number.isFinite(Date.parse(company.collectionCutoff))
+            || Date.parse(company.collectionCutoff) <= Date.parse(data.serverTime))) {
+          throw new Error(data.error || 'No se pudieron cargar las empresas y horarios de recolección.');
+        }
+        if (!dialog.open || loadVersion !== deliveryLoadVersion) return;
+        deliveryConfig = data;
+        deliveryServerTime = Date.parse(data.serverTime);
+        deliveryClockStart = performance.now();
+        companySelect.replaceChildren(new Option('Seleccioná una empresa', ''));
+        data.companies.forEach(company => companySelect.add(new Option(company.name, company.id)));
+        if (data.companies.some(company => company.id === previous)) companySelect.value = previous;
+        const unavailable = Array.isArray(data.unavailable) ? data.unavailable : [];
+        const reasons = unavailable.map(company => `${company.name}: ${company.reason}`).join(' · ');
+        status.textContent = [reasons, data.companies.length ? '' : 'No hay empresas disponibles. Podés coordinar por WhatsApp.'].filter(Boolean).join(' ');
+        companySelect.disabled = false;
+        updatePrivateFields();
+        clearInterval(deliveryCountdownTimer);
+        deliveryCountdownTimer = setInterval(updateCollectionCountdown, 1000);
+      } catch (error) {
+        if (!dialog.open || loadVersion !== deliveryLoadVersion) return;
+        status.textContent = error.message || 'No se pudieron cargar las empresas de envío.';
+        console.error('Error al cargar empresas de envío:', error);
+      }
+    }
+
     async function openShippingDialog() {
       if (shippingMethodSelect.value === 'Retiro Take Away en Villa Dominico') {
         document.getElementById('pickup-dialog').showModal();
@@ -1365,32 +1462,9 @@
         document.getElementById('coordination-dialog').showModal();
       } else if (shippingMethodSelect.value === 'Envío por empresa privada') {
         const dialog = document.getElementById('private-delivery-dialog');
-        const status = document.getElementById('private-delivery-status');
-        const companySelect = document.getElementById('delivery-company');
         privateDeliveryConfirmed = false;
         dialog.showModal();
-        status.textContent = 'Cargando empresas y tarifas...';
-        companySelect.disabled = true;
-        try {
-          const response = await fetch('./api/shipping-config', { cache: 'no-store' });
-          const data = await response.json();
-          if (!response.ok || !Array.isArray(data.companies) || !Array.isArray(data.zones)) {
-            throw new Error(data.error || 'No se pudieron cargar las empresas de envío.');
-          }
-          deliveryConfig = data;
-          const previous = selectedDelivery?.companyId || companySelect.value;
-          companySelect.replaceChildren(new Option('Seleccioná una empresa', ''));
-          data.companies.forEach(company => companySelect.add(new Option(company.name, company.id)));
-          if (data.companies.some(company => company.id === previous)) companySelect.value = previous;
-          const unavailable = Array.isArray(data.unavailable) ? data.unavailable : [];
-          const reasons = unavailable.map(company => `${company.name}: ${company.reason}`).join(' · ');
-          status.textContent = [reasons, data.companies.length ? '' : 'No hay empresas disponibles. Podés coordinar por WhatsApp.'].filter(Boolean).join(' ');
-          companySelect.disabled = false;
-          updatePrivateFields();
-        } catch (error) {
-          status.textContent = error.message || 'No se pudieron cargar las empresas de envío.';
-          console.error('Error al cargar empresas de envío:', error);
-        }
+        await loadPrivateShippingOptions();
       }
     }
 
@@ -1404,6 +1478,12 @@
         document.getElementById('private-delivery-status').textContent = 'Seleccioná una localidad con tarifa disponible.';
         return;
       }
+      const company = deliveryConfig.companies.find(item => item.id === quote.companyId);
+      const reopeningDate = company?.holidayReopeningDate;
+      if (reopeningDate && !document.getElementById('holiday-accept').checked) {
+        document.getElementById('private-delivery-status').textContent = 'Aceptá el aviso por feriado para continuar.';
+        return;
+      }
       const fields = new FormData(event.currentTarget);
       const details = {};
       for (const field of ['recipient', 'buyerDocument', 'street', 'number', 'floor', 'apartment', 'neighborhood', 'province', 'crossStreets', 'landmark', 'phone', 'phoneAlt', 'authorized']) {
@@ -1415,7 +1495,9 @@
       }
       selectedDelivery = { ...quote, ...details, destinationType: destinationTypeSelect.value,
         businessDeliveryHours: destinationTypeSelect.value === 'empresa' ? businessDeliveryHours.value.trim() : '',
-        shippingPayment: document.getElementById('delivery-payment').value };
+        shippingPayment: document.getElementById('delivery-payment').value,
+        collectionDate: company.collectionDate,
+        ...(reopeningDate ? { holidayReopeningDate: reopeningDate, holidayAccepted: true } : {}) };
       privateDeliveryConfirmed = true;
       document.getElementById('private-delivery-dialog').close();
       updateCheckoutOptions();
@@ -1423,6 +1505,9 @@
     });
     document.getElementById('cancel-private-delivery').addEventListener('click', () => document.getElementById('private-delivery-dialog').close());
     document.getElementById('private-delivery-dialog').addEventListener('close', () => {
+      deliveryLoadVersion++;
+      clearInterval(deliveryCountdownTimer);
+      deliveryCountdownTimer = null;
       if (!privateDeliveryConfirmed && !selectedDelivery && shippingMethodSelect.value === 'Envío por empresa privada') {
         shippingMethodSelect.value = '';
         updateCheckoutOptions();
@@ -1532,6 +1617,7 @@
         pendingOrderPayload = orderPayload;
       }
 
+      let orderRegistered = false;
       try {
         const response = await fetch('./api/orders', {
           method: 'POST',
@@ -1540,6 +1626,7 @@
         });
         const result = await response.json();
         if(!response.ok) throw new Error(result.error || 'No se pudo registrar el pedido.');
+        orderRegistered = true;
 
         try {
           const clientsList = JSON.parse(localStorage.getItem('dulce_feliz_clients') || '[]');
@@ -1591,6 +1678,8 @@
         }
         if (delivery) {
           text += `*Empresa:* ${delivery.companyName} · ${delivery.zoneName}\n`;
+          text += `*Recolección prevista:* ${delivery.collectionDate.split('-').reverse().join('/')}.\n`;
+          if (delivery.holidayReopeningDate) text += `*Feriado:* acepté que el pedido se gestione a partir del ${delivery.holidayReopeningDate.split('-').reverse().join('/')}.\n`;
           text += `*Costo de envío:* $${(delivery.quotedCents / 100).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · ${delivery.shippingPayment === 'together' ? 'incluido en la compra' : 'a pagar aparte por transferencia'}\n`;
           text += `*Destinatario:* ${delivery.recipient}\n*Documento del comprador:* ${delivery.buyerDocument}\n`;
           if(delivery.floor) text += `*Piso:* ${delivery.floor}\n`;
@@ -1630,7 +1719,7 @@
         document.getElementById('order-dialog').close();
       } catch (error) {
         if(checkoutWindow && !checkoutWindow.closed) checkoutWindow.close();
-        const nextStep = paymentMethod === 'Sistema Nave de Galicia / MODO'
+        const nextStep = orderRegistered && paymentMethod === 'Sistema Nave de Galicia / MODO'
           ? 'El pedido quedó registrado, pero el pago no se inició. Vuelve a intentarlo.'
           : 'El pedido no se envió; vuelve a intentarlo.';
         status.textContent = `${error.message || 'No se pudo completar el pedido.'} ${nextStep}`;
