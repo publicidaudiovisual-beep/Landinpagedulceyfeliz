@@ -80,20 +80,36 @@ test('los pedidos guardan el destino y validan el horario de empresas', async t 
   const previousFetch = global.fetch;
   const previousUrl = process.env.UPSTASH_REDIS_REST_URL;
   const previousToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const githubVariables = ['GITHUB_TOKEN', 'GITHUB_REPOSITORY', 'GITHUB_BRANCH'];
+  const previousGithub = Object.fromEntries(githubVariables.map(name => [name, process.env[name]]));
   process.env.UPSTASH_REDIS_REST_URL = 'https://redis.example.test';
   process.env.UPSTASH_REDIS_REST_TOKEN = 'test';
+  Object.assign(process.env, { GITHUB_TOKEN: 'test', GITHUB_REPOSITORY: 'example/repo', GITHUB_BRANCH: 'main' });
   t.after(() => {
     global.fetch = previousFetch;
     if (previousUrl === undefined) delete process.env.UPSTASH_REDIS_REST_URL;
     else process.env.UPSTASH_REDIS_REST_URL = previousUrl;
     if (previousToken === undefined) delete process.env.UPSTASH_REDIS_REST_TOKEN;
     else process.env.UPSTASH_REDIS_REST_TOKEN = previousToken;
+    for (const name of githubVariables) {
+      if (previousGithub[name] === undefined) delete process.env[name];
+      else process.env[name] = previousGithub[name];
+    }
   });
 
   let saved;
+  let condition = 'fijo';
+  let existingOrder;
   global.fetch = async (url, options) => {
+    if (url.startsWith('https://api.github.com/')) {
+      const catalog = { products: [{ id: 'p', condition }] };
+      return { ok: true, json: async () => ({ content: Buffer.from(JSON.stringify(catalog)).toString('base64') }) };
+    }
     const command = JSON.parse(options.body);
-    if (command.length > 6) {
+    if (command[5] === 'migrate' && existingOrder) {
+      return { ok: true, json: async () => ({ result: JSON.stringify([existingOrder]) }) };
+    }
+    if (command[5] !== 'migrate') {
       saved = JSON.parse(command[6]);
       saved.orderNumber = 1;
       return { ok: true, json: async () => ({ result: JSON.stringify(saved) }) };
@@ -121,6 +137,16 @@ test('los pedidos guardan el destino y validan el horario de empresas', async t 
   assert.equal(res.statusCode, 201);
   assert.equal(saved.destinationType, 'empresa');
   assert.equal(saved.businessDeliveryHours, 'Lunes de 9 a 12');
+  condition = 'proximamente';
+  res = await submit(base);
+  assert.equal(res.statusCode, 409);
+  assert.match(res.body.error, /no está disponible/);
+  existingOrder = { id: '00000000-0000-4000-8000-000000000001', orderNumber: 1 };
+  res = await submit(base);
+  assert.equal(res.statusCode, 201);
+  assert.equal(res.body.orderNumber, 1);
+  existingOrder = undefined;
+  condition = 'fijo';
   res = await submit({ ...base, destinationType: 'casa', businessDeliveryHours: '' });
   assert.equal(res.statusCode, 201);
   assert.equal(saved.destinationType, 'casa');

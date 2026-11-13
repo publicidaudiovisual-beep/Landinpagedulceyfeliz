@@ -55,3 +55,28 @@ test('el buscador encuentra números, nombres, teléfonos y estados sin depender
   }
   assert.equal(context.orderMatchesSearch(order, 'inexistente'), false);
 });
+
+test('al editar la condición se preservan el identificador y la descripción completa', async () => {
+  const save = source.match(/    async function saveProduct\(e\) \{[\s\S]*?\n    \}/);
+  assert.ok(save);
+  assert.match(source, /<option value="proximamente">Próximamente<\/option>/);
+  assert.match(source, /<option value="fijo">Sabor Fijo<\/option>/);
+  const values = {
+    'edit-product-id': '0', 'prod-name': 'Galleta', 'prod-line': 'vip',
+    'prod-condition': 'proximamente', 'prod-price': '6000', 'prod-stock': '4',
+    'prod-ingredients': 'Ingredientes', 'prod-img': 'foto.jpg', 'prod-img-cenital': 'cenital.png'
+  };
+  const original = { id: 'id-existente', size: 'Tamaño', taste: 'Sabor', texture: 'Textura',
+    ideal: 'Ideal', presentation: 'Caja' };
+  const ctx = vm.createContext({
+    adminData: { products: [original] },
+    document: { getElementById(id) { return id === 'product-modal'
+      ? { close() {}, showModal() {} } : { value: values[id] }; } },
+    renderAdminDashboard() {}, async persistAdminData() { return true; }
+  });
+  vm.runInContext(save[0], ctx);
+  await ctx.saveProduct({ preventDefault() {} });
+  const product = ctx.adminData.products[0];
+  for (const [field, value] of Object.entries(original)) assert.equal(product[field], value);
+  assert.equal(product.condition, 'proximamente');
+});

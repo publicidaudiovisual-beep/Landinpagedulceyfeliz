@@ -386,6 +386,8 @@
             <option value="">Ninguna / Normal</option>
             <option value="nuevo">Nuevo sabor</option>
             <option value="temporal">Sabor Temporal</option>
+            <option value="proximamente">Próximamente</option>
+            <option value="fijo">Sabor Fijo</option>
             <option value="descontinuado">Sabor descontinuado</option>
           </select>
         </div>
@@ -1424,10 +1426,10 @@
       document.getElementById('instagram-inputs-container').innerHTML = igHtml;
 
       const products = adminData.products || [];
-      const outStock = products.filter(p => (p.stockQuantity ?? 10) <= 0 || p.condition === 'descontinuado');
+      const outStock = products.filter(p => p.condition !== 'proximamente' && ((p.stockQuantity ?? 10) <= 0 || p.condition === 'descontinuado'));
       const lowStock = products.filter(p => {
         const s = p.stockQuantity ?? 10;
-        return s > 0 && s <= 5 && p.condition !== 'descontinuado';
+        return s > 0 && s <= 5 && p.condition !== 'descontinuado' && p.condition !== 'proximamente';
       });
 
       const banner = document.getElementById('stock-alerts-banner');
@@ -1449,10 +1451,14 @@
         let condBadge = `<span class="text-gray-500">-</span>`;
         if(cond === 'nuevo') condBadge = `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-blue-950 text-blue-400 border border-blue-800">Nuevo</span>`;
         else if(cond === 'temporal') condBadge = `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-purple-950 text-purple-400 border border-purple-800">Temporal</span>`;
+        else if(cond === 'proximamente') condBadge = `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-amber-950 text-amber-400 border border-amber-800">Próximamente</span>`;
+        else if(cond === 'fijo') condBadge = `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">Sabor Fijo</span>`;
         else if(cond === 'descontinuado') condBadge = `<span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-red-950 text-red-400 border border-red-800">Descontinuado</span>`;
 
         let badge = `<span class="px-2.5 py-1 rounded-full text-[10px] uppercase font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">Disponible (${stock})</span>`;
-        if (stock <= 0 || cond === 'descontinuado') {
+        if (cond === 'proximamente') {
+          badge = `<span class="px-2.5 py-1 rounded-full text-[10px] uppercase font-bold bg-amber-950 text-amber-400 border border-amber-800">Próximamente / No disponible</span>`;
+        } else if (stock <= 0 || cond === 'descontinuado') {
           badge = `<span class="px-2.5 py-1 rounded-full text-[10px] uppercase font-bold bg-red-950 text-red-400 border border-red-800">Agotado / Inactivo</span>`;
         } else if (stock <= 5) {
           badge = `<span class="px-2.5 py-1 rounded-full text-[10px] uppercase font-bold bg-amber-950 text-amber-400 border border-amber-800">Bajo Stock (${stock})</span>`;
@@ -1675,7 +1681,8 @@
       e.preventDefault();
       const idx = document.getElementById('edit-product-id').value;
       const prodData = {
-        id: document.getElementById('prod-name').value.toLowerCase().replace(/\s+/g, ''),
+        ...(idx === '' ? {} : adminData.products[idx]),
+        id: idx === '' ? document.getElementById('prod-name').value.toLowerCase().replace(/\s+/g, '') : adminData.products[idx].id,
         name: document.getElementById('prod-name').value,
         line: document.getElementById('prod-line').value,
         condition: document.getElementById('prod-condition').value,

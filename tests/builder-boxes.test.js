@@ -63,3 +63,28 @@ test('una caja parcialmente llena permanece y la última caja vacía permite rec
   assert.deepEqual(context.boxSizes, [4]);
   assert.equal(context.currentSize, 4);
 });
+
+test('las nuevas condiciones se muestran y Próximamente no se agrega a la caja', () => {
+  const card = html.match(/    function renderProductCard\(p\) \{[\s\S]*?\n    \}/);
+  const add = html.match(/    function addFlavorToCurrentBox\(idx\) \{[\s\S]*?\n    \}/);
+  assert.ok(card);
+  assert.ok(add);
+  const products = [
+    { name: 'Futura', condition: 'proximamente', stockQuantity: 5, price: 6000 },
+    { name: 'Permanente', condition: 'fijo', stockQuantity: 5, price: 6000 }
+  ];
+  const ctx = vm.createContext({
+    appData: { products }, activeBoxes: [[]], boxSizes: [4], currentSize: 4,
+    alert() {}, renderBuilder() {}
+  });
+  vm.runInContext(card[0], ctx);
+  vm.runInContext(add[0], ctx);
+  assert.match(ctx.renderProductCard(products[0]), /Próximamente/);
+  assert.match(ctx.renderProductCard(products[0]), /out-of-stock/);
+  assert.match(ctx.renderProductCard(products[1]), /Sabor Fijo/);
+  assert.doesNotMatch(ctx.renderProductCard(products[1]), /out-of-stock/);
+  ctx.addFlavorToCurrentBox(0);
+  assert.equal(ctx.activeBoxes[0].length, 0);
+  ctx.addFlavorToCurrentBox(1);
+  assert.equal(ctx.activeBoxes[0].length, 1);
+});

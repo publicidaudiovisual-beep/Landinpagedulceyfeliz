@@ -18,14 +18,21 @@ test('el servidor calcula el envío por zona y rechaza tarifas desactualizadas',
   const savedFetch = global.fetch;
   const previousUrl = process.env.UPSTASH_REDIS_REST_URL;
   const previousToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const githubVariables = ['GITHUB_TOKEN', 'GITHUB_REPOSITORY', 'GITHUB_BRANCH'];
+  const previousGithub = Object.fromEntries(githubVariables.map(name => [name, process.env[name]]));
   process.env.UPSTASH_REDIS_REST_URL = 'https://redis.example.test';
   process.env.UPSTASH_REDIS_REST_TOKEN = 'test';
+  Object.assign(process.env, { GITHUB_TOKEN: 'test', GITHUB_REPOSITORY: 'example/repo', GITHUB_BRANCH: 'main' });
   t.after(() => {
     global.fetch = savedFetch;
     if (previousUrl === undefined) delete process.env.UPSTASH_REDIS_REST_URL;
     else process.env.UPSTASH_REDIS_REST_URL = previousUrl;
     if (previousToken === undefined) delete process.env.UPSTASH_REDIS_REST_TOKEN;
     else process.env.UPSTASH_REDIS_REST_TOKEN = previousToken;
+    for (const name of githubVariables) {
+      if (previousGithub[name] === undefined) delete process.env[name];
+      else process.env[name] = previousGithub[name];
+    }
   });
   const zone = { id: '00000000-0000-4000-8000-000000000001', name: 'Zona 1', localities: ['Avellaneda'] };
   const company = {
@@ -34,9 +41,12 @@ test('el servidor calcula el envío por zona y rechaza tarifas desactualizadas',
   };
   let saved;
   global.fetch = async (url, options) => {
+    if (url.startsWith('https://api.github.com/')) {
+      return { ok: true, json: async () => ({ content: Buffer.from(JSON.stringify({ products: [{ id: 'p' }] })).toString('base64') }) };
+    }
     const command = JSON.parse(options.body);
     if (command[0] === 'GET') return { ok: true, json: async () => ({ result: JSON.stringify({ zones: [zone], companies: [company] }) }) };
-    if (command.length > 6) {
+    if (command[5] !== 'migrate') {
       assert.equal(command[7], '2000');
       saved = JSON.parse(command[6]);
       saved.orderNumber = 1;
@@ -187,6 +197,10 @@ test('Nave incluye el envío solo cuando se eligió pagarlo con la compra', () =
   assert.equal(separate.total, '100.00');
   assert.equal(separate.products.length, 1);
   assert.throws(() => context.getVerifiedProducts({ ...order, total: 100 }, catalog));
+  catalog.products[0].condition = 'proximamente';
+  assert.throws(() => context.getVerifiedProducts(order, catalog), /próximamente/);
+  catalog.products[0].condition = 'fijo';
+  assert.equal(context.getVerifiedProducts(order, catalog).total, '9421.84');
 });
 
 test('el formulario informa por qué una empresa no está disponible', async () => {

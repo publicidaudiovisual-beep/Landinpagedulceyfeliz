@@ -129,3 +129,5 @@ En **Settings → Git**, confirma que la rama indicada en `GITHUB_BRANCH` sea la
 ## Uso
 
 Ingresa la contraseña `ADMIN_PASSWORD` en el panel. Los botones de guardar y los controles de stock publican sus cambios en GitHub; Vercel construye y publica la nueva versión automáticamente. El botón **Publicar cambios** permite reintentar un guardado. **Descargar JSON** queda disponible como copia de respaldo.
+
+Al editar un sabor, la condición **Próximamente** lo muestra en el catálogo, pero impide seleccionarlo y generar nuevos pedidos aunque tenga stock. Cambia su condición cuando esté disponible. **Sabor Fijo** es una etiqueta para sabores permanentes y permite la compra cuando hay stock. Al crear un pedido se consulta el catálogo actual en GitHub; si no puede verificarse, se informa el error y no se registra el pedido.

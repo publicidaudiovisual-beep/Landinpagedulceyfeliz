@@ -823,11 +823,13 @@
     function renderProductCard(p) {
       const stock = p.stockQuantity ?? 10;
       const cond = p.condition || '';
-      const isOut = stock <= 0 || cond === 'descontinuado';
+      const isOut = stock <= 0 || cond === 'descontinuado' || cond === 'proximamente';
       
       let condTag = '';
       if(cond === 'nuevo') condTag = `<span class="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] uppercase font-bold bg-blue-900 text-blue-200 border border-blue-700 shadow">Nuevo Sabor</span>`;
       else if(cond === 'temporal') condTag = `<span class="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] uppercase font-bold bg-purple-900 text-purple-200 border border-purple-700 shadow">Sabor Temporal</span>`;
+      else if(cond === 'proximamente') condTag = `<span class="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] uppercase font-bold bg-amber-900 text-amber-200 border border-amber-700 shadow">Próximamente</span>`;
+      else if(cond === 'fijo') condTag = `<span class="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] uppercase font-bold bg-emerald-900 text-emerald-200 border border-emerald-700 shadow">Sabor Fijo</span>`;
 
       return `
         <div class="product-card ${isOut ? 'out-of-stock' : ''}">
@@ -840,7 +842,7 @@
             </div>
             <p class="text-xs text-gray-300 line-clamp-2 mb-4">${p.desc || p.ingredients}</p>
             <div class="flex items-center justify-between">
-              <span class="text-[10px] uppercase font-bold ${isOut ? 'text-red-400' : 'text-emerald-400'}">${isOut ? 'Agotado' : `Stock: ${stock}`}</span>
+              <span class="text-[10px] uppercase font-bold ${isOut ? 'text-red-400' : 'text-emerald-400'}">${cond === 'proximamente' ? 'Próximamente' : isOut ? 'Agotado' : `Stock: ${stock}`}</span>
               <button onclick='openFlavorDetail(${JSON.stringify(p)})' class="text-[10px] uppercase tracking-wider text-goldLight underline hover:text-white">Ver detalles</button>
             </div>
           </div>
@@ -1028,13 +1030,13 @@
         selectorContainer.innerHTML = products.map((p, idx) => {
           const stock = p.stockQuantity ?? 10;
           const cond = p.condition || '';
-          const isOut = stock <= 0 || cond === 'descontinuado';
+          const isOut = stock <= 0 || cond === 'descontinuado' || cond === 'proximamente';
           return `
             <div onclick="${isOut ? '' : `addFlavorToCurrentBox(${idx})`}" class="cookie-mobile-card ${isOut ? 'out-of-stock' : ''}">
               <img src="${p.imgCenital || p.img}" class="cookie-img-mobile" alt="${p.name}" />
               <span class="mt-1 text-[10px] font-semibold text-white text-center line-clamp-1">${p.name}</span>
               <span class="text-[9px] text-goldLight">$${p.price}</span>
-              <span class="text-[8px] ${isOut ? 'text-red-400 font-bold' : 'text-gray-400'}">${isOut ? 'Agotado' : `Stock: ${stock}`}</span>
+              <span class="text-[8px] ${isOut ? 'text-red-400 font-bold' : 'text-gray-400'}">${cond === 'proximamente' ? 'Próximamente' : isOut ? 'Agotado' : `Stock: ${stock}`}</span>
             </div>
           `;
         }).join('');
@@ -1043,13 +1045,13 @@
         selectorContainer.innerHTML = products.map((p, idx) => {
           const stock = p.stockQuantity ?? 10;
           const cond = p.condition || '';
-          const isOut = stock <= 0 || cond === 'descontinuado';
+          const isOut = stock <= 0 || cond === 'descontinuado' || cond === 'proximamente';
           return `
             <div onclick="${isOut ? '' : `addFlavorToCurrentBox(${idx})`}" class="cookie-pc-card ${isOut ? 'out-of-stock' : ''}">
               <img src="${p.imgCenital || p.img}" class="cookie-img-pc" alt="${p.name}" />
               <span class="mt-2 text-xs font-semibold text-white text-center line-clamp-1">${p.name}</span>
               <span class="text-[9px] text-goldLight">$${p.price}</span>
-              <span class="text-[9px] ${isOut ? 'text-red-400 font-bold' : 'text-gray-400'}">${isOut ? 'Agotado' : `Stock: ${stock}`}</span>
+              <span class="text-[9px] ${isOut ? 'text-red-400 font-bold' : 'text-gray-400'}">${cond === 'proximamente' ? 'Próximamente' : isOut ? 'Agotado' : `Stock: ${stock}`}</span>
             </div>
           `;
         }).join('');
@@ -1135,7 +1137,12 @@
       currentSize = boxSizes[currentBoxIndex];
       if(currentBox.length >= currentSize) return;
 
-      currentBox.push(appData.products[idx]);
+      const product = appData.products[idx];
+      if (!product || (product.stockQuantity ?? 10) <= 0 || product.condition === 'descontinuado' || product.condition === 'proximamente') {
+        alert('Este sabor no está disponible para agregar a la caja.');
+        return;
+      }
+      currentBox.push(product);
       renderBuilder();
       if(currentBox.length === currentSize) {
         document.getElementById('builder-completion-toast').classList.remove('hidden');

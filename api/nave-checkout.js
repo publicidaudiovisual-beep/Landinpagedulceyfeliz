@@ -1,9 +1,9 @@
 const crypto = require('node:crypto');
 const { getRedisKey } = require('../lib/redis-keys');
 const { createPaymentRequest, getNaveConfig } = require('../lib/nave');
+const { readCatalog } = require('../lib/catalog-read');
 
 const ORDERS_KEY = getRedisKey('dulce-feliz-generated-orders');
-const GITHUB_API = 'https://api.github.com';
 const NAVE_PAYMENT_METHOD = 'Sistema Nave de Galicia / MODO';
 const NAVE_CHECKOUT_ENABLED = process.env.NAVE_ENVIRONMENT === 'production';
 
@@ -32,38 +32,6 @@ async function redisCommand(command) {
   return result.result;
 }
 
-async function readCatalog() {
-  const token = process.env.GITHUB_TOKEN;
-  const repository = process.env.GITHUB_REPOSITORY || '';
-  const branch = process.env.GITHUB_BRANCH;
-  const [owner, repo, ...extraParts] = repository.split('/');
-  if (!token || !branch || !/^[A-Za-z0-9_.-]+$/.test(owner) || !/^[A-Za-z0-9_.-]+$/.test(repo) || extraParts.length) {
-    throw new Error('Falta configurar GITHUB_TOKEN, GITHUB_REPOSITORY o GITHUB_BRANCH para verificar los precios.');
-  }
-
-  const url = `${GITHUB_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/catalog-data.json?ref=${encodeURIComponent(branch)}`;
-  const response = await fetch(url, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      Authorization: ['Bearer', token].join(' '),
-      'X-GitHub-Api-Version': '2022-11-28',
-      'User-Agent': 'Dulce-y-Feliz-nave-checkout'
-    }
-  });
-  const result = await response.json();
-  if (!response.ok || !result.content) {
-    console.error('Could not read catalog before creating Nave payment intent', { status: response.status });
-    throw new Error('No se pudo verificar el catálogo actual antes de cobrar.');
-  }
-
-  try {
-    return JSON.parse(Buffer.from(result.content, 'base64').toString('utf8'));
-  } catch (error) {
-    console.error('Invalid catalog JSON before creating Nave payment intent', error);
-    throw new Error('El catálogo actual no tiene un formato válido.');
-  }
-}
-
 function getVerifiedProducts(order, catalog) {
   if (!Array.isArray(catalog.products) || !Array.isArray(order.items)) {
     throw new CheckoutValidationError('No se pudo validar el detalle del pedido.');
@@ -74,6 +42,9 @@ function getVerifiedProducts(order, catalog) {
     const product = catalog.products.find(candidate => candidate.id === item.productId);
     if (!product || !Number.isSafeInteger(item.quantity) || item.quantity < 1) {
       throw new CheckoutValidationError('El catálogo cambió. Vuelve a armar el pedido para actualizar los precios.');
+    }
+    if (product.condition === 'proximamente') {
+      throw new CheckoutValidationError(`"${product.name}" estará disponible próximamente. Vuelve a armar el pedido.`);
     }
     const unitPriceCents = Math.round(Number(product.price) * 100);
     if (!Number.isSafeInteger(unitPriceCents) || unitPriceCents < 0) {

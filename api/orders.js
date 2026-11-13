@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 const { getRedisKey } = require('../lib/redis-keys');
 const { readShippingConfig, companyAvailability, collectionSchedule } = require('../lib/shipping-config');
 const { getPrintJobKeys } = require('../lib/print-jobs');
+const { readCatalog } = require('../lib/catalog-read');
 
 const ORDERS_KEY = getRedisKey('dulce-feliz-generated-orders');
 const ORDER_SEQUENCE_KEY = getRedisKey('dulce-feliz-order-sequence');
@@ -62,7 +63,7 @@ async function redisCommand(command) {
   return result.result;
 }
 
-async function readOrders(migrateOnly = false) {
+async function readOrders(migrateOnly = false, existingOrderId = '') {
   const migrationScript = `
     local raw = redis.call('GET', KEYS[1])
     if not raw then return cjson.encode({}) end
@@ -85,10 +86,17 @@ async function readOrders(migrateOnly = false) {
     end
     if maxNumber > sequence then redis.call('SET', KEYS[2], maxNumber) end
     if changed then redis.call('SET', KEYS[1], cjson.encode(orders)) end
-    if ARGV[1] == 'migrate' then return '[]' end
+    if ARGV[1] == 'migrate' then
+      for _, order in ipairs(orders) do
+        if order.id == ARGV[2] then return cjson.encode({order}) end
+      end
+      return '[]'
+    end
     return cjson.encode(orders)
   `;
-  const result = await redisCommand(['EVAL', migrationScript, '2', ORDERS_KEY, ORDER_SEQUENCE_KEY, migrateOnly ? 'migrate' : 'read']);
+  const command = ['EVAL', migrationScript, '2', ORDERS_KEY, ORDER_SEQUENCE_KEY, migrateOnly ? 'migrate' : 'read'];
+  if (migrateOnly) command.push(existingOrderId);
+  const result = await redisCommand(command);
   const orders = typeof result === 'string' ? JSON.parse(result) : result;
   if (orders && !Array.isArray(orders) && Object.keys(orders).length === 0) return [];
   if (!Array.isArray(orders)) throw new Error('El registro de pedidos tiene un formato inválido.');
@@ -253,8 +261,21 @@ async function createOrder(req, res, body) {
       order.total = (Math.round(order.productTotal * 100) + priceCents) / 100;
     }
   }
-  await readOrders(true);
-
+  const existingOrders = await readOrders(true, body.requestId);
+  if (existingOrders.length) {
+    return respond(res, 201, {
+      saved: true,
+      orderId: existingOrders[0].id,
+      orderNumber: existingOrders[0].orderNumber
+    });
+  }
+  const catalog = await readCatalog();
+  for (const item of order.items) {
+    const product = catalog.products.find(candidate => candidate.id === item.productId);
+    if (!product || product.condition === 'proximamente') {
+      return respond(res, 409, { error: `"${item.name}" no está disponible. Actualizá la página y volvé a armar el pedido.` });
+    }
+  }
   const script = `
     local raw = redis.call('GET', KEYS[1])
     local orders = raw and cjson.decode(raw) or {}
