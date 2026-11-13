@@ -623,6 +623,20 @@
         <select id="delivery-company" required class="mt-1 w-full bg-[#1C1C1E] border border-gold/40 rounded-xl px-3 py-2 text-sm text-white"><option value="">Seleccioná una empresa</option></select>
         <p id="delivery-company-hours" class="mt-1 text-xs text-gray-400"></p>
       </label>
+      <div aria-live="polite">
+        <div data-delivery-benefits="00000000-0000-4000-8000-000000000005" class="hidden rounded-xl border border-gold/30 bg-[#1C1C1E] p-4 text-sm text-gray-200">
+          <p class="mb-1 font-semibold text-goldLight">Ventajas de Vima</p>
+          <p>Amplia cobertura, muy buena reputación y una alta efectividad de entrega. Ofrece seguro para los paquetes y puede transportarlos en auto o en moto.</p>
+        </div>
+        <div data-delivery-benefits="00000000-0000-4000-8000-000000000006" class="hidden rounded-xl border border-gold/30 bg-[#1C1C1E] p-4 text-sm text-gray-200">
+          <p class="mb-1 font-semibold text-goldLight">Ventajas de Cabify Logistics</p>
+          <p>Una empresa con múltiples opciones y un servicio especializado en paquetería de alimentos. Los envíos nacionales se coordinan previamente con Dulce y Feliz por <a href="https://wa.me/541127401426?text=Hola%2C%20quiero%20consultar%20por%20un%20env%C3%ADo%20nacional%20con%20Cabify." target="_blank" rel="noopener noreferrer" class="text-goldLight underline">WhatsApp</a>.</p>
+        </div>
+        <div data-delivery-benefits="00000000-0000-4000-8000-000000000007" class="hidden rounded-xl border border-gold/30 bg-[#1C1C1E] p-4 text-sm text-gray-200">
+          <p class="mb-1 font-semibold text-goldLight">Ventajas de Solo Moto Flex</p>
+          <p>Entregas en moto con mayor inmediatez y a un costo accesible.</p>
+        </div>
+      </div>
       <div id="collection-countdown" class="hidden rounded-xl border border-gold/30 bg-[#1C1C1E] p-4 text-sm text-goldLight">
         <p id="collection-countdown-label"></p>
         <progress id="collection-countdown-bar" max="86400" value="0" class="mt-2 w-full accent-[#D4AF37]" aria-label="Tiempo restante para solicitar la recolección"></progress>
@@ -1326,6 +1340,9 @@
     function updatePrivateFields() {
       const companySelect = document.getElementById('delivery-company');
       const company = deliveryConfig?.companies.find(item => item.id === companySelect.value);
+      document.querySelectorAll('[data-delivery-benefits]').forEach(card => {
+        card.classList.toggle('hidden', card.dataset.deliveryBenefits !== company?.id);
+      });
       const holidayWarning = document.getElementById('holiday-warning');
       const holidayAccept = document.getElementById('holiday-accept');
       const reopeningDate = company?.holidayReopeningDate;

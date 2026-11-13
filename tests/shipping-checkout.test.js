@@ -215,6 +215,41 @@ test('el formulario informa por qué una empresa no está disponible', async () 
   assert.match(status.textContent, /WhatsApp/);
 });
 
+test('el formulario muestra solo las ventajas de la empresa seleccionada', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const match = source.match(/    function updatePrivateFields\(\) \{[\s\S]*?\n    \}/);
+  assert.ok(match);
+  const cards = ['005', '006', '007'].map(suffix => ({
+    dataset: { deliveryBenefits: `00000000-0000-4000-8000-000000000${suffix}` },
+    hidden: true,
+    classList: { toggle(name, hidden) { this.card.hidden = hidden; } }
+  }));
+  cards.forEach(card => { card.classList.card = card; });
+  const select = { value: '' };
+  const locality = { value: '', options: [], replaceChildren() {}, append() {} };
+  const generic = () => ({ classList: { toggle() {} }, querySelectorAll: () => [] });
+  const elements = {
+    'delivery-company': select, 'holiday-warning': generic(), 'holiday-accept': {},
+    'holiday-warning-text': {}, 'delivery-company-hours': {}, 'private-delivery-fields': generic(),
+    'delivery-locality': locality, 'cabify-coverage-notice': generic()
+  };
+  const context = vm.createContext({
+    deliveryConfig: { companies: cards.map(card => ({ id: card.dataset.deliveryBenefits, rates: [] })), zones: [] },
+    document: { getElementById: id => elements[id], querySelectorAll: () => cards },
+    Option: function(text, value) { this.value = value; },
+    updateCollectionCountdown() {}, updateBusinessHours() {}, updatePrivateQuote() {}
+  });
+  vm.runInContext(match[0], context);
+  for (const [index, card] of cards.entries()) {
+    select.value = card.dataset.deliveryBenefits;
+    context.updatePrivateFields();
+    assert.deepEqual(cards.map(item => item.hidden), cards.map((_, i) => i !== index));
+  }
+  select.value = '';
+  context.updatePrivateFields();
+  assert.ok(cards.every(card => card.hidden));
+});
+
 test('el estado del pago de envío exige autenticación y datos válidos', async t => {
   const previous = { fetch: global.fetch, password: process.env.ADMIN_PASSWORD,
     url: process.env.UPSTASH_REDIS_REST_URL, token: process.env.UPSTASH_REDIS_REST_TOKEN };
