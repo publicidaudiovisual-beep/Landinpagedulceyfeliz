@@ -48,7 +48,7 @@
       "line": "vip",
       "condition": "nuevo",
       "price": 6000,
-      "stockQuantity": 15,
+      "stockQuantity": 14,
       "ingredients": "Trozos de chocolate blanco de primera calidad, gotas de chocolate blanco, nueces, cacao en polvo, colorante vegetal rojo, manteca, azúcar, harina, vainilla y relleno de queso crema",
       "desc": "Trozos de chocolate blanco de primera calidad, gotas de chocolate blanco, nueces, cacao en polvo, colorante vegetal rojo, manteca, azúcar, harina, vainilla y relleno de queso crema",
       "img": "Red Velvet Cheese.jpg",
@@ -65,7 +65,7 @@
       "line": "vip",
       "condition": "temporal",
       "price": 6000,
-      "stockQuantity": 5,
+      "stockQuantity": 4,
       "ingredients": "Trozos de chocolate blanco de primera calidad, gotas de chocolate blanco, cacao en polvo, pistachos, manteca, azúcar, harina, vainilla y rellena con crema de pistachos",
       "desc": "Trozos de chocolate blanco de primera calidad, gotas de chocolate blanco, cacao en polvo, pistachos, manteca, azúcar, harina, vainilla y rellena con crema de pistachos",
       "img": "Dubai Gold.jpg",
@@ -82,7 +82,7 @@
       "line": "vip",
       "condition": "",
       "price": 6000,
-      "stockQuantity": 15,
+      "stockQuantity": 14,
       "ingredients": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate, cacao en polvo, manteca, azúcar, harina, vainilla y relleno de crema de maracuyá",
       "desc": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate, cacao en polvo, manteca, azúcar, harina, vainilla y relleno de crema de maracuyá",
       "img": "Choco Pasión.jpg",
@@ -116,7 +116,7 @@
       "line": "vip",
       "condition": "",
       "price": 6000,
-      "stockQuantity": 15,
+      "stockQuantity": 14,
       "ingredients": "Trozos de chocolate blanco de primera calidad, gotas de chocolate blanco, manteca, hojitas de menta frezca, azúcar, cacao en polvo, harina, vainilla y relleno de crema brigadeiro",
       "desc": "Trozos de chocolate blanco de primera calidad, gotas de chocolate blanco, manteca, hojitas de menta frezca, azúcar, cacao en polvo, harina, vainilla y relleno de crema brigadeiro",
       "img": "Menthe Noire.jpg",
@@ -297,7 +297,8 @@
     "9e108f09-42f5-4bb5-9a77-7efc24e8fb92",
     "3d3330d6-7021-4a6e-9846-7b023e191dc9",
     "8127fae1-a88c-41e6-be24-7bf6fdb17903",
-    "b52e1601-93cc-41b1-9719-f4c7a37f1fd0"
+    "b52e1601-93cc-41b1-9719-f4c7a37f1fd0",
+    "0465efec-7159-419a-b64c-d38f84bb50c0"
   ],
   "processedSales": {
     "9e108f09-42f5-4bb5-9a77-7efc24e8fb92": [
@@ -321,6 +322,24 @@
     "b52e1601-93cc-41b1-9719-f4c7a37f1fd0": [
       {
         "productId": "happycookie",
+        "quantity": 1
+      }
+    ],
+    "0465efec-7159-419a-b64c-d38f84bb50c0": [
+      {
+        "productId": "redvelvetcheese",
+        "quantity": 1
+      },
+      {
+        "productId": "dubaigold",
+        "quantity": 1
+      },
+      {
+        "productId": "menthenoire",
+        "quantity": 1
+      },
+      {
+        "productId": "chocopasión",
         "quantity": 1
       }
     ]
