@@ -53,7 +53,7 @@
       "line": "vip",
       "condition": "nuevo",
       "price": 6500,
-      "stockQuantity": 14,
+      "stockQuantity": 12,
       "ingredients": "Trozos de chocolate blanco de primera calidad, gotas de chocolate blanco, nueces, cacao en polvo, colorante vegetal rojo, manteca, azúcar, harina, vainilla y relleno de queso crema",
       "desc": "Trozos de chocolate blanco de primera calidad, gotas de chocolate blanco, nueces, cacao en polvo, colorante vegetal rojo, manteca, azúcar, harina, vainilla y relleno de queso crema",
       "img": "Galeria de Galletas/Red Velvet Deluxe.jfif",
@@ -138,7 +138,7 @@
       "line": "vip",
       "condition": "fijo",
       "price": 6500,
-      "stockQuantity": 14,
+      "stockQuantity": 13,
       "ingredients": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate, nueces, manteca, azúcar, harina, vainilla y crema brigadeiro",
       "desc": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate, nueces, manteca, azúcar, harina, vainilla y crema brigadeiro",
       "img": "Galeria de Galletas/Briga Nut.jfif",
@@ -155,7 +155,7 @@
       "line": "clasica",
       "condition": "",
       "price": 6500,
-      "stockQuantity": 15,
+      "stockQuantity": 14,
       "ingredients": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate, nueces, manteca, azúcar, vainilla y sal.",
       "desc": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate, nueces, manteca, azúcar, vainilla y sal.",
       "img": "Galeria de Galletas/Choco Nut.png",
@@ -172,7 +172,7 @@
       "line": "clasica",
       "condition": "",
       "price": 5500,
-      "stockQuantity": 15,
+      "stockQuantity": 14,
       "ingredients": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate oscuro y blanco, cacao en polvo, nueces, manteca, azúcar y vainilla.",
       "desc": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate oscuro y blanco, cacao en polvo, nueces, manteca, azúcar y vainilla.",
       "img": "Galeria de Galletas/Triple Choco.png",
@@ -279,7 +279,8 @@
     "3d3330d6-7021-4a6e-9846-7b023e191dc9",
     "8127fae1-a88c-41e6-be24-7bf6fdb17903",
     "b52e1601-93cc-41b1-9719-f4c7a37f1fd0",
-    "0465efec-7159-419a-b64c-d38f84bb50c0"
+    "0465efec-7159-419a-b64c-d38f84bb50c0",
+    "1b55fe38-87a8-4e77-8667-4b454d4f1d77"
   ],
   "processedSales": {
     "9e108f09-42f5-4bb5-9a77-7efc24e8fb92": [
@@ -321,6 +322,24 @@
       },
       {
         "productId": "chocopasión",
+        "quantity": 1
+      }
+    ],
+    "1b55fe38-87a8-4e77-8667-4b454d4f1d77": [
+      {
+        "productId": "redvelvetcheese",
+        "quantity": 2
+      },
+      {
+        "productId": "triplechoco",
+        "quantity": 1
+      },
+      {
+        "productId": "choconut",
+        "quantity": 1
+      },
+      {
+        "productId": "briganut",
         "quantity": 1
       }
     ]
