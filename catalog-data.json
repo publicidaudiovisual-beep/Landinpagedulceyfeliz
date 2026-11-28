@@ -36,7 +36,7 @@
       "line": "vip",
       "condition": "nuevo",
       "price": 6500,
-      "stockQuantity": 5,
+      "stockQuantity": 4,
       "ingredients": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate oscuro, avellanas, cacao en polvo, manteca, azúcar, harina, vainilla y relleno de Nutella.",
       "desc": "Trozos de chocolate semi amargo de primera calidad, gotas de chocolate oscuro, avellanas, cacao en polvo, manteca, azúcar, harina, vainilla y relleno de Nutella.",
       "img": "Galeria de Galletas/Nocciolle Supreme galeria.jpg",
@@ -280,7 +280,8 @@
     "8127fae1-a88c-41e6-be24-7bf6fdb17903",
     "b52e1601-93cc-41b1-9719-f4c7a37f1fd0",
     "0465efec-7159-419a-b64c-d38f84bb50c0",
-    "1b55fe38-87a8-4e77-8667-4b454d4f1d77"
+    "1b55fe38-87a8-4e77-8667-4b454d4f1d77",
+    "6b993ff6-e22d-4cdd-9873-a80b171cbf3e"
   ],
   "processedSales": {
     "9e108f09-42f5-4bb5-9a77-7efc24e8fb92": [
@@ -340,6 +341,12 @@
       },
       {
         "productId": "briganut",
+        "quantity": 1
+      }
+    ],
+    "6b993ff6-e22d-4cdd-9873-a80b171cbf3e": [
+      {
+        "productId": "nocciollasupreme",
         "quantity": 1
       }
     ]
