@@ -132,6 +132,6 @@ Ingresa la contraseña `ADMIN_PASSWORD` en el panel. Los botones de guardar y lo
 
 Guarda las nuevas imágenes de galletas en `Galeria de Galletas` y utiliza esa ruta en los campos de imagen del producto. La imagen principal se muestra en el catálogo y en los detalles; la imagen cenital se utiliza en el armador. Cuando sea posible, usa una imagen con fondo transparente para el armador.
 
-Las imágenes de cajas, videos y promociones están en `Cajas`, `Videos` y `Promociones`, respectivamente. Al seleccionar un archivo en el panel, incluye la carpeta en su ruta, por ejemplo `Videos/Cookie de lujo.mp4`.
+Las imágenes de cajas, videos y promociones están en `Cajas`, `Videos` y `Promociones`, respectivamente. Al seleccionar un archivo en el panel, incluye la carpeta en su ruta, por ejemplo `Videos/Video Cookies Hero.mp4`.
 
 Al editar un sabor, la condición **Próximamente** lo muestra en el catálogo, pero impide seleccionarlo y generar nuevos pedidos aunque tenga stock. Cambia su condición cuando esté disponible. **Sabor Fijo** es una etiqueta para sabores permanentes y permite la compra cuando hay stock. Al crear un pedido se consulta el catálogo actual en GitHub; si no puede verificarse, se informa el error y no se registra el pedido.

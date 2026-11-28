@@ -220,7 +220,7 @@
         <h3 class="font-serif-luxury text-2xl text-white"><i class="fa-solid fa-video text-gold mr-2"></i> Video del Hero (Portada)</h3>
         <div>
           <label class="block text-xs text-gray-300 mb-1">Nombre del archivo de video (.mp4)</label>
-          <input type="text" id="input-hero-video" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-2.5 text-sm text-white" placeholder="Ej. Videos/Cookie de lujo.mp4" />
+          <input type="text" id="input-hero-video" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-2.5 text-sm text-white" placeholder="Ej. Videos/Video Cookies Hero.mp4" />
         </div>
         <button onclick="saveHeroVideo()" class="gold-button rounded-xl px-5 py-2 text-xs uppercase tracking-wider">Guardar Video</button>
       </section>
@@ -1389,7 +1389,7 @@
         ? `$${monthSales.toLocaleString('es-AR')}`
         : 'No disponible';
 
-      document.getElementById('input-hero-video').value = adminData.heroVideo || 'Videos/Cookie de lujo.mp4';
+      document.getElementById('input-hero-video').value = adminData.heroVideo || 'Videos/Video Cookies Hero.mp4';
       const pkg = adminData.packagingConfig || { title: 'Nuestra Caja de Lujo', text: 'Una presentación alargada y refinada diseñada para albergar perfectamente 4 galletas de autor con detalles dorados.', media: 'Cajas/Cajas Instagram.jpg' };
       document.getElementById('input-pkg-title').value = pkg.title || '';
       document.getElementById('input-pkg-text').value = pkg.text || '';
