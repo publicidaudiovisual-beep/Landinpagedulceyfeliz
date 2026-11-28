@@ -8,8 +8,8 @@
   <meta name="theme-color" content="#0B0B0C" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Dulce y Feliz" />
-  <link rel="icon" type="image/png" href="/icon-192-v4.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/icon-180-v4.png" />
+  <link rel="icon" type="image/png" href="/Iconos/icon-192-v4.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/Iconos/icon-180-v4.png" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <script>
     const appLaunchedAsInstalled = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
@@ -84,7 +84,7 @@
     .chip { border: 1px solid rgba(212,175,55,0.28); background: rgba(28,28,30,0.7); }
     .product-card { background: rgba(17,17,19,0.9); border: 1px solid rgba(212,175,55,0.22); border-radius: 1.5rem; overflow: hidden; transition: .25s ease; position: relative; }
     .product-card:hover { transform: translateY(-4px); border-color: rgba(212,175,55,0.62); }
-    .product-card img { width: 100%; height: 260px; object-fit: cover; }
+    .product-card img { width: 100%; height: auto; min-height: 320px; aspect-ratio: 4 / 5; object-fit: cover; }
     .product-card.out-of-stock img { opacity: 0.4; filter: grayscale(80%); }
     
     .cookie-pc-card { background: rgba(24, 24, 27, 0.85); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 1.25rem; padding: 0.85rem; display: flex; flex-direction: column; align-items: center; transition: all 0.25s ease; cursor: pointer; }
@@ -101,10 +101,10 @@
     .cookie-img-mobile { width: 62px; height: 62px; object-fit: contain; filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.9)); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .cookie-mobile-card:active .cookie-img-mobile { transform: translateY(-12px) scale(1.15); }
 
-    .caja-foto-container { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 1.25rem; overflow: hidden; border: 2px solid rgba(212,175,55,0.45); box-shadow: 0 15px 35px rgba(0,0,0,0.6); background-color: #17171a; background-image: url('Caja vacía para el armador.png'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center; }
+    .caja-foto-container { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 1.25rem; overflow: hidden; border: 2px solid rgba(212,175,55,0.45); box-shadow: 0 15px 35px rgba(0,0,0,0.6); background-color: #17171a; background-image: url('Cajas/Caja vacía para el armador.png'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center; }
     
-    .caja-foto-4 { aspect-ratio: 3064 / 1376; background-image: url('Caja de 4 galletas para armador.jpg'); }
-    .caja-foto-1 { aspect-ratio: 2 / 1; background-image: url('Caja pequena para el armador.jpg'); }
+    .caja-foto-4 { aspect-ratio: 3064 / 1376; background-image: url('Cajas/Caja de 4 galletas para armador.jpg'); }
+    .caja-foto-1 { aspect-ratio: 2 / 1; background-image: url('Cajas/Caja pequena para el armador.jpg'); }
     .caja-foto-1 .slot-exacto-1 { inset: 12% 5.5% 12% 56%; }
     .slot-exacto-3 { position: absolute; top: 53%; height: 42%; width: 16.4%; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 0.75rem; transition: background 0.2s; }
     .slot-exacto-3:hover { background: rgba(212,175,55,0.12); }
@@ -149,6 +149,19 @@
   #builder-boxes-wrapper > div {
     min-width: 0;
   }
+  #builder-vip .builder-layout { gap: 0.5rem; }
+  #builder-vip .builder-selector-panel { padding-bottom: 0.5rem; }
+  #builder-vip .builder-preview-panel { padding-top: 0.5rem; }
+  .builder-preview-body, .builder-box-card, .builder-box-visual {
+    display: flex;
+    flex-direction: column;
+  }
+  #builder-boxes-wrapper, .builder-box-visual, .builder-box-visual > .caja-foto-container {
+    order: -1;
+  }
+  .builder-box-card { gap: 0.5rem; }
+  .builder-box-visual { gap: 0.25rem; }
+  .builder-box-card > * + *, .builder-box-visual > * + * { margin-top: 0; }
   .caja-foto-container {
     aspect-ratio: 485 / 205;
   }
@@ -191,7 +204,7 @@
           welcomeVideo.classList.remove('is-playing');
           console.warn('No se pudo cargar el video de bienvenida.');
         });
-        fetch('/bienvenida-app-v1.mp4', { signal: welcomeVideoRequest.signal })
+        fetch('/Videos/bienvenida-app-v1.mp4', { signal: welcomeVideoRequest.signal })
           .then(response => {
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             return response.blob();
@@ -218,7 +231,7 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="flex h-20 items-center justify-between gap-4">
         <a href="index.html#home" class="flex items-center gap-3">
-          <img src="Logo Dulce y Feliz Logo Nuevo.png" alt="Dulce y Feliz" class="h-12 sm:h-14 w-auto object-contain" />
+          <img src="Logos/Logo Dulce y Feliz Logo Nuevo.png" alt="Dulce y Feliz" class="h-12 sm:h-14 w-auto object-contain" />
         </a>
         <nav class="hidden md:flex items-center gap-6 text-[10px] font-medium uppercase tracking-[0.2em] text-gray-300">
           <a href="index.html#home" class="hover:text-gold transition-colors">Inicio</a>
@@ -243,7 +256,7 @@
   <main>
     <section id="home" class="hero-section relative isolate overflow-hidden border-b border-gold/20 bg-[#0B0B0C] flex items-center py-20 lg:py-28">
       <video id="hero-video-tag" class="hero-background-video" autoplay muted loop playsinline preload="auto">
-        <source id="hero-video-source" src="Cookie de lujo.mp4" type="video/mp4" />
+        <source id="hero-video-source" src="Videos/Cookie de lujo.mp4" type="video/mp4" />
       </video>
       <div class="hero-background-overlay" aria-hidden="true"></div>
       <div class="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -307,7 +320,7 @@
         </div>
         <div class="mt-12 max-w-2xl mx-auto rounded-[2rem] border border-gold/30 bg-[#17171A] p-6 shadow-2xl">
           <div id="pkg-media-render" class="overflow-hidden rounded-[1.5rem] border border-gold/25">
-            <img id="packaging-img-render" src="Caja modelo.jpg" alt="Caja Dulce y Feliz" class="h-80 w-full object-cover" />
+            <img id="packaging-img-render" src="Cajas/Cajas Instagram.jpg" alt="Caja Dulce y Feliz" class="h-80 w-full object-cover" />
           </div>
           <div class="mt-6 text-center">
             <h3 class="font-serif-luxury text-3xl text-white">Caja Alargada de 4 Unidades</h3>
@@ -364,9 +377,9 @@
           <p class="mt-2 text-xs text-gray-400">Elegí un formato y seleccioná sabores. Al cambiar de tamaño se agrega otra caja sin borrar las anteriores.</p>
         </div>
 
-        <div class="grid gap-8 lg:grid-cols-[1fr_1.1fr] items-start">
+        <div class="builder-layout grid gap-8 lg:grid-cols-[1fr_1.1fr] items-start">
           
-          <div class="glass-card rounded-[2rem] p-6">
+          <div class="builder-selector-panel glass-card rounded-[2rem] p-6">
             <div class="mb-6 flex items-center justify-between">
               <div class="flex gap-3">
                 <button class="size-option active rounded-full px-5 py-2.5 text-[10px] uppercase tracking-[0.2em]" data-size="4">Caja de 4 galletas</button>
@@ -374,23 +387,23 @@
               </div>
             </div>
 
-            <div class="mb-3 flex items-center justify-between">
+            <div class="mb-3 flex items-center justify-between gap-2">
               <p id="builder-selector-title" class="text-xs uppercase tracking-[0.2em] text-goldLight font-semibold">SELECCIONA TUS SABORES (0/3):</p>
+              <div class="flex shrink-0 justify-end gap-2 md:hidden">
+                <button type="button" onclick="scrollMobileCarousel('left')" aria-label="Ver sabores anteriores" class="h-9 w-9 rounded-full border border-gold/40 text-goldLight hover:bg-gold/15">
+                  <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <button type="button" onclick="scrollMobileCarousel('right')" aria-label="Ver más sabores" class="h-9 w-9 rounded-full border border-gold/40 text-goldLight hover:bg-gold/15">
+                  <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                </button>
+              </div>
             </div>
 
             <div id="builder-selector-container"></div>
-            <div class="mt-2 flex justify-end gap-2 md:hidden">
-              <button type="button" onclick="scrollMobileCarousel('left')" aria-label="Ver sabores anteriores" class="h-9 w-9 rounded-full border border-gold/40 text-goldLight hover:bg-gold/15">
-                <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
-              </button>
-              <button type="button" onclick="scrollMobileCarousel('right')" aria-label="Ver más sabores" class="h-9 w-9 rounded-full border border-gold/40 text-goldLight hover:bg-gold/15">
-                <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
-              </button>
-            </div>
           </div>
 
-          <div class="glass-card rounded-[2rem] p-6 relative flex flex-col justify-between">
-            <div>
+          <div class="builder-preview-panel glass-card rounded-[2rem] p-6 relative flex flex-col justify-between">
+            <div class="builder-preview-body">
               <div class="mb-4 flex items-center justify-between">
                 <h3 class="font-serif-luxury text-2xl text-white">Vista previa</h3>
                 <span id="builder-size-label" class="text-[10px] uppercase tracking-[0.2em] text-goldLight">Caja de 4</span>
@@ -446,11 +459,11 @@
 
   <footer class="border-t border-gold/20 bg-[#0B0B0C] py-8 relative">
     <div class="mx-auto mb-8 flex max-w-7xl flex-col items-center gap-3 px-4 text-center sm:px-6 lg:px-8">
-      <img src="/logo-footer-mobile.webp" alt="Dulce y Feliz - Repostería artesanal" class="mx-auto block h-auto w-full max-w-md object-contain sm:hidden" />
-      <video class="footer-desktop-video mx-auto hidden h-auto w-full max-w-3xl object-contain sm:block" autoplay muted loop playsinline preload="metadata" poster="/logo-footer-desktop.webp" aria-label="Logo animado de Dulce y Feliz">
-        <source src="/logo-footer-desktop.mp4" type="video/mp4" media="(min-width: 640px) and (prefers-reduced-motion: no-preference)" />
+      <img src="/Logos/logo-footer-mobile.webp" alt="Dulce y Feliz - Repostería artesanal" class="mx-auto block h-auto w-full max-w-md object-contain sm:hidden" />
+      <video class="footer-desktop-video mx-auto hidden h-auto w-full max-w-3xl object-contain sm:block" autoplay muted loop playsinline preload="metadata" poster="/Logos/logo-footer-desktop.webp" aria-label="Logo animado de Dulce y Feliz">
+        <source src="/Logos/logo-footer-desktop.mp4" type="video/mp4" media="(min-width: 640px) and (prefers-reduced-motion: no-preference)" />
       </video>
-      <img src="/logo-footer-desktop.webp" alt="Dulce y Feliz - Repostería artesanal" class="footer-desktop-static mx-auto hidden h-auto w-full max-w-3xl object-contain" />
+      <img src="/Logos/logo-footer-desktop.webp" alt="Dulce y Feliz - Repostería artesanal" class="footer-desktop-static mx-auto hidden h-auto w-full max-w-3xl object-contain" />
       <p class="text-xs tracking-wide text-gray-400">Este proyecto fue diseñado y ejecutado por Vktor-SYS</p>
     </div>
     <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 text-center text-sm text-gray-400 sm:flex-row sm:text-left sm:px-6 lg:px-8">
@@ -469,7 +482,7 @@
 
   <aside id="install-app-banner" class="fixed inset-x-3 bottom-3 z-[60] mx-auto hidden max-w-md rounded-2xl border border-gold/50 bg-[#121214]/95 p-4 text-white shadow-2xl shadow-black/60 backdrop-blur-xl sm:inset-x-auto sm:bottom-5 sm:right-5" role="region" aria-label="Instalar acceso directo de Dulce y Feliz">
     <div class="flex items-start gap-3">
-      <img src="/logo-banner-instalacion.webp" alt="Logo Dulce y Feliz" class="h-12 w-12 shrink-0 rounded-xl object-contain" />
+      <img src="/Logos/logo-banner-instalacion.webp" alt="Logo Dulce y Feliz" class="h-12 w-12 shrink-0 rounded-xl object-contain" />
       <div class="min-w-0 flex-1">
         <p class="font-serif-luxury text-lg text-goldLight">Dulce y Feliz en tu inicio</p>
         <p class="mt-0.5 text-xs leading-relaxed text-gray-300">Agregá la tienda a tu celular y tenela siempre a mano.</p>
@@ -796,9 +809,9 @@
 
     function renderInstagram() {
       const igGallery = appData.instagramGallery || [
-        {media: 'Briga Nut.jpg', link: 'https://instagram.com/dulceyfelices'},
-        {media: 'Dubai Gold.jpg', link: 'https://instagram.com/dulceyfelices'},
-        {media: 'Caja VIP 6.jpg', link: 'https://instagram.com/dulceyfelices'}
+        {media: 'Galeria de Galletas/Briga Nut.jpg', link: 'https://instagram.com/dulceyfelices'},
+        {media: 'Galeria de Galletas/Dubai Gold.jpg', link: 'https://instagram.com/dulceyfelices'},
+        {media: 'Cajas/Cajas Instagram.jpg', link: 'https://instagram.com/dulceyfelices'}
       ];
       const grid = document.getElementById('instagram-grid-container');
       grid.innerHTML = igGallery.map(item => `
@@ -1074,14 +1087,14 @@
         const capacity = size;
         const isComplete = box.length === capacity;
         boxesHtml += `
-          <div class="space-y-2 rounded-xl border border-gold/20 bg-[#0f0f10] p-3">
+          <div class="builder-box-card space-y-2 rounded-xl border border-gold/20 bg-[#0f0f10] p-3">
             ${size === 4 ? `<label for="box-name-${globalIdx}" class="block text-[10px] uppercase tracking-wider text-goldLight">Nombre para personalizar la caja #${globalIdx + 1} (opcional)</label>
             <input id="box-name-${globalIdx}" data-box-name="${globalIdx}" type="text" maxlength="40" class="w-full rounded-lg border border-gold/30 bg-[#1C1C1E] px-3 py-2 text-sm text-white" placeholder="Dejá el campo vacío si no querés personalizarla" />` : ''}
             <p class="text-[10px] text-gray-400">${isComplete ? 'Caja completa' : `Seleccionadas: ${box.length} de ${capacity}`}</p>
         `;
         if(size === 4) {
           boxesHtml += `
-            <div class="space-y-1">
+            <div class="builder-box-visual space-y-1">
               <p class="text-[10px] text-goldLight uppercase font-bold">Caja #${globalIdx+1} (4 Unidades)</p>
               <div class="caja-foto-container caja-foto-4">
           `;
@@ -1101,7 +1114,7 @@
           boxesHtml += `</div></div></div>`;
         } else {
           boxesHtml += `
-            <div class="space-y-1">
+            <div class="builder-box-visual space-y-1">
               <p class="text-[10px] text-goldLight uppercase font-bold">Cajita Individual #${globalIdx+1}</p>
               <div class="caja-foto-container caja-foto-1">
           `;

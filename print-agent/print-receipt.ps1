@@ -23,7 +23,7 @@ $large = New-Object System.Drawing.Font 'Arial', $(if ($ArchivePath) { 14 } else
 $small = New-Object System.Drawing.Font 'Arial', $(if ($ArchivePath) { 9 } else { 7 })
 $center = New-Object System.Drawing.StringFormat
 $center.Alignment = [System.Drawing.StringAlignment]::Center
-$logo = [System.Drawing.Image]::FromFile((Join-Path $PSScriptRoot '..\Isotipo Sin fondo.png'))
+$logo = [System.Drawing.Image]::FromFile((Join-Path $PSScriptRoot '..\Logos\Isotipo Sin fondo.png'))
 $document = New-Object System.Drawing.Printing.PrintDocument
 try {
   $document.PrinterSettings.PrinterName = $PrinterName

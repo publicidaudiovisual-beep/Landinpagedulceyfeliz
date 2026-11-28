@@ -1,12 +1,12 @@
-const CACHE_NAME = 'dulce-feliz-app-assets-v6';
+const CACHE_NAME = 'dulce-feliz-app-assets-v7';
 const APP_ASSETS = new Set([
   '/manifest.webmanifest',
-  '/Logo%20Dulce%20y%20Feliz%20Logo%20Nuevo.png',
-  '/logo-banner-instalacion.webp',
-  '/icon-180-v4.png',
-  '/icon-192-v4.png',
-  '/icon-512-v4.png',
-  '/icon-maskable-512-v4.png'
+  '/Logos/Logo%20Dulce%20y%20Feliz%20Logo%20Nuevo.png',
+  '/Logos/logo-banner-instalacion.webp',
+  '/Iconos/icon-180-v4.png',
+  '/Iconos/icon-192-v4.png',
+  '/Iconos/icon-512-v4.png',
+  '/Iconos/icon-maskable-512-v4.png'
 ]);
 
 self.addEventListener('install', event => {

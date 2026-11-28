@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Panel de Administración | Dulce y Feliz</title>
-  <link rel="icon" type="image/png" href="/icon-192-v4.png" />
+  <link rel="icon" type="image/png" href="/Iconos/icon-192-v4.png" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -47,7 +47,7 @@
   <!-- AUTH LOCK MODAL -->
   <div id="auth-modal" class="fixed inset-0 z-50 bg-[#0B0B0C] flex items-center justify-center p-4">
     <div class="glass-card max-w-md w-full p-8 text-center border-gold/40">
-      <img src="Logo Dulce y Feliz Logo Nuevo.png" alt="Logo Dulce y Feliz" class="h-16 w-auto mx-auto mb-4 object-contain" />
+      <img src="Logos/Logo Dulce y Feliz Logo Nuevo.png" alt="Logo Dulce y Feliz" class="h-16 w-auto mx-auto mb-4 object-contain" />
       <h2 class="font-serif-luxury text-3xl text-white mb-2">Acceso Restringido</h2>
       <p class="text-xs text-gray-400 mb-6">Ingresa el código de seguridad para administrar la tienda.</p>
       <input type="password" id="auth-code-input" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-3 text-center text-xl tracking-widest text-goldLight mb-4 focus:outline-none focus:border-gold" placeholder="••••" />
@@ -59,7 +59,7 @@
   <header class="border-b border-white/10 bg-[#0B0B0C]/90 backdrop-blur-md sticky top-0 z-40">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex h-20 items-center justify-between">
       <div class="flex items-center gap-3">
-        <img src="Logo Dulce y Feliz Logo Nuevo.png" alt="Logo Dulce y Feliz" class="h-12 w-auto object-contain" />
+        <img src="Logos/Logo Dulce y Feliz Logo Nuevo.png" alt="Logo Dulce y Feliz" class="h-12 w-auto object-contain" />
         <div>
           <h1 class="font-serif-luxury text-2xl text-white">Panel de Administración</h1>
           <p class="text-[10px] uppercase tracking-[0.2em] text-goldLight">Gestión Integral de Tienda</p>
@@ -220,7 +220,7 @@
         <h3 class="font-serif-luxury text-2xl text-white"><i class="fa-solid fa-video text-gold mr-2"></i> Video del Hero (Portada)</h3>
         <div>
           <label class="block text-xs text-gray-300 mb-1">Nombre del archivo de video (.mp4)</label>
-          <input type="text" id="input-hero-video" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-2.5 text-sm text-white" placeholder="Ej. Cookie de lujo.mp4" />
+          <input type="text" id="input-hero-video" class="w-full rounded-xl border border-gold/30 bg-[#121214] px-4 py-2.5 text-sm text-white" placeholder="Ej. Videos/Cookie de lujo.mp4" />
         </div>
         <button onclick="saveHeroVideo()" class="gold-button rounded-xl px-5 py-2 text-xs uppercase tracking-wider">Guardar Video</button>
       </section>
@@ -407,11 +407,11 @@
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-xs text-gray-300 mb-1">Imagen Principal</label>
-          <input type="text" id="prod-img" class="w-full rounded-xl border border-gold/30 bg-[#0B0B0C] px-3 py-2 text-sm text-white" value="Briga Nut.jpg" />
+          <input type="text" id="prod-img" class="w-full rounded-xl border border-gold/30 bg-[#0B0B0C] px-3 py-2 text-sm text-white" value="Galeria de Galletas/Briga Nut.jpg" />
         </div>
         <div>
           <label class="block text-xs text-gray-300 mb-1">Imagen Cenital (Armador)</label>
-          <input type="text" id="prod-img-cenital" class="w-full rounded-xl border border-gold/30 bg-[#0B0B0C] px-3 py-2 text-sm text-white" value="Nocciolla Supreme cenital sin fondo.png" />
+          <input type="text" id="prod-img-cenital" class="w-full rounded-xl border border-gold/30 bg-[#0B0B0C] px-3 py-2 text-sm text-white" value="Galeria de Galletas/Nocciolla Supreme cenital sin fondo.png" />
         </div>
       </div>
       <div class="flex justify-end gap-3 pt-4">
@@ -1275,7 +1275,7 @@
       }
       try {
         const data = DulceReceipt.createCustomerReceipt(order);
-        const logoUrl = new URL('Isotipo Sin fondo.png', location.href).href;
+        const logoUrl = new URL('Logos/Isotipo Sin fondo.png', location.href).href;
         const content = data.blocks.map(block =>
           `<div class="${escapeOrderHTML(block.type)}">${escapeOrderHTML(block.text)}</div>`
         ).join('');
@@ -1389,8 +1389,8 @@
         ? `$${monthSales.toLocaleString('es-AR')}`
         : 'No disponible';
 
-      document.getElementById('input-hero-video').value = adminData.heroVideo || 'Cookie de lujo.mp4';
-      const pkg = adminData.packagingConfig || { title: 'Nuestra Caja de Lujo', text: 'Una presentación alargada y refinada diseñada para albergar perfectamente 4 galletas de autor con detalles dorados.', media: 'Caja modelo.jpg' };
+      document.getElementById('input-hero-video').value = adminData.heroVideo || 'Videos/Cookie de lujo.mp4';
+      const pkg = adminData.packagingConfig || { title: 'Nuestra Caja de Lujo', text: 'Una presentación alargada y refinada diseñada para albergar perfectamente 4 galletas de autor con detalles dorados.', media: 'Cajas/Cajas Instagram.jpg' };
       document.getElementById('input-pkg-title').value = pkg.title || '';
       document.getElementById('input-pkg-text').value = pkg.text || '';
       document.getElementById('input-pkg-media').value = pkg.media || '';
@@ -1408,9 +1408,9 @@
       document.getElementById('offer-media').value = ann.offerMedia || '';
 
       const igGallery = adminData.instagramGallery || [
-        {media: 'Briga Nut.jpg', link: 'https://instagram.com/dulceyfelices'},
-        {media: 'Dubai Gold.jpg', link: 'https://instagram.com/dulceyfelices'},
-        {media: 'Caja VIP 6.jpg', link: 'https://instagram.com/dulceyfelices'}
+        {media: 'Galeria de Galletas/Briga Nut.jpg', link: 'https://instagram.com/dulceyfelices'},
+        {media: 'Galeria de Galletas/Dubai Gold.jpg', link: 'https://instagram.com/dulceyfelices'},
+        {media: 'Cajas/Cajas Instagram.jpg', link: 'https://instagram.com/dulceyfelices'}
       ];
       let igHtml = '';
       for(let i=0; i<3; i++) {
