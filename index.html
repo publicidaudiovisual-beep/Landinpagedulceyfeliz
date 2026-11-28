@@ -59,7 +59,7 @@
     }
     .hero-section { min-height: min(880px, calc(100vh - 5rem)); }
     .hero-background-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
-    .hero-background-overlay { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,11,12,0.8), rgba(11,11,12,0.35) 75%), linear-gradient(0deg, rgba(11,11,12,0.5), rgba(11,11,12,0.3) 50%); }
+    .hero-background-overlay { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(11,11,12,0.45), rgba(11,11,12,0.12) 75%), linear-gradient(0deg, rgba(11,11,12,0.25), rgba(11,11,12,0.12) 50%); }
     .font-serif-luxury { font-family: 'Cormorant Garamond', serif; }
     .gold-script {
       font-family: 'Great Vibes', 'Cormorant Garamond', serif;
@@ -284,6 +284,9 @@
             <button id="install-app-button" type="button" class="inline-flex items-center gap-2 rounded-xl border border-gold/50 px-5 py-3 text-[10px] uppercase tracking-[0.18em] text-goldLight transition-colors hover:bg-gold/10">
               <i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i>
               Agregar al inicio
+            </button>
+            <button id="hero-audio-button" type="button" aria-controls="hero-video-tag" class="inline-flex items-center rounded-xl border border-gold/50 bg-black/70 px-5 py-3 text-[10px] uppercase tracking-[0.18em] text-goldLight transition-colors hover:bg-gold/10">
+              Activar sonido
             </button>
           </div>
         </div>
@@ -735,6 +738,21 @@
     let deliveryServerTime = 0;
     let deliveryCountdownTimer = null;
     let deliveryLoadVersion = 0;
+    const heroVideo = document.getElementById('hero-video-tag');
+    const heroAudioButton = document.getElementById('hero-audio-button');
+    heroVideo.addEventListener('volumechange', () => {
+      heroAudioButton.textContent = heroVideo.muted ? 'Activar sonido' : 'Silenciar video';
+    });
+    heroAudioButton.addEventListener('click', () => {
+      heroVideo.muted = !heroVideo.muted;
+      if (!heroVideo.muted) {
+        heroVideo.play().catch(error => {
+          heroVideo.muted = true;
+          console.error('No se pudo reproducir el video con sonido:', error);
+          alert('No se pudo activar el sonido del video. Intentá nuevamente.');
+        });
+      }
+    });
     async function loadPublicData() {
       try {
         const res = await fetch('./catalog-data.json', { cache: 'no-store' });
